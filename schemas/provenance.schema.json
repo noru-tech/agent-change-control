@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/provenance.schema.json",
+  "$ref": "#/$defs/provenance",
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "spec_version": {
+          "const": "0.1"
+        },
+        "agent": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "operator": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "id",
+            "started_at"
+          ],
+          "additionalProperties": false
+        },
+        "change": {
+          "type": "object",
+          "properties": {
+            "base_commit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "head_commit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "base_commit",
+            "head_commit"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "spec_version",
+        "agent",
+        "operator",
+        "session",
+        "change"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "version": "0.1",
+  "repository": "acme/api",
+  "window": {
+    "from": "2026-08-01T00:00:00Z",
+    "to": "2026-08-31T23:59:59Z",
+    "complete": true,
+    "reason": null
+  },
+  "actors": {
+    "github:alice": {
+      "kind": "human",
+      "display_name": "Alice"
+    },
+    "github:bob": {
+      "kind": "human",
+      "display_name": "Bob"
+    },
+    "agent:claude-code": {
+      "kind": "agent",
+      "display_name": "Claude Code"
+    },
+    "agent:codex": {
+      "kind": "agent",
+      "display_name": "Codex"
+    },
+    "github:ci": {
+      "kind": "bot",
+      "display_name": "CI"
+    }
+  },
+  "changes": [
+    {
+      "id": "github:acme/api:pr:421",
+      "repository": "acme/api",
+      "forge": "github",
+      "title": "Example change",
+      "url": "https://github.com/acme/api/pull/421",
+      "opened_at": "2026-08-01T12:00:00Z",
+      "merged_at": "2026-08-03T12:00:00Z",
+      "head_sha": "head",
+      "commits": [
+        {
+          "sha": "head",
+          "author": {
+            "actor_id": "github:alice",
+            "provenance": [
+              {
+                "source": "github_api",
+                "ref": "https://api.github.com/repos/acme/api/pulls/421",
+                "kind": "observed"
+              }
+            ]
+          }
+        }
+      ],
+      "forge_author": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "author": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "agent_operator": null,
+      "reviews": [
+        {
+          "id": "1",
+          "actor_id": "github:bob",
+          "state": "approved",
+          "at": "2026-08-02T12:00:00Z",
+          "commit_sha": "head",
+          "provenance": [
+            {
+              "source": "github_api",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/1",
+              "kind": "observed"
+            }
+          ]
+        },
+        {
+          "id": "2",
+          "actor_id": "github:bob",
+          "state": "commented",
+          "at": "2026-08-02T13:00:00Z",
+          "commit_sha": "head",
+          "provenance": [
+            {
+              "source": "github_api",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/1",
+              "kind": "observed"
+            }
+          ]
+        }
+      ],
+      "reviews_complete": true,
+      "merger": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source": "github_api",
+          "ref": "https://api.github.com/repos/acme/api/pulls/421",
+          "kind": "observed"
+        }
+      ]
+    }
+  ]
+}

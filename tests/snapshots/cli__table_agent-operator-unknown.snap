@@ -1,0 +1,18 @@
+---
+source: tests/cli.rs
+expression: "String::from_utf8(table.stdout).unwrap()"
+---
+CHANGE                  AUTHOR             OPERATOR  RESULT
+github:acme/api:pr:421  agent:claude-code  -         WARN
+
+1 changes evaluated
+0 human-authored
+1 agent-authored
+1 agent operator unknown
+0 clean
+1 with findings
+0 indeterminate
+ACC001  agent_change_without_independent_human  0
+ACC002  approver_is_author                      0
+ACC003  merged_without_independent_approval     0
+ACC006  unknown_agent_operator                  1

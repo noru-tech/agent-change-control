@@ -1,0 +1,734 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/manifest.schema.json",
+  "$ref": "#/$defs/manifest",
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "observed",
+            "derived",
+            "declared"
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "ref",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "human",
+            "agent",
+            "bot",
+            "service",
+            "unknown"
+          ]
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "display_name"
+      ],
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "complete",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "actor_id",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "operator": {
+      "type": "object",
+      "properties": {
+        "actor_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "explicit",
+            "derived",
+            "unknown"
+          ]
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "actor_id",
+        "confidence",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "changes_requested",
+            "dismissed",
+            "commented"
+          ]
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "actor_id",
+        "state",
+        "at",
+        "commit_sha",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "commit": {
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/identity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sha",
+        "author"
+      ],
+      "additionalProperties": false
+    },
+    "change": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "forge": {
+          "type": "string",
+          "enum": [
+            "github"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "opened_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "merged_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "head_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commit"
+          }
+        },
+        "forge_author": {
+          "$ref": "#/$defs/identity"
+        },
+        "author": {
+          "$ref": "#/$defs/identity"
+        },
+        "agent_operator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/operator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/review"
+          }
+        },
+        "reviews_complete": {
+          "type": "boolean"
+        },
+        "merger": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/identity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "repository",
+        "forge",
+        "title",
+        "url",
+        "opened_at",
+        "merged_at",
+        "head_sha",
+        "commits",
+        "forge_author",
+        "author",
+        "agent_operator",
+        "reviews",
+        "reviews_complete",
+        "merger",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "0.1"
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "window": {
+          "$ref": "#/$defs/window"
+        },
+        "actors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/actor"
+          }
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/change"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "repository",
+        "window",
+        "actors",
+        "changes"
+      ],
+      "additionalProperties": false
+    },
+    "rule_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "warning",
+            "info"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "severity"
+      ],
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "0.1"
+        },
+        "fail_on": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "warning",
+            "info"
+          ]
+        },
+        "rules": {
+          "type": "object",
+          "properties": {
+            "agent_change_without_independent_human": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "approver_is_author": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "merged_without_independent_approval": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "unknown_agent_operator": {
+              "$ref": "#/$defs/rule_policy"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "rules"
+      ],
+      "additionalProperties": false
+    },
+    "disposition": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "remediated",
+            "false_positive"
+          ]
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decided_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "remediated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "owner",
+        "decided_at",
+        "expires_at",
+        "rationale",
+        "remediated_at"
+      ],
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^acc-[a-f0-9]{16}$"
+        },
+        "rule_id": {
+          "type": "string",
+          "enum": [
+            "ACC001",
+            "ACC002",
+            "ACC003",
+            "ACC006"
+          ]
+        },
+        "rule": {
+          "type": "string",
+          "enum": [
+            "agent_change_without_independent_human",
+            "approver_is_author",
+            "merged_without_independent_approval",
+            "unknown_agent_operator"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "warning",
+            "info"
+          ]
+        },
+        "change_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        },
+        "disposition": {
+          "$ref": "#/$defs/disposition"
+        }
+      },
+      "required": [
+        "id",
+        "rule_id",
+        "rule",
+        "severity",
+        "change_id",
+        "actor_ids",
+        "explanation",
+        "provenance",
+        "disposition"
+      ],
+      "additionalProperties": false
+    },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "change_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rule_id": {
+          "type": "string",
+          "enum": [
+            "ACC001",
+            "ACC002",
+            "ACC003",
+            "ACC006"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "unknown",
+            "not_applicable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "change_id",
+        "rule_id",
+        "status",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "human_authored": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agent_authored": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agent_operator_unknown": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clean": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "with_findings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "indeterminate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "changes",
+        "human_authored",
+        "agent_authored",
+        "agent_operator_unknown",
+        "clean",
+        "with_findings",
+        "indeterminate",
+        "findings"
+      ],
+      "additionalProperties": false
+    },
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "0.1"
+        },
+        "events": {
+          "$ref": "#/$defs/events"
+        },
+        "policy": {
+          "$ref": "#/$defs/policy"
+        },
+        "summary": {
+          "$ref": "#/$defs/summary"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/assessment"
+          }
+        },
+        "generated": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "const": "agent-change-control"
+            },
+            "version": {
+              "const": "0.1.0"
+            },
+            "source_digest": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "tool",
+            "version",
+            "source_digest"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "events",
+        "policy",
+        "summary",
+        "findings",
+        "assessments",
+        "generated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

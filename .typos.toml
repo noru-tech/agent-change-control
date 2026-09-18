@@ -1,0 +1,7 @@
+[default.extend-words]
+# Rule and validation code prefixes.
+acc = "acc"
+acv = "acv"
+
+[files]
+extend-exclude = ["target/**", "tests/fixtures/**", "tests/snapshots/**", "CHANGELOG.md", "Cargo.lock"]

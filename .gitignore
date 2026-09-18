@@ -1,0 +1,21 @@
+# Rust
+/target/
+*.pending-snap
+
+# Local scan outputs (contain employee activity data; never commit real exports)
+.agent-change-control/manifest.*
+/events.json
+/manifest.json
+*.sarif
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local scratch
+*.local

@@ -1,0 +1,66 @@
+[package]
+name = "agent-change-control"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+description = "acc — deterministic change control for software written with coding agents: record the agent, operator, reviewers and merger, then evaluate separation-of-duty rules"
+license = "MIT"
+repository = "https://github.com/noru-tech/agent-change-control"
+homepage = "https://github.com/noru-tech/agent-change-control"
+documentation = "https://github.com/noru-tech/agent-change-control#readme"
+readme = "README.md"
+keywords = ["change-control", "separation-of-duties", "coding-agents", "github", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+authors = ["Noru <bip@noru.tech>"]
+include = [
+  "src/**",
+  "schemas/**",
+  "Cargo.toml",
+  "LICENSE",
+  "README.md",
+  "CHANGELOG.md",
+]
+
+[lib]
+name = "agent_change_control"
+path = "src/lib.rs"
+
+[[bin]]
+name = "acc"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.6", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.6"
+clap_mangen = "0.3"
+jsonschema = { version = "0.29", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-saphyr = "1.2"
+sha2 = "0.10"
+thiserror = "2"
+ureq = { version = "3.4", default-features = false, features = ["rustls"] }
+
+[dev-dependencies]
+assert_cmd = "2.2"
+insta = { version = "1.48", features = ["yaml"] }
+predicates = "3.1"
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# cargo-binstall: dist produces `<name>-<target>.tar.xz` archives on GitHub Releases.
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }{ archive-suffix }"
+bin-dir = "{ name }-{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "txz"

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/policy.schema.json",
+  "$ref": "#/$defs/policy",
+  "$defs": {
+    "rule_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "warning",
+            "info"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "severity"
+      ],
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "0.1"
+        },
+        "fail_on": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "warning",
+            "info"
+          ]
+        },
+        "rules": {
+          "type": "object",
+          "properties": {
+            "agent_change_without_independent_human": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "approver_is_author": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "merged_without_independent_approval": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "unknown_agent_operator": {
+              "$ref": "#/$defs/rule_policy"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "rules"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

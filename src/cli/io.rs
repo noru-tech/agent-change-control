@@ -1,0 +1,195 @@
+//! Input parsing, output writing and the flags shared by several subcommands.
+
+use crate::model::*;
+use crate::output::Format;
+use crate::{Exit, failure};
+use anyhow::{Context, Result, anyhow, ensure};
+use chrono::NaiveDate;
+use clap::Args;
+use serde::de::DeserializeOwned;
+use serde_json::Value;
+use std::collections::BTreeMap;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+
+const MAX_INPUT: u64 = 32 * 1024 * 1024;
+/// Where `scan` writes when neither `--format` nor `--output` is given.
+pub const DEFAULT_MANIFEST: &str = ".agent-change-control/manifest.yml";
+/// The policy file loaded automatically when present.
+pub const DEFAULT_POLICY: &str = ".agent-change-control/policy.yml";
+
+/// Shared `--format` / `--output` flags.
+#[derive(Debug, Clone, Args, Default)]
+pub struct OutputArgs {
+    /// Output format; inferred from the --output extension when omitted.
+    #[arg(short, long, value_enum)]
+    pub format: Option<Format>,
+    /// Write to FILE instead of stdout.
+    #[arg(short, long, value_name = "FILE")]
+    pub output: Option<PathBuf>,
+}
+
+impl OutputArgs {
+    /// The explicit format, else the one implied by the output extension, else `default`.
+    pub fn format(&self, default: Format) -> Format {
+        self.format
+            .or_else(|| {
+                self.output
+                    .as_ref()
+                    .and_then(|p| p.extension())
+                    .and_then(|s| s.to_str())
+                    .and_then(Format::from_extension)
+            })
+            .unwrap_or(default)
+    }
+
+    pub fn render(&self, m: &Manifest, default: Format) -> Result<()> {
+        write(
+            &crate::output::render(m, self.format(default))?,
+            self.output.as_deref(),
+        )
+    }
+}
+
+/// Read a JSON or YAML document, validate it against the embedded `schema`, and deserialize it.
+pub fn read<T: DeserializeOwned>(path: &Path, schema: &str) -> Result<T> {
+    let mut data = String::new();
+    std::fs::File::open(path)
+        .with_context(|| format!("unable to open {}", path.display()))?
+        .take(MAX_INPUT + 1)
+        .read_to_string(&mut data)
+        .context("unable to read UTF-8 input")?;
+    ensure!(data.len() as u64 <= MAX_INPUT, "input exceeds 32 MiB limit");
+    // YAML 1.2 is a superset of JSON; try the strict JSON parser first.
+    let value: Value = match serde_json::from_str(&data) {
+        Ok(v) => v,
+        Err(_) => {
+            serde_saphyr::from_str(&data).map_err(|_| anyhow!("input is not valid JSON or YAML"))?
+        }
+    };
+    crate::normalize::schema(&value, schema)?;
+    Ok(serde_json::from_value(value)?)
+}
+
+/// Load `path`, else the default policy file when it exists, else the built-in defaults.
+pub fn load_policy(path: Option<&Path>) -> Result<Policy> {
+    let default = Path::new(DEFAULT_POLICY);
+    match path.or_else(|| default.exists().then_some(default)) {
+        Some(path) => crate::policy::resolve(read(path, "policy")?),
+        None => Ok(Policy::default()),
+    }
+}
+
+/// Parse repeated `LOGIN=AGENT` mappings into a lowercase login map.
+pub fn known(values: &[String]) -> Result<BTreeMap<String, String>> {
+    let mut map = BTreeMap::new();
+    for v in values {
+        let (login, agent) = v
+            .split_once('=')
+            .ok_or_else(|| failure(Exit::Usage, "agent-account must be LOGIN=AGENT"))?;
+        if login.is_empty() || agent.is_empty() {
+            return Err(failure(Exit::Usage, "empty agent account mapping"));
+        }
+        if map
+            .insert(login.to_ascii_lowercase(), agent.into())
+            .is_some()
+        {
+            return Err(failure(Exit::Usage, "duplicate known agent account"));
+        }
+    }
+    Ok(map)
+}
+
+/// Parse a window boundary: a calendar date expands to the start (or `end`) of that UTC day; an
+/// RFC 3339 timestamp is taken as is.
+pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
+    if s.len() == 10 {
+        let date = NaiveDate::parse_from_str(s, "%Y-%m-%d")
+            .map_err(|_| failure(Exit::Usage, "invalid date"))?;
+        let time = if end {
+            date.and_hms_nano_opt(23, 59, 59, 999_999_999)
+        } else {
+            date.and_hms_opt(0, 0, 0)
+        };
+        return time
+            .map(|t| t.and_utc())
+            .ok_or_else(|| failure(Exit::Usage, "invalid date"));
+    }
+    crate::normalize::timestamp(s).map_err(|_| failure(Exit::Usage, "invalid date/time"))
+}
+
+/// The GitHub token from the environment: `GITHUB_TOKEN`, else `GH_TOKEN`.
+pub fn token() -> Option<String> {
+    ["GITHUB_TOKEN", "GH_TOKEN"]
+        .iter()
+        .find_map(|name| std::env::var(name).ok().filter(|t| !t.is_empty()))
+}
+
+/// Write to `path` (creating parent directories) or to stdout.
+pub fn write(data: &str, path: Option<&Path>) -> Result<()> {
+    if let Some(path) = path {
+        if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(path, data)
+            .with_context(|| format!("unable to write {}", path.display()))?;
+    } else {
+        std::io::stdout().lock().write_all(data.as_bytes())?;
+    }
+    Ok(())
+}
+
+/// Whether any part of the collection was incomplete (exit 4 territory).
+pub fn incomplete(e: &Events) -> bool {
+    !e.window.complete || e.changes.iter().any(|c| !c.reviews_complete)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn boundaries_expand_dates_to_utc_day_edges() {
+        let from = boundary("2026-08-01", false).unwrap();
+        let to = boundary("2026-08-31", true).unwrap();
+        assert_eq!(from.to_rfc3339(), "2026-08-01T00:00:00+00:00");
+        assert_eq!(
+            serde_json::to_string(&to).unwrap(),
+            "\"2026-08-31T23:59:59.999999999Z\""
+        );
+        let exact = boundary("2026-08-01T14:00:00+02:00", false).unwrap();
+        assert_eq!(exact.to_rfc3339(), "2026-08-01T12:00:00+00:00");
+        assert_eq!(
+            crate::exit_for(&boundary("2026-13-01", false).unwrap_err()),
+            Exit::Usage
+        );
+        assert_eq!(
+            crate::exit_for(&boundary("yesterday", false).unwrap_err()),
+            Exit::Usage
+        );
+    }
+
+    #[test]
+    fn agent_account_mappings_are_lowercased_and_unique() {
+        let map = known(&["My-Agent[bot]=codex".into()]).unwrap();
+        assert_eq!(map["my-agent[bot]"], "codex");
+        assert!(known(&["nope".into()]).is_err());
+        assert!(known(&["=codex".into()]).is_err());
+        assert!(known(&["a=codex".into(), "A=claude-code".into()]).is_err());
+    }
+
+    #[test]
+    fn output_format_is_explicit_then_inferred_then_default() {
+        let args = OutputArgs {
+            format: None,
+            output: Some("out.sarif".into()),
+        };
+        assert_eq!(args.format(Format::Json), Format::Sarif);
+        let args = OutputArgs {
+            format: Some(Format::Table),
+            output: Some("out.yml".into()),
+        };
+        assert_eq!(args.format(Format::Json), Format::Table);
+        assert_eq!(OutputArgs::default().format(Format::Yaml), Format::Yaml);
+    }
+}
