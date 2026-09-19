@@ -122,7 +122,7 @@ predicate:
   generated:
     source_digest: "sha256:336cfba5231f6d816fa22dfd3a63f166d382b6c78cdad166388bb2f0d8387af7"
     tool: agent-change-control
-    version: 0.2.0
+    version: 0.3.0
   policy:
     fail_on: medium
     rules:

@@ -69,7 +69,7 @@ acc check manifest.json
 Or gate every pull request with the [GitHub Action](docs/github-action.md):
 
 ```yaml
-- uses: noru-tech/agent-change-control@v0.2.0
+- uses: noru-tech/agent-change-control@v0.3.0
 ```
 
 ## How it works

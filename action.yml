@@ -19,7 +19,7 @@ inputs:
       The acc release to install (a tag without the leading v). Bumped with each release of this
       repository; pin it explicitly for byte-stable output across runs.
     required: false
-    default: "0.2.0"
+    default: "0.3.0"
   pr:
     description: Pull request number to evaluate.
     required: false
