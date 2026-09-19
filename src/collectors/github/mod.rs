@@ -5,6 +5,7 @@
 
 use crate::model::*;
 use crate::normalize::timestamp;
+use crate::provenance::agent_trace::AgentTraces;
 use crate::{Exit, failure};
 use anyhow::{Result, ensure};
 use serde_json::Value;
@@ -17,6 +18,17 @@ const MAX_BYTES: u64 = 8 * 1024 * 1024;
 const USER_AGENT: &str = concat!("agent-change-control/", env!("CARGO_PKG_VERSION"));
 /// The actor recorded when GitHub returns no account for a role (a deleted user, for example).
 pub const UNAVAILABLE_ACTOR: &str = "unknown:unavailable";
+
+/// The caller-supplied evidence sources for a collection.
+#[derive(Debug, Clone, Copy)]
+pub struct Sources<'a> {
+    /// Verified agent accounts, `login -> agent`.
+    pub known: &'a BTreeMap<String, String>,
+    /// The vendor trailer registry, or `None` to ignore commit trailers.
+    pub trailers: Option<&'a BTreeMap<String, String>>,
+    /// Agent Trace records to bind to commits, if any.
+    pub traces: Option<&'a AgentTraces>,
+}
 
 pub struct Github {
     agent: ureq::Agent,
@@ -145,14 +157,22 @@ impl Github {
     }
 
     /// Collect the pull requests merged in `[from, to]`, or the single pull request `pr`.
+    /// Collect the pull requests merged in `from..=to` (or the single pull request `pr`),
+    /// establishing agent authorship from `sources` in tier order: declaration or verified
+    /// account first, then derived evidence (trailers, Agent Trace records).
     pub fn collect(
         &self,
         repository: &str,
         from: Timestamp,
         to: Timestamp,
         pr: Option<u64>,
-        known: &BTreeMap<String, String>,
+        sources: Sources<'_>,
     ) -> Result<Events> {
+        let Sources {
+            known,
+            trailers,
+            traces,
+        } = sources;
         validate_repo(repository)?;
         if from > to {
             return Err(failure(Exit::Usage, "window is reversed"));
@@ -268,13 +288,42 @@ impl Github {
                 incomplete(&mut e, "Commit collection is incomplete");
             }
             let mut normalized_commits = Vec::new();
+            // Derived-tier evidence per commit: the vendor trailers and Agent Trace records
+            // that name an agent, each with the evidence it came from.
+            let mut derived: Vec<(Evidence, BTreeSet<String>)> = Vec::new();
             for commit in commits {
                 let sha = string(&commit, "sha")?;
-                let source = evidence(
-                    &format!("{ORIGIN}/repos/{repository}/commits/{sha}"),
-                    EvidenceKind::Observed,
-                );
+                let commit_ref = format!("{ORIGIN}/repos/{repository}/commits/{sha}");
+                let source = evidence(&commit_ref, EvidenceKind::Observed);
                 let author = actor(&commit["author"], &mut e.actors, &source, known)?;
+                if let Some(registry) = trailers {
+                    let message = commit["commit"]["message"].as_str().unwrap_or("");
+                    let agents = crate::provenance::trailer_agents(message, registry);
+                    if !agents.is_empty() {
+                        derived.push((
+                            Evidence {
+                                source: "commit_trailer".into(),
+                                r#ref: commit_ref.clone(),
+                                kind: EvidenceKind::Derived,
+                            },
+                            agents,
+                        ));
+                    }
+                }
+                for hit in traces.map(|t| t.hits(&sha)).unwrap_or_default() {
+                    // A record without a tool name attests AI authorship it cannot name;
+                    // the model has no unnamed agent, so it is not interpreted.
+                    if let Some(agent) = &hit.agent {
+                        derived.push((
+                            Evidence {
+                                source: "agent_trace".into(),
+                                r#ref: hit.locator.clone(),
+                                kind: EvidenceKind::Derived,
+                            },
+                            BTreeSet::from([agent.clone()]),
+                        ));
+                    }
+                }
                 normalized_commits.push(Commit { sha, author });
             }
             let mut c = Change {
@@ -331,13 +380,14 @@ impl Github {
                     agent,
                     op,
                     "github",
-                    evidence(
+                    vec![evidence(
                         &format!(
                             "https://github.com/{repository}/pull/{n}#issue-{}",
                             number(&p, "id")?
                         ),
                         EvidenceKind::Declared,
-                    ),
+                    )],
+                    Confidence::Explicit,
                 )?;
             } else if let (Some(login), Some(agent)) = (login.as_deref(), mapped) {
                 crate::provenance::apply(
@@ -346,13 +396,46 @@ impl Github {
                     agent.clone(),
                     None,
                     "github",
-                    Evidence {
+                    vec![Evidence {
                         source: "known_agent_account".into(),
                         r#ref: format!("github:{login}={agent}"),
                         kind: EvidenceKind::Declared,
-                    },
+                    }],
+                    Confidence::Explicit,
                 )?;
                 c.author.provenance.push(source);
+            } else if !derived.is_empty() {
+                // The lower tier: records written at authoring time. One agent across every
+                // piece of derived evidence establishes agent authorship with `derived`
+                // confidence; two different agents are not interpreted (mixed authorship is
+                // deferred), and the forge author stays the effective author.
+                let agents: BTreeSet<&String> =
+                    derived.iter().flat_map(|(_, a)| a.iter()).collect();
+                if agents.len() == 1 {
+                    let agent = (*agents.iter().next().expect("one agent")).clone();
+                    // The operator is derived only when every commit in the change was
+                    // authored by the same human account. Anything else stays unknown.
+                    let mut authors = c.commits.iter().map(|k| {
+                        k.author
+                            .as_ref()
+                            .map(|a| a.actor_id.as_str())
+                            .filter(|id| e.actors[*id].kind == ActorKind::Human)
+                    });
+                    let operator = match authors.next().flatten() {
+                        Some(first) if authors.all(|a| a == Some(first)) => Some(first.to_string()),
+                        _ => None,
+                    };
+                    let provenance = derived.into_iter().map(|(ev, _)| ev).collect();
+                    crate::provenance::apply(
+                        &mut c,
+                        &mut e.actors,
+                        agent,
+                        operator,
+                        "github",
+                        provenance,
+                        Confidence::Derived,
+                    )?;
+                }
             }
             // Detect a moving head/review snapshot; this exporter does not claim atomic API
             // snapshots.

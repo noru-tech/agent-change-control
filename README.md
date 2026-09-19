@@ -88,6 +88,12 @@ Or gate every pull request with the [GitHub Action](docs/github-action.md):
    Accounts your organization has verified as agents can be mapped instead:
    `--agent-account 'my-agent[bot]=codex'`.
 
+   Below that sits a **derived tier**, read only when no declaration applies: the
+   `Co-Authored-By` trailers that Claude Code and Copilot already write into commits, and
+   [Agent Trace](https://agent-trace.dev) records bound to the change's commits
+   (`--agent-trace PATH`). They yield `derived` confidence, the operator is derived only when one
+   human authored every commit, and `--ignore-trailers` switches trailers off.
+
 2. **Collect.** `acc` reads the pull request, its commits, its full review history (with the
    commit each review applied to) and its merger through GET-only calls to `api.github.com`.
    Anything it cannot retrieve is marked incomplete, never assumed.

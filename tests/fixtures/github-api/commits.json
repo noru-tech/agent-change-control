@@ -5,6 +5,9 @@
       "login": "Alice",
       "type": "User",
       "id": 1
+    },
+    "commit": {
+      "message": "Add rate limiting\n\nCo-Authored-By: Claude Opus 4 <noreply@anthropic.com>\n"
     }
   }
 ]

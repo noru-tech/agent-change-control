@@ -10,14 +10,40 @@ for status.
 GitHub collection, offline evaluation of ACC001/ACC002/ACC003/ACC006, public schemas, byte-stable
 manifests, dispositions, table/JSON/YAML/SARIF output.
 
+## Shipped since 0.1
+
+- **AI Change Provenance 0.1** published for comment: `spec/ai-change-provenance.md`.
+- **GitHub Action** (`noru-tech/agent-change-control@v0.2.0`) and **in-toto output**
+  (`--format in-toto`), released in 0.2.0.
+- **Derived evidence tier** (unreleased): vendor `Co-Authored-By` trailers and Agent Trace records
+  as lower-tier agent evidence, with the operator derived from commit authorship.
+
 ## Next
 
-- **AI Change Provenance 0.1 published for comment** — `spec/ai-change-provenance.md`. Feedback
-  wanted from control owners, auditors and agent vendors before it is frozen.
-- **GitHub Action** — `noru-tech/agent-change-control@v…` evaluates the current pull request,
-  writes SARIF and a job summary. Included in the repository; released with the next tag.
-- **in-toto attestation output** — `--format in-toto`, an unsigned Statement v1 with the manifest
-  as predicate, ready for DSSE signing.
+- **AI reviewer classification.** Teams already let an AI reviewer approve low-risk changes, and
+  `acc` can currently only say "not a human". Proposed design, for discussion in an issue before
+  any rule ships:
+  - *Classification.* A reviewer account mapped with `--agent-account` is already an agent and
+    never counts as a human approval. Add a vendor to agent actors (registry: `claude-code` and
+    `claude-code-review` → `anthropic`, `copilot` → `github`, …) so two agents can be compared.
+  - *ACC007, agent approval recorded* (`info`): an agent's approval is on the current head. Not a
+    violation; makes the population of AI-reviewed changes visible.
+  - *ACC008, same-vendor write and review* (`high`): the effective author is an agent and the only
+    approvals of the head are by agents of the same vendor. One model checking its own work is
+    the agent-era self-approval and deserves its own identifier.
+  - *Policy.* `agent_review.satisfies_independence: false` by default. When a team sets it to
+    `true` for changes carrying an allow-listed forge label (collected as a new `labels` field),
+    an agent approval by a *different* vendor may satisfy ACC001/ACC003 for those changes only,
+    and the manifest records that the policy, not a human, made the call. Risk classification
+    itself stays outside `acc`.
+- **Adapters for more third-party provenance.** Agent Trace is read today (§3.4 of the spec).
+  git-ai (an Agent Trace partner) and AgentDiff next, once their record formats are reviewed
+  against the same requirement: written at authoring time, bound to a revision, naming the tool.
+  Reading Agent Trace records from git notes and from a path in the repository at the head
+  revision (via the contents API, no clone) so the GitHub Action needs no checkout of trace files.
+- **Unnamed AI authorship.** An Agent Trace record with `contributor.type: ai` but no `tool.name`
+  proves an agent wrote the change without naming it. The model has no unnamed agent; a spec
+  change is needed before `acc` can record it truthfully.
 
 ## Planned
 
@@ -25,9 +51,9 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   approvals API exposes the *current* approval set; the approval history with commit binding and
   reset-on-push semantics comes from resource state events and notes, and some of it is tier-gated.
   Whatever cannot be retrieved will be marked incomplete, not inferred.
-- **Commit trailers** (`Agent-Author:`, `Agent-Operator:`) as a third declaration form, so agents
-  that commit but do not open pull requests can declare authorship where it happens. Reserved in
-  spec 0.1, to be defined in 0.2 with precedence rules against the inline block.
+- **ACP trailers** (`Agent-Author:`, `Agent-Operator:`) as an explicit-tier declaration form for
+  agents that commit but do not open pull requests. Reserved in spec 0.1; defined in 0.2 with
+  precedence against the inline block.
 - **Signed provenance.** Verification of DSSE-wrapped provenance documents (§3.2) so that a
   declaration can be authenticated, not merely recorded. Likely Sigstore first.
 - **`acc verify`** for attestations produced by `--format in-toto`: unwrap, check subjects against
@@ -42,7 +68,8 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 
 ## Not planned
 
-- Detecting AI-written code from its content. Declarations only.
+- Detecting AI-written code from its content. Declarations and records written at authoring time
+  only.
 - Any LLM in the evaluation path.
 - Treating every bot as an agent, or any merger as an operator.
 - Hosted services or telemetry in this repository. Noru's platform consumes the same manifests;

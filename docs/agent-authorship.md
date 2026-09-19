@@ -17,4 +17,13 @@ Only matching GitHub human identities resolve an operator. The exporter can GET 
 
 Evidence records `source`, `ref`, and `kind` (observed, derived, declared). API observations and user declarations are distinguishable even though both have source links. Empty evidence arrays are invalid for important observations. Known-account recognition retains both the mapping and observed PR evidence.
 
-The separately published provenance schema defines tool-neutral agent/version, operator ID, session and change base/head fields. The library can validate its binding to an explicit head SHA. File discovery, trailers, signed assertions, app installation verification and email identity maps are deferred. No LLM, wording/style classifier or blanket bot-to-agent conversion is used.
+The separately published provenance schema defines tool-neutral agent/version, operator ID, session and change base/head fields. The library can validate its binding to an explicit head SHA. File discovery, signed assertions, app installation verification and email identity maps are deferred. No LLM, wording/style classifier or blanket bot-to-agent conversion is used.
+
+## Derived tier
+
+When no declaration or account mapping applies, two kinds of record written at authoring time establish agent authorship with `derived` confidence and `derived` evidence:
+
+- **Vendor `Co-Authored-By` trailers** in git's trailer block (the final paragraph, every line a `Token: value`). The built-in registry maps `noreply@anthropic.com` to `claude-code` and `copilot@users.noreply.github.com` to `copilot`; `--agent-trailer EMAIL=AGENT` extends it and `--ignore-trailers` disables the tier. Display names are never matched. Evidence source: `commit_trailer`, referencing the commit.
+- **Agent Trace records** (`--agent-trace PATH`, files or directories) whose `vcs.revision` is one of the change's commits and whose contributors include `ai` or `mixed` ranges; the agent is the record's `tool.name`. Records without a revision or a tool name are ignored. Evidence source: `agent_trace`, referencing `file#id`.
+
+Precedence is strict: a declaration or mapping wins and derived records are then not consulted; derived records naming two different agents for one change are not interpreted. The operator is derived only when a single human account authored every commit of the change; otherwise it stays unknown (ACC006), as does anything authored by a bot account. The table output marks such operators `(derived)`.

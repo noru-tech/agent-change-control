@@ -67,9 +67,10 @@ Actor identifiers are `namespace:name`, lowercase where the namespace is case-in
 
 ## 3. Establishing agent authorship
 
-Agent authorship is **declared evidence**. It is accepted only from explicit, delimited sources.
-Nothing in this specification permits inferring agent authorship from writing style, diff size,
-commit-message phrasing, account naming, or the presence of the word "AI".
+Agent authorship is established only from explicit, delimited sources, in two tiers: declarations
+(§3.1–§3.3), and records that agents and their tools write at authoring time (§3.4). Nothing in
+this specification permits inferring agent authorship from writing style, diff size,
+commit-message prose, account naming, or the presence of the word "AI".
 
 ### 3.1 Inline declaration
 
@@ -118,10 +119,45 @@ A consumer MAY be configured with an exact mapping from forge accounts to agents
 consumer-side trust decision, recorded as `declared` evidence. A mapping and an inline
 declaration that disagree about the agent MUST be an error.
 
-### 3.4 Reserved
+### 3.4 Derived evidence: records written at authoring time
 
-Commit trailers (`Agent-Author:`, `Agent-Operator:`) and signed identity assertions are reserved
-for a later version. Consumers MUST NOT interpret them under 0.1.
+Two kinds of record that agents and their tools already write establish agent authorship at a
+**lower tier** than §3.1–§3.3. A consumer reads them only when no declaration or verified account
+applies to the change; they yield `derived` confidence (never `explicit`); and when the derived
+records of one change name two different agents, the change is not interpreted and the forge
+author remains the effective author. Consumers MUST allow the tier to be switched off.
+
+**Vendor commit trailers.** A `Co-Authored-By` trailer whose email is a registered vendor
+identity names that vendor's agent. Only git's trailer block is read: the final paragraph of the
+commit message, when every line in it is a `Token: value` pair. Emails are lowercased and a
+numeric GitHub `ID+` prefix is dropped before matching. The registry in this version:
+
+| Email | Agent |
+| --- | --- |
+| `noreply@anthropic.com` | `claude-code` |
+| `copilot@users.noreply.github.com` | `copilot` |
+
+Consumers MAY extend the registry with their own `email → agent` mappings. They MUST NOT match on
+the trailer's display name alone, and MUST NOT treat a co-author trailer for a human as agent
+evidence.
+
+**Agent Trace records.** An [Agent Trace](https://agent-trace.dev) record (0.1) is derived
+evidence for a change when its `vcs.revision` is one of the change's commits and any
+conversation-level or range-level `contributor.type` is `ai` or `mixed`. The agent name is
+`tool.name`, normalized to `[a-z0-9._-]`. A record without `vcs.revision` cannot be bound and is
+ignored; a record without `tool.name` attests AI authorship that this version cannot name and is
+ignored. Agent Trace leaves storage implementation-defined, so the consumer is pointed at the
+record files. See §11 for how the two specifications relate.
+
+**Operator derivation.** For derived evidence, the operator is the single human account that
+authored *every* commit of the change, with confidence `derived`. Any other case (a bot author,
+several human authors, a missing author) leaves the operator unknown and yields ACC006. The
+merger, opener and reviewers are never substituted, exactly as for declarations.
+
+### 3.5 Reserved
+
+ACP-specific commit trailers (`Agent-Author:`, `Agent-Operator:`) and signed identity assertions
+are reserved for a later version. Consumers MUST NOT interpret them under 0.1.
 
 ## 4. Collection
 
@@ -281,7 +317,31 @@ project canonicalization, not an RFC 8785 claim. Input order MUST NOT affect out
 - A clean result is a statement about the recorded scope and trusted inputs, not a compliance
   certification.
 
-## 11. Versioning
+## 11. Relationship to Agent Trace and line-level attribution
+
+[Agent Trace](https://agent-trace.dev) (Cursor and partners, 0.1 RFC, CC BY 4.0) records which
+model produced which line ranges of which files at a given revision, with links to the
+conversation that produced them. AI Change Provenance records who is the effective human behind a
+change and whether someone independent of them approved it. The two are complementary and are
+meant to be used together:
+
+| | Agent Trace | AI Change Provenance |
+| --- | --- | --- |
+| Unit | Line ranges within files at a revision | A change (pull request) and its head commit |
+| Who wrote it | `contributor.type` (`human`, `ai`, `mixed`, `unknown`) and `model_id`; the `tool` | The agent, by tool name, and the **human operator** |
+| Who approved it | Not recorded | The complete review history, bound to commits and time |
+| Question answered | What in this file came from a model, and from which conversation? | Was the four-eyes control effective for this change? |
+| Storage | Implementation-defined (files, git notes, a database) | Forge data plus a self-validating manifest |
+
+An Agent Trace record is derived evidence to ACP (§3.4): it establishes that a named tool wrote
+part of a change, and ACP adds the operator and the independence assessment that Agent Trace does
+not model. ACP does not duplicate line attribution and does not need the conversation links; a
+manifest cites the record it used by file and `id`. Other tools that write attribution at
+authoring time (git-ai, which is an Agent Trace partner; AgentDiff) can be read the same way once
+their formats are reviewed; the requirement is the same for all of them: a record bound to a
+revision, naming the tool, written when the code was produced.
+
+## 12. Versioning
 
 The specification, the schemas and the predicate type share a version. Additive changes (new
 optional fields, new rules with new identifiers) increment the minor version. Changes to the
@@ -290,5 +350,9 @@ are never reused.
 
 ## Changelog
 
-- **0.1 (2026-09)** — initial draft: inline declaration, provenance document, verified accounts,
-  collection and evaluation requirements, ACC001/ACC002/ACC003/ACC006, manifest, SARIF, in-toto.
+- **0.1, revision 2 (2026-09-19)** — the derived evidence tier (vendor `Co-Authored-By`
+  trailers, Agent Trace records) with operator derivation from commit authorship; relationship to
+  Agent Trace (§11). Additive; schemas unchanged.
+- **0.1 (2026-09-18)** — initial draft: inline declaration, provenance document, verified
+  accounts, collection and evaluation requirements, ACC001/ACC002/ACC003/ACC006, manifest, SARIF,
+  in-toto.

@@ -29,7 +29,7 @@ src/normalize/    schema validation, timeline checks, canonical ordering and can
 src/rules/        pure evaluation of normalized facts into findings and assessments
 src/manifest/     manifest generation, validation (re-evaluation) and policy checks
 src/policy/       rule catalogue, default policy, severity ranking
-src/provenance/   agent declarations (PR body block) and the provenance-file convention
+src/provenance/   declarations (PR body block, provenance file), vendor trailers, Agent Trace adapter
 src/collectors/   forge collectors; github/ is the only one in Phase 1
 src/output/       json, yaml, table, sarif and in-toto renderers
 schemas/          public JSON Schemas (draft 2020-12), embedded into the binary

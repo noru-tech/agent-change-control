@@ -1,8 +1,10 @@
 //! The GitHub collector against a loopback HTTP server that replays fixture responses.
 
-use agent_change_control::collectors::github::{Github, UNAVAILABLE_ACTOR};
-use agent_change_control::model::{ActorKind, Events, Policy, RuleId};
+use agent_change_control::collectors::github::{Github, Sources, UNAVAILABLE_ACTOR};
+use agent_change_control::model::{ActorKind, Confidence, Events, EvidenceKind, Policy, RuleId};
 use agent_change_control::normalize::timestamp;
+use agent_change_control::provenance::agent_trace::AgentTraces;
+use agent_change_control::provenance::trailer_registry;
 use agent_change_control::{Exit, exit_for, manifest};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -155,7 +157,19 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
         return ("200 OK", "", body);
     }
     if path.contains("/commits?") {
-        return ("200 OK", "", COMMITS.into());
+        let body = match mode {
+            "trailer-bot-author" => edited(COMMITS, |v| {
+                v[0]["author"]["login"] = "acme-agent[bot]".into();
+                v[0]["author"]["type"] = "Bot".into();
+                v[0]["author"]["id"] = 7.into();
+            }),
+            "trailer-two-agents" => edited(COMMITS, |v| {
+                v[0]["commit"]["message"] = "x\n\nCo-Authored-By: A <noreply@anthropic.com>\nCo-Authored-By: C <1+Copilot@users.noreply.github.com>".into();
+            }),
+            "trace-only" => edited(COMMITS, |v| v[0]["commit"]["message"] = "Plain".into()),
+            _ => COMMITS.into(),
+        };
+        return ("200 OK", "", body);
     }
     if path.starts_with("/users/") {
         return ("200 OK", "", USER.into());
@@ -164,6 +178,11 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
     let body = match mode {
         "moving" if *pull_reads > 1 => edited(PULL, |v| v["head"]["sha"] = "moved".into()),
         "deleted-merger" => edited(PULL, |v| v["merged_by"] = Value::Null),
+        // No declaration in the body: only the commit trailer speaks to authorship.
+        "trailer-only" | "trailer-bot-author" | "trailer-two-agents" | "trailers-ignored"
+        | "trace-only" | "trace-and-trailer" => {
+            edited(PULL, |v| v["body"] = "Plain description".into())
+        }
         _ => PULL.into(),
     };
     ("200 OK", "", body)
@@ -183,7 +202,26 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
     let server = Server::start(mode);
     let pages = if mode == "capped" { 1 } else { 3 };
     let (from, to) = window();
-    Github::with_base(None, pages, &server.base)?.collect("acme/api", from, to, None, known)
+    let registry = (mode != "trailers-ignored").then(|| trailer_registry(&BTreeMap::new()));
+    let traces = matches!(mode, "trace-only" | "trace-and-trailer")
+        .then(|| AgentTraces::load(&[fixture("agent-trace")]).unwrap());
+    Github::with_base(None, pages, &server.base)?.collect(
+        "acme/api",
+        from,
+        to,
+        None,
+        Sources {
+            known,
+            trailers: registry.as_ref(),
+            traces: traces.as_ref(),
+        },
+    )
+}
+
+fn fixture(name: &str) -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
 }
 
 fn collect(mode: &'static str) -> anyhow::Result<Events> {
@@ -207,6 +245,84 @@ fn github_export_evaluate_and_check() {
     let m = manifest::evaluate(e, Policy::default()).unwrap();
     assert!(m.findings.is_empty());
     assert_eq!(manifest::check(&m, None, None).unwrap().1, Exit::Ok);
+}
+
+#[test]
+fn declarations_outrank_trailers() {
+    // The clean fixture carries both a declaration and a Claude trailer.
+    let e = collect("clean").unwrap();
+    let op = e.changes[0].agent_operator.as_ref().unwrap();
+    assert_eq!(op.confidence, Confidence::Explicit);
+    assert!(
+        e.changes[0]
+            .author
+            .provenance
+            .iter()
+            .all(|p| p.source != "commit_trailer")
+    );
+}
+
+#[test]
+fn vendor_trailers_derive_agent_authorship_and_operator() {
+    let e = collect("trailer-only").unwrap();
+    let c = &e.changes[0];
+    assert_eq!(c.author.actor_id, "agent:claude-code");
+    assert_eq!(c.forge_author.actor_id, "github:alice");
+    let evidence = &c.author.provenance;
+    assert_eq!(evidence.len(), 1);
+    assert_eq!(evidence[0].source, "commit_trailer");
+    assert_eq!(evidence[0].kind, EvidenceKind::Derived);
+    assert!(evidence[0].r#ref.ends_with("/repos/acme/api/commits/head"));
+    let op = c.agent_operator.as_ref().unwrap();
+    assert_eq!(op.actor_id.as_deref(), Some("github:alice"));
+    assert_eq!(op.confidence, Confidence::Derived);
+    // Bob approved the head: independent of the derived operator, so clean.
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    assert!(m.findings.is_empty());
+    assert_eq!(m.summary.agent_authored, 1);
+
+    // A bot committed the trailer-bearing commit: agent authorship, operator unknown.
+    let e = collect("trailer-bot-author").unwrap();
+    let c = &e.changes[0];
+    assert_eq!(c.author.actor_id, "agent:claude-code");
+    let op = c.agent_operator.as_ref().unwrap();
+    assert!(op.actor_id.is_none());
+    assert_eq!(op.confidence, Confidence::Unknown);
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    assert_eq!(
+        m.findings.iter().map(|f| f.rule_id).collect::<Vec<_>>(),
+        vec![RuleId::Acc006]
+    );
+
+    // Two vendors in the trailers: not interpreted, the forge author stays effective.
+    let e = collect("trailer-two-agents").unwrap();
+    assert_eq!(e.changes[0].author.actor_id, "github:alice");
+    assert!(e.changes[0].agent_operator.is_none());
+
+    // An Agent Trace record bound to the head commit names the tool; same derived tier.
+    let e = collect("trace-only").unwrap();
+    let c = &e.changes[0];
+    assert_eq!(c.author.actor_id, "agent:cursor");
+    assert_eq!(c.author.provenance.len(), 1);
+    assert_eq!(c.author.provenance[0].source, "agent_trace");
+    assert_eq!(c.author.provenance[0].kind, EvidenceKind::Derived);
+    assert!(
+        c.author.provenance[0]
+            .r#ref
+            .ends_with("cursor.json#550e8400-e29b-41d4-a716-446655440000")
+    );
+    let op = c.agent_operator.as_ref().unwrap();
+    assert_eq!(op.actor_id.as_deref(), Some("github:alice"));
+    assert_eq!(op.confidence, Confidence::Derived);
+
+    // A cursor record and a Claude trailer on the same change disagree: not interpreted.
+    let e = collect("trace-and-trailer").unwrap();
+    assert_eq!(e.changes[0].author.actor_id, "github:alice");
+
+    // Trailers switched off: same as before this tier existed.
+    let e = collect("trailers-ignored").unwrap();
+    assert_eq!(e.changes[0].author.actor_id, "github:alice");
+    assert!(e.changes[0].agent_operator.is_none());
 }
 
 #[test]

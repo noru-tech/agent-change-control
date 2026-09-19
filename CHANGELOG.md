@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- A derived evidence tier below declarations: vendor `Co-Authored-By` trailers (built-in registry
+  for Claude Code and Copilot, `--agent-trailer EMAIL=AGENT` to extend, `--ignore-trailers` to
+  disable) and Agent Trace records (`--agent-trace PATH`) bound to a change's commits by
+  `vcs.revision`. Both yield `derived` confidence; the operator is derived only when one human
+  account authored every commit. Declarations and account mappings take precedence, and derived
+  records naming two agents are not interpreted. Evidence sources `commit_trailer` and
+  `agent_trace`; the table marks derived operators.
+- Matching `agent-trailer`, `ignore-trailers` and `agent-trace` inputs on the GitHub Action.
+- Specification 0.1 revision 2: §3.4 derived evidence, §11 relationship to Agent Trace.
+
+### Changed
+- The repository's self-check now installs the published 0.2.0 release.
+
 ## [0.2.0] - 2026-09-19
 
 ### Added

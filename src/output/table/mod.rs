@@ -1,6 +1,6 @@
 //! A plain aligned-column terminal summary.
 
-use crate::model::{Manifest, Severity, Status};
+use crate::model::{Confidence, Manifest, Operator, Severity, Status};
 use crate::policy::RULES;
 
 /// Strip terminal control characters from untrusted identifiers.
@@ -57,12 +57,17 @@ pub fn render(m: &Manifest) -> String {
         rows.push(vec![
             plain(&c.id),
             plain(&c.author.actor_id),
-            plain(
-                c.agent_operator
-                    .as_ref()
-                    .and_then(|o| o.actor_id.as_deref())
-                    .unwrap_or("-"),
-            ),
+            match c.agent_operator.as_ref() {
+                Some(Operator {
+                    actor_id: Some(id),
+                    confidence: Confidence::Derived,
+                    ..
+                }) => format!("{} (derived)", plain(id)),
+                Some(Operator {
+                    actor_id: Some(id), ..
+                }) => plain(id),
+                _ => "-".into(),
+            },
             result.into(),
         ]);
     }
