@@ -45,6 +45,9 @@ with.
 | `token` | `github.token` | Read access to contents and pull requests; GET-only, never written to outputs |
 | `policy` | `.agent-change-control/policy.yml` when present | Policy file, see [policy](policy.md) |
 | `agent-account` | none | Verified agent accounts, one `LOGIN=AGENT` per line |
+| `agent-trailer` | none | Extra `Co-Authored-By` identities, one `EMAIL=AGENT` per line |
+| `ignore-trailers` | `false` | Do not read `Co-Authored-By` trailers |
+| `agent-trace` | none | Agent Trace record files or directories, one path per line |
 | `format` | `sarif` | `sarif`, `json`, `yaml`, `table` or `in-toto` |
 | `output` | `acc-results.sarif` | Where the rendered output is written |
 | `fail-on-findings` | `true` | Fail the step on exit 1 (policy) or exit 4 (incomplete) |
@@ -98,8 +101,9 @@ request body, or account mappings passed as input.
             acme-claude[bot]=claude-code
 ```
 
-Only these explicit declarations establish agent authorship. Writing style, diff size, commit
-message wording and bot-looking names never do. See [agent authorship](agent-authorship.md) and
+Below the declarations sits the derived tier: the `Co-Authored-By` trailers Claude Code and
+Copilot write, and Agent Trace records committed to the repository (`agent-trace: traces/`).
+Writing style, diff size, commit message prose and bot-looking names never establish authorship. See [agent authorship](agent-authorship.md) and
 the [specification](../spec/ai-change-provenance.md).
 
 ## Attesting the verdict

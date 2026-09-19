@@ -2,6 +2,7 @@
 
 use crate::model::*;
 use crate::output::Format;
+use crate::provenance::agent_trace::AgentTraces;
 use crate::{Exit, failure};
 use anyhow::{Context, Result, anyhow, ensure};
 use chrono::NaiveDate;
@@ -100,6 +101,55 @@ pub fn known(values: &[String]) -> Result<BTreeMap<String, String>> {
     Ok(map)
 }
 
+/// Shared derived-evidence flags: the vendor trailer registry and Agent Trace records.
+#[derive(Debug, Clone, Args, Default)]
+pub struct EvidenceArgs {
+    /// Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable;
+    /// extends the built-in vendor registry).
+    #[arg(long, value_name = "EMAIL=AGENT")]
+    pub agent_trailer: Vec<String>,
+    /// Do not read Co-Authored-By trailers; only declarations and account mappings establish
+    /// agent authorship.
+    #[arg(long)]
+    pub ignore_trailers: bool,
+    /// Agent Trace record files or directories, bound to commits by vcs.revision (repeatable).
+    #[arg(long, value_name = "PATH")]
+    pub agent_trace: Vec<PathBuf>,
+}
+
+impl EvidenceArgs {
+    /// The Agent Trace records, when any path was given.
+    pub fn traces(&self) -> Result<Option<AgentTraces>> {
+        if self.agent_trace.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(AgentTraces::load(&self.agent_trace)?))
+    }
+
+    /// The trailer registry to collect with, or `None` when trailers are ignored.
+    pub fn registry(&self) -> Result<Option<BTreeMap<String, String>>> {
+        if self.ignore_trailers {
+            return Ok(None);
+        }
+        let mut extra = BTreeMap::new();
+        for v in &self.agent_trailer {
+            let (email, agent) = v
+                .split_once('=')
+                .ok_or_else(|| failure(Exit::Usage, "agent-trailer must be EMAIL=AGENT"))?;
+            if email.is_empty() || agent.is_empty() || !email.contains('@') {
+                return Err(failure(Exit::Usage, "invalid agent trailer mapping"));
+            }
+            if extra
+                .insert(email.to_ascii_lowercase(), agent.to_string())
+                .is_some()
+            {
+                return Err(failure(Exit::Usage, "duplicate agent trailer mapping"));
+            }
+        }
+        Ok(Some(crate::provenance::trailer_registry(&extra)))
+    }
+}
+
 /// Parse a window boundary: a calendar date expands to the start (or `end`) of that UTC day; an
 /// RFC 3339 timestamp is taken as is.
 pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
@@ -167,6 +217,34 @@ mod tests {
             crate::exit_for(&boundary("yesterday", false).unwrap_err()),
             Exit::Usage
         );
+    }
+
+    #[test]
+    fn trailer_flags_build_or_disable_the_registry() {
+        let args = EvidenceArgs {
+            agent_trailer: vec!["Bot@Example.com=house-agent".into()],
+            ..Default::default()
+        };
+        let registry = args.registry().unwrap().unwrap();
+        assert_eq!(registry["bot@example.com"], "house-agent");
+        assert_eq!(registry["noreply@anthropic.com"], "claude-code");
+        let off = EvidenceArgs {
+            ignore_trailers: true,
+            ..Default::default()
+        };
+        assert!(off.registry().unwrap().is_none());
+        assert!(off.traces().unwrap().is_none());
+        for bad in ["nope", "=x", "a@b=", "noat=x"] {
+            let args = EvidenceArgs {
+                agent_trailer: vec![bad.into()],
+                ..Default::default()
+            };
+            assert_eq!(
+                crate::exit_for(&args.registry().unwrap_err()),
+                Exit::Usage,
+                "{bad}"
+            );
+        }
     }
 
     #[test]

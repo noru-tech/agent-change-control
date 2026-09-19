@@ -1,8 +1,8 @@
 //! `acc pr NUMBER --repo OWNER/REPO`
 
 use super::Ctx;
-use super::io::{self, OutputArgs};
-use crate::collectors::github::{Github, validate_repo};
+use super::io::{self, EvidenceArgs, OutputArgs};
+use crate::collectors::github::{Github, Sources, validate_repo};
 use crate::output::Format;
 use crate::{Exit, failure, manifest};
 use anyhow::Result;
@@ -22,6 +22,8 @@ pub struct Args {
     /// Treat LOGIN as the verified account of AGENT (repeatable).
     #[arg(long, value_name = "LOGIN=AGENT")]
     pub agent_account: Vec<String>,
+    #[command(flatten)]
+    pub evidence: EvidenceArgs,
     /// Maximum pages per list endpoint (100 items each).
     #[arg(long, default_value_t = 100, value_name = "N")]
     pub max_pages: usize,
@@ -42,12 +44,19 @@ pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
         .with_ymd_and_hms(9999, 12, 31, 23, 59, 59)
         .single()
         .expect("fixed far-future instant");
+    let known = io::known(&args.agent_account)?;
+    let registry = args.evidence.registry()?;
+    let traces = args.evidence.traces()?;
     let events = Github::new(io::token(), args.max_pages)?.collect(
         &repo,
         from,
         to,
         Some(args.number),
-        &io::known(&args.agent_account)?,
+        Sources {
+            known: &known,
+            trailers: registry.as_ref(),
+            traces: traces.as_ref(),
+        },
     )?;
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
     let (_, exit) = manifest::check(&m, None, None)?;

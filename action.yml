@@ -44,6 +44,22 @@ inputs:
       (for example `my-agent[bot]=codex`).
     required: false
     default: ""
+  agent-trailer:
+    description: >-
+      Additional Co-Authored-By trailer identities, one EMAIL=AGENT per line, extending the
+      built-in vendor registry (Claude Code, Copilot).
+    required: false
+    default: ""
+  ignore-trailers:
+    description: Do not read Co-Authored-By trailers; only declarations and mappings count.
+    required: false
+    default: "false"
+  agent-trace:
+    description: >-
+      Agent Trace record files or directories in the checkout, one path per line, bound to the
+      pull request's commits by vcs.revision.
+    required: false
+    default: ""
   format:
     description: Output format written to `output` — sarif, json, yaml, table or in-toto.
     required: false
@@ -129,6 +145,9 @@ runs:
         ACC_REPOSITORY: ${{ inputs.repository }}
         ACC_POLICY: ${{ inputs.policy }}
         ACC_AGENT_ACCOUNTS: ${{ inputs.agent-account }}
+        ACC_AGENT_TRAILERS: ${{ inputs.agent-trailer }}
+        ACC_IGNORE_TRAILERS: ${{ inputs.ignore-trailers }}
+        ACC_AGENT_TRACES: ${{ inputs.agent-trace }}
         ACC_FORMAT: ${{ inputs.format }}
         ACC_OUTPUT: ${{ inputs.output }}
         ACC_FAIL: ${{ inputs.fail-on-findings }}
@@ -147,6 +166,15 @@ runs:
           mapping="${mapping//[$'\r']}"
           if [ -n "$mapping" ]; then args+=(--agent-account "$mapping"); fi
         done <<< "$ACC_AGENT_ACCOUNTS"
+        while IFS= read -r mapping; do
+          mapping="${mapping//[$'\r']}"
+          if [ -n "$mapping" ]; then args+=(--agent-trailer "$mapping"); fi
+        done <<< "$ACC_AGENT_TRAILERS"
+        while IFS= read -r trace; do
+          trace="${trace//[$'\r']}"
+          if [ -n "$trace" ]; then args+=(--agent-trace "$trace"); fi
+        done <<< "$ACC_AGENT_TRACES"
+        if [ "$ACC_IGNORE_TRAILERS" = "true" ]; then args+=(--ignore-trailers); fi
         acc "${args[@]}"
         code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"

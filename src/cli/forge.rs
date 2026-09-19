@@ -1,7 +1,7 @@
 //! The forge selector and collection flags shared by `scan` and `export`.
 
-use super::io::{self, OutputArgs};
-use crate::collectors::github::{Github, validate_repo};
+use super::io::{self, EvidenceArgs, OutputArgs};
+use crate::collectors::github::{Github, Sources, validate_repo};
 use crate::model::Events;
 use crate::{Exit, failure};
 use anyhow::Result;
@@ -30,6 +30,8 @@ pub struct Collect {
     /// Treat LOGIN as the verified account of AGENT (repeatable).
     #[arg(long, value_name = "LOGIN=AGENT")]
     pub agent_account: Vec<String>,
+    #[command(flatten)]
+    pub evidence: EvidenceArgs,
     /// Maximum pages per list endpoint (100 items each).
     #[arg(long, default_value_t = 100, value_name = "N")]
     pub max_pages: usize,
@@ -45,11 +47,18 @@ pub fn collect(c: &Collect) -> Result<Events> {
     if from > to {
         return Err(failure(Exit::Usage, "window is reversed"));
     }
+    let known = io::known(&c.agent_account)?;
+    let registry = c.evidence.registry()?;
+    let traces = c.evidence.traces()?;
     Github::new(io::token(), c.max_pages)?.collect(
         &c.repository,
         from,
         to,
         None,
-        &io::known(&c.agent_account)?,
+        Sources {
+            known: &known,
+            trailers: registry.as_ref(),
+            traces: traces.as_ref(),
+        },
     )
 }
