@@ -184,7 +184,7 @@ predicate:
   generated:
     source_digest: "sha256:d794f75cdcd9356f829760b0d2ed696a44f3d3a85ef2c81ac51bccd52dcbe14f"
     tool: agent-change-control
-    version: 0.3.0
+    version: 0.3.1
   policy:
     fail_on: medium
     rules:

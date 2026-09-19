@@ -10,6 +10,20 @@
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
 [![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.1-informational)](./spec/ai-change-provenance.md)
 
+```yaml
+# .github/workflows/change-control.yml — gate every pull request on an independent human review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+jobs:
+  acc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: noru-tech/agent-change-control@v0.3.1
+```
+
 Change control assumes that the account which opened a change is the party that produced it.
 Coding agents break that assumption. When an agent opens the pull request under its own account
 and the engineer who directed it approves, the platform reports two different actors and the
@@ -69,7 +83,7 @@ acc check manifest.json
 Or gate every pull request with the [GitHub Action](docs/github-action.md):
 
 ```yaml
-- uses: noru-tech/agent-change-control@v0.3.0
+- uses: noru-tech/agent-change-control@v0.3.1
 ```
 
 ## How it works
