@@ -15,7 +15,7 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 - **AI Change Provenance 0.1** published for comment: `spec/ai-change-provenance.md`.
 - **GitHub Action** (`noru-tech/agent-change-control@v0.2.0`) and **in-toto output**
   (`--format in-toto`), released in 0.2.0.
-- **Derived evidence tier** (unreleased): vendor `Co-Authored-By` trailers and Agent Trace records
+- **Derived evidence tier** (0.3.0): vendor `Co-Authored-By` trailers and Agent Trace records
   as lower-tier agent evidence, with the operator derived from commit authorship.
 
 ## Next

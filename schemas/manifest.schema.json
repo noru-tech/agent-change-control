@@ -704,7 +704,7 @@
               "const": "agent-change-control"
             },
             "version": {
-              "const": "0.2.0"
+              "const": "0.3.0"
             },
             "source_digest": {
               "type": "string",
