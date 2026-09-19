@@ -134,7 +134,8 @@ runs:
         ACC_FAIL: ${{ inputs.fail-on-findings }}
         ACC_MAX_PAGES: ${{ inputs.max-pages }}
       run: |
-        set -uo pipefail
+        # The runner's bash is `-e`; acc's exit code is the verdict, so it must be captured, not fatal.
+        set +e -uo pipefail
         if [ -z "$ACC_PR" ]; then
           echo "::error::no pull request number: set the pr input or run on a pull_request event" >&2
           exit 1
