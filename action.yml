@@ -4,10 +4,10 @@
 # fetches the binary, runs `acc pr`, renders the requested format and a job summary, and maps the
 # exit code to the step outcome. See docs/github-action.md.
 name: Agent Change Control
+# Kept under the GitHub Marketplace limit of 125 characters.
 description: >-
-  Separation of duties for pull requests written with coding agents. Records the agent, the human
-  operator, the reviewers and the merger, then checks for an independent human approval.
-  Deterministic, offline evaluation; no LLM.
+  Four-eyes for coding agents: records the agent, operator and reviewers of a pull request and
+  checks independent approval.
 author: Noru
 branding:
   icon: shield
@@ -19,7 +19,7 @@ inputs:
       The acc release to install (a tag without the leading v). Bumped with each release of this
       repository; pin it explicitly for byte-stable output across runs.
     required: false
-    default: "0.3.0"
+    default: "0.3.1"
   pr:
     description: Pull request number to evaluate.
     required: false

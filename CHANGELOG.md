@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-19
+
+### Fixed
+- The GitHub Action's description is under the Marketplace's 125-character limit, so the action
+  can be listed. No functional change.
+
 ## [0.3.0] - 2026-09-19
 
 ### Added
@@ -50,7 +56,8 @@ All notable changes to this project are documented here. The format is based on
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/noru-tech/agent-change-control/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/agent-change-control/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/noru-tech/agent-change-control/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/noru-tech/agent-change-control/releases/tag/v0.1.0
