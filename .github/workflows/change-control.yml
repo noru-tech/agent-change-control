@@ -31,6 +31,10 @@ jobs:
         id: acc
         uses: ./
         with:
+          # The last *published* release. The action's own default tracks the version being
+          # released, which does not exist yet while its release pull request is open; bump this
+          # pin in a follow-up once the tag has been published (see CONTRIBUTING "Releases").
+          version: "0.1.0"
           fail-on-findings: false
       - name: Report
         env:

@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: noru-tech/agent-change-control@v0.1.0
+      - uses: noru-tech/agent-change-control@v0.2.0
 ```
 
 Run on review events as well as pushes: the verdict for an agent-written change flips from ACC001
@@ -71,7 +71,7 @@ current head. This is the intended deployment.
 While you roll out declarations, run in advisory mode and keep the evidence:
 
 ```yaml
-      - uses: noru-tech/agent-change-control@v0.1.0
+      - uses: noru-tech/agent-change-control@v0.2.0
         id: acc
         with:
           fail-on-findings: false
@@ -109,7 +109,7 @@ commit and whose predicate is the manifest. Sign it with the DSSE signer you alr
 store it next to the build provenance of the release that ships the change:
 
 ```yaml
-      - uses: noru-tech/agent-change-control@v0.1.0
+      - uses: noru-tech/agent-change-control@v0.2.0
         with:
           format: in-toto
           output: change-control.intoto.json

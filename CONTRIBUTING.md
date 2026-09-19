@@ -105,4 +105,6 @@ in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins 
 
 The manifest schema pins `generated.version` to the crate version. Bump both together, and bump the
 `version` input default in `action.yml` to the same release so the action installs the binary it was
-published with.
+published with. `.github/workflows/change-control.yml` pins `version` to the last *published*
+release instead, because the release pull request runs before its tag exists; bump that pin in a
+follow-up once the release is out.
