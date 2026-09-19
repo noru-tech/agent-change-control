@@ -1,0 +1,28 @@
+# A merge gate: agent-written pull requests need an approval from a human who did not operate
+# the agent. Add the job as a required status check in branch protection.
+name: change-control
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  acc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: noru-tech/agent-change-control@v0.1.0
+        with:
+          agent-account: |
+            acme-agent[bot]=codex
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: acc-results.sarif
+          category: agent-change-control

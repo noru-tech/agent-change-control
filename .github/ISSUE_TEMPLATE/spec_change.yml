@@ -1,0 +1,31 @@
+name: Specification change
+description: Propose a change to AI Change Provenance
+labels: [spec]
+body:
+  - type: input
+    id: section
+    attributes:
+      label: Section
+      placeholder: e.g. 3.1 Inline declaration
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: What producer, collector or evaluator situation does the current text handle badly?
+    validations:
+      required: true
+  - type: dropdown
+    id: compat
+    attributes:
+      label: Compatibility
+      options: [additive (minor), changes existing meaning (major), editorial]
+    validations:
+      required: true

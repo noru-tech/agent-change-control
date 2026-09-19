@@ -1,0 +1,19 @@
+# A stricter policy than the defaults: unknown operators fail the check.
+#
+# Drop this file at .agent-change-control/policy.yml to have it picked up automatically, or pass
+# it with --policy. Partial rule maps inherit the defaults; see docs/policy.md.
+version: "0.1"
+fail_on: medium
+rules:
+  agent_change_without_independent_human:
+    enabled: true
+    severity: high
+  approver_is_author:
+    enabled: true
+    severity: high
+  merged_without_independent_approval:
+    enabled: true
+    severity: high
+  unknown_agent_operator:
+    enabled: true
+    severity: medium

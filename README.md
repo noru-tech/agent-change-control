@@ -1,26 +1,39 @@
 # agent-change-control
 
-> `acc` — deterministic change control for software written with coding agents: record the agent,
-> the human operator, the reviewers and the merger of every pull request, then evaluate explicit
-> separation-of-duty rules. Offline, reproducible, no LLM.
+> **The four-eyes principle is broken for coding agents. This is a machine-readable replacement.**
+>
+> `acc` records the agent, the human operator, the reviewers and the merger of every change, then
+> evaluates explicit separation-of-duty rules against those facts. Offline, reproducible, no LLM.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
+[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.1-informational)](./spec/ai-change-provenance.md)
 
-Software change-control systems were designed around a simple assumption: the author recorded by
-the development platform is the person who produced the change. Coding agents break that identity
-model. A pull request opened by a human account may have been written entirely by an agent; the
-human who prompted it may also be the one who approved it.
+Change control assumes that the account which opened a change is the party that produced it.
+Coding agents break that assumption. When an agent opens the pull request under its own account
+and the engineer who directed it approves, the platform reports two different actors and the
+control is silently gone: one human judgment, two logins. When nobody recorded who directed the
+agent, no tool can tell whether the reviewer was independent at all.
 
-`acc` records the agent, human operator, reviewers and merger, then evaluates explicit
-separation-of-duty rules against those facts. It makes no legal compliance claim and uses no LLM.
-Agent authorship alone is not a finding: what matters is whether an **independent human** reviewed
-the change.
+`acc` replaces "author ≠ approver" with the question the control was always about: **did a human
+who is independent of the change's effective author approve its current head before merge, and
+what is the evidence?** Agent authorship alone is never a finding. An unknown operator is reported
+as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
 
-Phase 1 (`0.1.0`) implements GitHub collection, offline evaluation, public JSON Schemas,
-deterministic manifests, dispositions, and table / JSON / YAML / SARIF output. Deployments, bypass
-detection, other forges and signed attestations are outside this release.
+Read the argument in [The four-eyes principle is broken for coding agents](docs/four-eyes.md).
+The convention it implements is published as [AI Change Provenance 0.1](spec/ai-change-provenance.md).
+
+## What is in this repository
+
+| Piece | Where |
+| --- | --- |
+| **Specification** — AI Change Provenance 0.1: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
+| **Schemas** — events, manifest, policy, provenance (JSON Schema 2020-12) | [`schemas/`](schemas/) |
+| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
+| **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
+| **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 | [`src/output/`](src/output/) |
+| **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
 
 ## Install
 
@@ -36,35 +49,75 @@ Release binaries carry GitHub artifact attestations:
 
 ## Quick start
 
+Try it offline, without credentials, on the synthetic fixtures:
+
+```bash
+acc evaluate tests/fixtures/claude-operator-self-approved/events.json --format table
+# github:acme/api:pr:421  agent:claude-code  github:alice  FAIL   (ACC001, ACC002, ACC003)
+acc evaluate tests/fixtures/claude-clean/events.json --format table
+# github:acme/api:pr:421  agent:codex        github:alice  PASS
+```
+
+Scan a repository for a reporting period, then check it:
+
 ```bash
 # GITHUB_TOKEN (or GH_TOKEN) should already be set through your secret manager.
 acc scan github acme/api --since 2026-08-01 --until 2026-08-31 --output manifest.json
 acc check manifest.json
 ```
 
-The token needs read access to repository contents and pull requests (public repositories can be
-read without a token). Requests are GET-only, restricted to `api.github.com`, with redirects
-disabled. Tokens are never written to exports or error messages.
+Or gate every pull request with the [GitHub Action](docs/github-action.md):
 
-Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
-the day. They do not select by PR creation date. `pr` evaluates an open or merged PR directly.
-
-```bash
-acc export github acme/api --since 2026-08-01 --until 2026-08-31 > events.json
-acc evaluate events.json --output manifest.json
-acc validate manifest.json
-acc check manifest.json --policy policy.yml
-acc pr 421 --repo acme/api
-acc evaluate events.json --format sarif > results.sarif
+```yaml
+- uses: noru-tech/agent-change-control@v0.1.0
 ```
 
-Try the offline workflow without credentials:
+## How it works
 
-```bash
-acc evaluate tests/fixtures/claude-operator-self-approved/events.json --output /tmp/manifest.json
-acc check /tmp/manifest.json          # exits 1; reports ACC001, ACC002, ACC003
-acc evaluate tests/fixtures/claude-clean/events.json --format table
-```
+1. **Declare.** The agent, or the engineer operating it, puts one fenced block in the pull request
+   description. Only this exact block is read; prose, style and bot names never establish
+   authorship.
+
+   ````text
+   ```agent-change-control
+   author: claude-code
+   operator: alice
+   ```
+   ````
+
+   Accounts your organization has verified as agents can be mapped instead:
+   `--agent-account 'my-agent[bot]=codex'`.
+
+2. **Collect.** `acc` reads the pull request, its commits, its full review history (with the
+   commit each review applied to) and its merger through GET-only calls to `api.github.com`.
+   Anything it cannot retrieve is marked incomplete, never assumed.
+
+3. **Evaluate.** Offline, deterministically, `acc` asks whether a human other than the effective
+   human (the author, or the agent's operator) approved the current head before merge, with no
+   later withdrawal. Each rule yields `pass`, `fail`, `unknown` or `not_applicable` per change,
+   and every finding cites the API records it came from.
+
+4. **Report.** A manifest that re-validates byte for byte, a SARIF log for code scanning, or an
+   in-toto statement to sign and file next to the release's build provenance.
+
+## Rules
+
+| ID | Finding | Default severity |
+| --- | --- | --- |
+| ACC001 | Agent change without independent human approval | high |
+| ACC002 | Effective human author/operator approved own change | high |
+| ACC003 | Merged change without independent human approval | high |
+| ACC006 | Agent operator unknown | warning |
+
+A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
+equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
+withdraw approval. Exact conditions, with the fixture that exercises each, are in
+[docs/policy.md](docs/policy.md) and [the specification](spec/ai-change-provenance.md#62-rules).
+
+Unknown operators yield ACC006 and `unknown` independence assessments, not invented violations.
+Incomplete collection produces exit 4 and cannot yield a clean result. A review or merge whose
+GitHub account no longer exists is recorded against the `unknown:unavailable` actor. Invalid
+approval-after-merge data produces ACV001, separately from governance findings.
 
 ## Commands
 
@@ -79,61 +132,30 @@ acc evaluate tests/fixtures/claude-clean/events.json --format table
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages |
 
 Global flags: `-q` silences status lines on stderr. Every evaluated command accepts
-`--format table|json|yaml|sarif` and `--output FILE`; the format is inferred from the output
-extension when omitted. `export` emits normalized JSON only. `scan` without output flags writes
-`.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
+`--format table|json|yaml|sarif|in-toto` and `--output FILE`; the format is inferred from the
+output extension when omitted. `export` emits normalized JSON only. `scan` without output flags
+writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
 
-## Explicit agent attribution
+Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
+the day. `pr` evaluates an open or merged PR directly. The token needs read access to repository
+contents and pull requests (public repositories can be read without a token). Requests are
+GET-only, restricted to `api.github.com`, with redirects disabled. Tokens are never written to
+exports or error messages.
 
-Place an exact fenced block in the PR body:
+## Attestations
 
-````text
-```agent-change-control
-author: claude-code
-operator: alice
-```
-````
-
-Only this delimited declaration is interpreted. The operator must resolve to a GitHub human
-account; unmatched identifiers and emails remain unknown. Omit `operator` when unknown. This is
-**declared evidence**, not a cryptographic assertion of identity. PR metadata is mutable.
-
-For an account your organization has verified as an agent, pass an exact mapping:
+`--format in-toto` emits an unsigned [in-toto Statement v1](https://github.com/in-toto/attestation)
+whose subjects are the evaluated changes (`gitCommit` digests of their head commits) and whose
+predicate is the manifest:
 
 ```bash
-acc scan github acme/api --since 2026-08-01 --until 2026-08-31 \
-  --agent-account 'my-agent[bot]=codex' --format table
+acc evaluate events.json --format in-toto > change-control.intoto.json
 ```
 
-No bot is automatically an agent. No writing style, diff size or casual mention of AI establishes
-authorship. This release accepts PR declarations and caller-maintained account mappings; it does not
-yet ingest commit trailers, repository provenance files or signed identity attestations. The
-independent provenance convention is published in `schemas/provenance.schema.json` for producers.
-
-## Rules and uncertainty
-
-| ID | Finding | Default severity |
-| --- | --- | --- |
-| ACC001 | Agent change without independent human approval | high |
-| ACC002 | Effective human author/operator approved own change | high |
-| ACC003 | Merged change without independent human approval | high |
-| ACC006 | Agent operator unknown | warning |
-
-A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
-equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
-withdraw approval. This conservative head requirement does not attempt to reproduce GitHub's
-configurable branch-protection policy.
-
-Unknown operators yield ACC006 and `unknown` independence assessments, not invented SOD violations.
-Incomplete collection produces exit 4 and cannot yield a clean result. Review dismissal timing
-unavailable through the REST review snapshot is marked incomplete. A review or merge whose GitHub
-account no longer exists is recorded against the `unknown:unavailable` actor, and a missing reviewer
-identity marks that change's reviews incomplete. Invalid approval-after-merge data produces ACV001,
-separately from governance findings.
-
-Every finding retains input evidence references. `validate` verifies the schema, timeline, actors,
-source digest, summaries and findings by re-evaluating embedded facts. This detects inconsistency,
-not forgery: a digest is not a signature.
+Sign it with the DSSE signer you already use for build provenance. A verifier checks that the
+subjects cover the commits it cares about and runs `acc validate` on the predicate to confirm the
+findings follow from the embedded facts. The predicate type is
+`https://noru.tech/spec/ai-change-provenance/v0.1`.
 
 ## Exit codes
 
@@ -151,16 +173,19 @@ not forgery: a digest is not a signature.
 Warnings do not fail the default policy. `scan` and `evaluate` write findings without returning
 policy exit 1; use `check` to enforce policy. See [policy semantics](docs/policy.md).
 
-## Limits
+## Limits and non-goals
 
 The collector uses bounded pages (`--max-pages`, default 100 per endpoint; maximum 1000) and 8 MiB
-per response. Historical scans list pull requests newest-updated first and stop at the first page
-that ends before the window, so cost scales with recent activity rather than repository age; hitting
-a bound is never silently complete. Collection is a best-effort snapshot, not an atomic historical
-archive. GitHub identity changes, deleted users and mutable declarations cannot be reconstructed
-reliably from current REST data. PR opener is the default effective author unless explicit accepted
-agent evidence overrides it; commit authors remain separately recorded, and mixed human authorship is
-not resolved in Phase 1.
+per response. Collection is a best-effort snapshot, not an atomic historical archive. GitHub
+identity changes, deleted users and mutable declarations cannot be reconstructed reliably from
+current REST data. The PR opener is the default effective author unless explicit agent evidence
+overrides it; mixed human authorship is not resolved in this release.
+
+`acc` does not detect AI-written code, does not treat bots as agents, does not guess that the
+merger operated the agent, and does not call a model. A declaration is declared evidence, not
+authenticated identity; a digest detects inconsistency, not forgery. A clean result is a statement
+about the recorded scope, not a compliance certification. See the
+[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signed provenance.
 
 Manifests contain employee activity data; keep real exports out of public Git repositories. Read
 [the model](docs/model.md), [authorship](docs/agent-authorship.md), [privacy](docs/privacy.md) and
@@ -176,12 +201,18 @@ cargo clippy --all-targets -- -D warnings
 
 Tests include reviewed fixture expectations, golden manifests/findings, offline CLI workflows and a
 loopback HTTP server that replays GitHub pagination, errors, deleted accounts and changing snapshots.
-They require loopback networking, no GitHub credentials. Integration behavior is based on GitHub's
-[pull request](https://docs.github.com/en/rest/pulls/pulls) and
-[review](https://docs.github.com/en/rest/pulls/reviews) APIs.
+They require loopback networking, no GitHub credentials. This repository also runs its own check
+on every pull request ([workflow](.github/workflows/change-control.yml)).
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the layout, how to add a rule, and how goldens are
-updated.
+updated. Proposals for rules, collectors and specification changes have
+[issue templates](https://github.com/noru-tech/agent-change-control/issues/new/choose).
+
+## About
+
+Built and maintained by [Noru](https://noru.tech), a compliance platform. The tool, the schemas and
+the specification are MIT-licensed and independent of the platform; Noru consumes the same
+manifests everyone else does.
 
 ## License
 

@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: If you reference the specification or the tool, please cite it as below.
+title: "AI Change Provenance: separation of duties for software written with coding agents"
+type: software
+authors:
+  - name: Noru
+    website: https://noru.tech
+repository-code: https://github.com/noru-tech/agent-change-control
+url: https://github.com/noru-tech/agent-change-control/blob/main/spec/ai-change-provenance.md
+license: MIT
+version: "0.1"
+date-released: "2026-09-18"
+keywords:
+  - change control
+  - separation of duties
+  - coding agents
+  - provenance
+  - GRC

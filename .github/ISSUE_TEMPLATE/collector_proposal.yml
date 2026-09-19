@@ -1,0 +1,35 @@
+name: Collector proposal
+description: Propose support for another forge or data source (GitLab, Bitbucket, Azure DevOps, Gerrit, ...)
+labels: [collector]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        A collector must fill the normalized model truthfully: complete review histories with
+        commit binding, human/bot classification from the platform, and explicit incompleteness
+        wherever the API cannot answer. See the specification, section 4.
+  - type: input
+    id: forge
+    attributes:
+      label: Forge
+    validations:
+      required: true
+  - type: textarea
+    id: endpoints
+    attributes:
+      label: Endpoints and fields
+      description: Which read-only endpoints provide changes, review decisions with time and commit, merger, and account type? Note anything tier-gated.
+    validations:
+      required: true
+  - type: textarea
+    id: gaps
+    attributes:
+      label: Known gaps
+      description: What can the API not tell us (dismissal times, approval history after new commits, deleted users)? Each becomes an incompleteness reason, not a guess.
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: Collectors are tested against a loopback server replaying recorded responses. Can you provide sanitized fixtures?

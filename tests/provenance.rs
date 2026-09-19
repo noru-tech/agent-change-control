@@ -52,3 +52,28 @@ fn policy_default_threshold_and_unknown_rules() {
     let v = json!({"version": "0.1", "rules": {"typo": {"enabled": false, "severity": "warning"}}});
     assert!(normalize::schema(&v, "policy").is_err());
 }
+
+/// The shipped examples are producer-facing documentation; they must stay valid.
+#[test]
+fn shipped_examples_are_valid() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let body = std::fs::read_to_string(root.join("examples/pull-request-body.md")).unwrap();
+    let (agent, operator) = provenance::declaration(&body).unwrap().unwrap();
+    assert_eq!(agent, "claude-code");
+    assert_eq!(operator.as_deref(), Some("alice"));
+    let v: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("examples/provenance.json")).unwrap(),
+    )
+    .unwrap();
+    let head = v["change"]["head_commit"].as_str().unwrap().to_string();
+    let (agent, operator) = provenance::convention(&v, &head).unwrap();
+    assert_eq!(agent, "codex");
+    assert_eq!(operator.as_deref(), Some("github:alice"));
+    let policy: Policy =
+        serde_saphyr::from_str(&std::fs::read_to_string(root.join("examples/policy.yml")).unwrap())
+            .unwrap();
+    normalize::schema(&serde_json::to_value(&policy).unwrap(), "policy").unwrap();
+    // The pull request template must not itself be parsed as a declaration.
+    let template = std::fs::read_to_string(root.join(".github/PULL_REQUEST_TEMPLATE.md")).unwrap();
+    assert!(provenance::declaration(&template).unwrap().is_none());
+}

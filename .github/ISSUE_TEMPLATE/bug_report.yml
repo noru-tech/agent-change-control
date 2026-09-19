@@ -1,0 +1,44 @@
+name: Bug report
+description: Wrong finding, crash, or an API condition acc does not handle
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Manifests and exports contain names and work activity. Please attach a **synthetic**
+        reproduction (see `tests/fixtures/`) or pseudonymize before pasting.
+  - type: input
+    id: version
+    attributes:
+      label: acc version
+      placeholder: acc --version
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [evaluation (rules), GitHub collection, output format, GitHub Action, schemas, other]
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: For a rule, cite the exact condition in docs/policy.md or the specification.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened?
+      description: Command, exit code and output. Redact tokens.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: A minimal `events.json` (synthetic identities) that shows the problem, if you can.
+      render: json
