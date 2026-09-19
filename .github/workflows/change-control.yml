@@ -1,0 +1,40 @@
+# This repository runs its own check. Every pull request is evaluated with the action defined in
+# ./action.yml: who (or what) wrote it, who operated the agent, who approved the current head.
+#
+# The step is advisory (fail-on-findings: false): an agent-written pull request legitimately
+# shows ACC001 until an independent human approves its head, and the verdict changes with every
+# review, which is why the workflow also runs on review events. The table lands in the job
+# summary; the SARIF file is kept as the machine-readable record.
+name: change-control
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: change-control-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  acc:
+    name: separation of duties
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Evaluate this pull request
+        id: acc
+        uses: ./
+        with:
+          fail-on-findings: false
+      - name: Report
+        env:
+          CODE: ${{ steps.acc.outputs.exit-code }}
+        run: |
+          echo "acc exit code: $CODE"
+          test -s acc-results.sarif

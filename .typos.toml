@@ -2,6 +2,8 @@
 # Rule and validation code prefixes.
 acc = "acc"
 acv = "acv"
+# in-toto: the module name and the conventional `.intoto.json` attestation suffix.
+intoto = "intoto"
 
 [files]
 extend-exclude = ["target/**", "tests/fixtures/**", "tests/snapshots/**", "CHANGELOG.md", "Cargo.lock"]

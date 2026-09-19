@@ -1,0 +1,40 @@
+name: Rule proposal
+description: Propose a new separation-of-duty or provenance rule
+labels: [rule]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Rules are deterministic conditions over the normalized model. They never read the diff,
+        the prose or a model's opinion. See CONTRIBUTING.md "Adding a rule" and the specification.
+  - type: input
+    id: name
+    attributes:
+      label: Proposed policy name
+      placeholder: e.g. approval_before_last_push
+    validations:
+      required: true
+  - type: textarea
+    id: condition
+    attributes:
+      label: Exact condition
+      description: When does it fail, when is it not applicable, and when is it unknown? Use the model's field names.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Which recorded facts does the finding cite? Is any of it missing from the current model or the GitHub collector?
+    validations:
+      required: true
+  - type: textarea
+    id: control
+    attributes:
+      label: Control objective
+      description: Which framework control or organizational policy does this rule produce evidence for?
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Fixtures
+      description: Sketch one passing and one failing synthetic case.

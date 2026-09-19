@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- `--format in-toto`: an unsigned in-toto Statement v1 whose subjects are the evaluated changes'
+  head commits and whose predicate is the manifest, ready for DSSE signing.
+- A composite GitHub Action (`action.yml`) that installs a checksum- and attestation-verified
+  release, runs `acc pr` on the current pull request, writes SARIF and a job summary, and exposes
+  the exit code. This repository runs it on its own pull requests.
+- The AI Change Provenance 0.1 specification (`spec/ai-change-provenance.md`), a narrative on why
+  account-based four-eyes fails for coding agents (`docs/four-eyes.md`), a control mapping to
+  SOC 2, ISO/IEC 27001, PCI DSS, NIST SP 800-53 and SSDF (`docs/control-mapping.md`), a roadmap,
+  examples, issue and pull request templates, CODEOWNERS and a citation file.
+
 ## [0.1.0] - 2026-09-18
 
 ### Added

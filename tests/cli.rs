@@ -63,6 +63,19 @@ fn formats_roundtrip() {
     let value: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(value["version"], "2.1.0");
     assert_eq!(value["runs"][0]["results"].as_array().unwrap().len(), 3);
+    // The attestation predicate is a complete manifest: it validates on its own.
+    let out = stdout(acc().args(["evaluate", "--format", "in-toto"]).arg(&events));
+    let value: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(value["_type"], "https://in-toto.io/Statement/v1");
+    assert_eq!(value["subject"][0]["digest"]["gitCommit"], "head");
+    let predicate: Manifest = serde_json::from_value(value["predicate"].clone()).unwrap();
+    manifest::validate(&predicate).unwrap();
+    acc()
+        .args(["check", "--format", "in-toto"])
+        .arg(fixture("human-clean", "expected-manifest.json"))
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"predicateType\""));
 }
 
 #[test]
@@ -81,7 +94,7 @@ fn output_extension_selects_the_format() {
 }
 
 #[test]
-fn table_and_sarif_snapshots() {
+fn table_sarif_and_attestation_snapshots() {
     for name in [
         "claude-operator-self-approved",
         "agent-operator-unknown",
@@ -105,6 +118,13 @@ fn table_and_sarif_snapshots() {
             .unwrap();
         let value: serde_json::Value = serde_json::from_slice(&sarif.stdout).unwrap();
         insta::assert_yaml_snapshot!(format!("sarif_{name}"), value);
+        let statement = acc()
+            .args(["evaluate", "--format", "in-toto"])
+            .arg(&events)
+            .output()
+            .unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&statement.stdout).unwrap();
+        insta::assert_yaml_snapshot!(format!("intoto_{name}"), value);
     }
 }
 

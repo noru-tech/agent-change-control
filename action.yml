@@ -1,0 +1,184 @@
+# Composite GitHub Action: install a verified `acc` release and evaluate the current pull request.
+#
+# The evaluation is the same offline, deterministic check the CLI performs; this file only
+# fetches the binary, runs `acc pr`, renders the requested format and a job summary, and maps the
+# exit code to the step outcome. See docs/github-action.md.
+name: Agent Change Control
+description: >-
+  Separation of duties for pull requests written with coding agents. Records the agent, the human
+  operator, the reviewers and the merger, then checks for an independent human approval.
+  Deterministic, offline evaluation; no LLM.
+author: Noru
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  version:
+    description: >-
+      The acc release to install (a tag without the leading v). Bumped with each release of this
+      repository; pin it explicitly for byte-stable output across runs.
+    required: false
+    default: "0.1.0"
+  pr:
+    description: Pull request number to evaluate.
+    required: false
+    default: ${{ github.event.pull_request.number }}
+  repository:
+    description: Repository as OWNER/REPO.
+    required: false
+    default: ${{ github.repository }}
+  token:
+    description: >-
+      Token with read access to contents and pull requests. Only GET requests to api.github.com
+      are made; the token is never written to outputs.
+    required: false
+    default: ${{ github.token }}
+  policy:
+    description: Path to a policy file. Defaults to .agent-change-control/policy.yml when present.
+    required: false
+    default: ""
+  agent-account:
+    description: >-
+      Accounts your organization has verified as agents, one LOGIN=AGENT per line
+      (for example `my-agent[bot]=codex`).
+    required: false
+    default: ""
+  format:
+    description: Output format written to `output` — sarif, json, yaml, table or in-toto.
+    required: false
+    default: sarif
+  output:
+    description: Path of the rendered output file.
+    required: false
+    default: acc-results.sarif
+  fail-on-findings:
+    description: >-
+      Fail the step when the policy threshold is exceeded (exit 1) or collection is incomplete
+      (exit 4). Set to false to run in advisory mode; the exit code is still available as an output.
+    required: false
+    default: "true"
+  verify-attestation:
+    description: >-
+      Verify the downloaded archive's GitHub artifact attestation with `gh attestation verify`
+      before running it. Requires the gh CLI (present on GitHub-hosted runners).
+    required: false
+    default: "true"
+  max-pages:
+    description: Maximum pages per list endpoint (100 items each).
+    required: false
+    default: "100"
+
+outputs:
+  exit-code:
+    description: >-
+      acc's exit code: 0 passed, 1 policy threshold exceeded, 4 collection incomplete. Other codes
+      always fail the step.
+    value: ${{ steps.evaluate.outputs.exit-code }}
+  output:
+    description: Path of the rendered output file.
+    value: ${{ steps.evaluate.outputs.output }}
+  manifest:
+    description: Path of the evaluated JSON manifest (contains reviewer identities; treat as sensitive).
+    value: ${{ steps.evaluate.outputs.manifest }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install acc
+      id: install
+      shell: bash
+      env:
+        ACC_VERSION: ${{ inputs.version }}
+        ACC_VERIFY: ${{ inputs.verify-attestation }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64)  target=x86_64-unknown-linux-musl ;;
+          Linux-aarch64) target=aarch64-unknown-linux-musl ;;
+          Darwin-x86_64) target=x86_64-apple-darwin ;;
+          Darwin-arm64)  target=aarch64-apple-darwin ;;
+          *) echo "::error::unsupported runner platform $(uname -s)-$(uname -m); acc ships Linux and macOS binaries" >&2; exit 1 ;;
+        esac
+        archive="agent-change-control-${target}.tar.xz"
+        base="https://github.com/noru-tech/agent-change-control/releases/download/v${ACC_VERSION}"
+        dir="${RUNNER_TEMP}/acc-${ACC_VERSION}"
+        mkdir -p "$dir"
+        cd "$dir"
+        curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "$archive" "${base}/${archive}"
+        curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "${archive}.sha256" "${base}/${archive}.sha256"
+        if command -v sha256sum >/dev/null; then sha256sum -c "${archive}.sha256"; else shasum -a 256 -c "${archive}.sha256"; fi
+        if [ "$ACC_VERIFY" = "true" ]; then
+          if ! command -v gh >/dev/null; then
+            echo "::error::verify-attestation is true but the gh CLI is not installed; install it or set verify-attestation: false" >&2
+            exit 1
+          fi
+          gh attestation verify "$archive" --repo noru-tech/agent-change-control
+        fi
+        tar -xJf "$archive"
+        echo "${dir}/agent-change-control-${target}" >> "$GITHUB_PATH"
+        "${dir}/agent-change-control-${target}/acc" --version
+
+    - name: Evaluate pull request
+      id: evaluate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        ACC_PR: ${{ inputs.pr }}
+        ACC_REPOSITORY: ${{ inputs.repository }}
+        ACC_POLICY: ${{ inputs.policy }}
+        ACC_AGENT_ACCOUNTS: ${{ inputs.agent-account }}
+        ACC_FORMAT: ${{ inputs.format }}
+        ACC_OUTPUT: ${{ inputs.output }}
+        ACC_FAIL: ${{ inputs.fail-on-findings }}
+        ACC_MAX_PAGES: ${{ inputs.max-pages }}
+      run: |
+        # The runner's bash is `-e`; acc's exit code is the verdict, so it must be captured, not fatal.
+        set +e -uo pipefail
+        if [ -z "$ACC_PR" ]; then
+          echo "::error::no pull request number: set the pr input or run on a pull_request event" >&2
+          exit 1
+        fi
+        manifest="${RUNNER_TEMP}/acc-manifest.json"
+        args=(pr "$ACC_PR" --repo "$ACC_REPOSITORY" --max-pages "$ACC_MAX_PAGES" --format json --output "$manifest")
+        if [ -n "$ACC_POLICY" ]; then args+=(--policy "$ACC_POLICY"); fi
+        while IFS= read -r mapping; do
+          mapping="${mapping//[$'\r']}"
+          if [ -n "$mapping" ]; then args+=(--agent-account "$mapping"); fi
+        done <<< "$ACC_AGENT_ACCOUNTS"
+        acc "${args[@]}"
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "manifest=$manifest" >> "$GITHUB_OUTPUT"
+        echo "output=$ACC_OUTPUT" >> "$GITHUB_OUTPUT"
+        case "$code" in
+          0|1|4) ;;
+          *) echo "::error::acc failed with exit code $code" >&2; exit "$code" ;;
+        esac
+        # Rendering is offline: the manifest already holds the facts and the verdict.
+        acc -q check "$manifest" --format "$ACC_FORMAT" --output "$ACC_OUTPUT"
+        rendered=$?
+        case "$rendered" in
+          0|1|4) ;;
+          *) echo "::error::rendering $ACC_FORMAT failed with exit code $rendered" >&2; exit "$rendered" ;;
+        esac
+        {
+          echo "### Agent change control"
+          echo
+          echo '```'
+          acc -q check "$manifest" --format table 2>/dev/null || true
+          echo '```'
+          case "$code" in
+            0) echo "Result: **pass** — policy threshold not exceeded." ;;
+            1) echo "Result: **policy threshold exceeded** (exit 1). See \`$ACC_OUTPUT\`." ;;
+            4) echo "Result: **collection incomplete** (exit 4) — a clean result cannot be claimed." ;;
+          esac
+        } >> "$GITHUB_STEP_SUMMARY"
+        if [ "$code" -ne 0 ]; then
+          if [ "$ACC_FAIL" = "true" ]; then
+            echo "::error::agent change control failed with exit code $code" >&2
+            exit "$code"
+          fi
+          echo "::warning::agent change control exit code $code (advisory mode)" >&2
+        fi

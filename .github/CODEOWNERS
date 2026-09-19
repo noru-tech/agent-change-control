@@ -1,0 +1,9 @@
+# Review ownership. Changes to the specification, schemas and rules carry compatibility
+# commitments; changes to the action and workflows run with repository credentials.
+*                       @bipthelin
+/spec/                  @bipthelin
+/schemas/               @bipthelin
+/src/rules/             @bipthelin
+/src/policy/            @bipthelin
+/action.yml             @bipthelin
+/.github/               @bipthelin

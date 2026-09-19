@@ -31,9 +31,12 @@ src/manifest/     manifest generation, validation (re-evaluation) and policy che
 src/policy/       rule catalogue, default policy, severity ranking
 src/provenance/   agent declarations (PR body block) and the provenance-file convention
 src/collectors/   forge collectors; github/ is the only one in Phase 1
-src/output/       json, yaml, table and sarif renderers
+src/output/       json, yaml, table, sarif and in-toto renderers
 schemas/          public JSON Schemas (draft 2020-12), embedded into the binary
-docs/             model, policy, authorship and privacy notes
+spec/             the AI Change Provenance specification; versioned with the schemas
+docs/             model, policy, authorship, privacy, action and control-mapping notes
+examples/         producer-facing examples, validated by tests/provenance.rs
+action.yml        the composite GitHub Action; no logic beyond install, run and report
 tests/            integration tests (assert_cmd), insta snapshots, fixtures under tests/fixtures
 ```
 
@@ -78,7 +81,15 @@ findings diff. Never refresh goldens merely to hide a failure.
 Change the public schema and the model together. Add the rule to `RULES` in `src/policy/`, add the
 `rule_id` and rule name to the enums in `schemas/manifest.schema.json` and `schemas/policy.schema.json`,
 implement the condition in `src/rules/`, add at least one passing and one failing fixture, document the
-exact condition and evidence in `docs/policy.md`, and add the row to the README table.
+exact condition and evidence in `docs/policy.md`, add the row to the README table, and add the rule to
+§6.2 of `spec/ai-change-provenance.md`. A rule is a specification change: say so in the pull request.
+
+## Changing the specification
+
+`spec/ai-change-provenance.md`, the schemas and the in-toto predicate type share a version. Additive
+changes bump the minor version; changes to the meaning of an existing rule, identifier or format bump
+the major version, and the old predicate type URI stays valid for old attestations. Use the
+"Specification change" issue template to propose one before writing the text.
 
 ## Releases
 
@@ -92,4 +103,6 @@ regenerate `.github/workflows/release.yml` with `dist generate` rather than edit
 only hand edit is pinning the `uses:` actions to commit SHAs, as in `ci.yml`; `allow-dirty = ["ci"]`
 in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current.
 
-The manifest schema pins `generated.version` to the crate version. Bump both together.
+The manifest schema pins `generated.version` to the crate version. Bump both together, and bump the
+`version` input default in `action.yml` to the same release so the action installs the binary it was
+published with.
