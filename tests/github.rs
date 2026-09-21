@@ -2,7 +2,7 @@
 
 use agent_change_control::collectors::github::{Github, Sources, UNAVAILABLE_ACTOR};
 use agent_change_control::model::{
-    ActorKind, Confidence, Events, EvidenceKind, Policy, RuleId, Status,
+    ActorKind, Confidence, Events, EvidenceKind, Policy, ReviewState, RuleId, Status,
 };
 use agent_change_control::normalize::timestamp;
 use agent_change_control::provenance::agent_trace::AgentTraces;
@@ -209,6 +209,25 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
     let traces = matches!(mode, "trace-only" | "trace-and-trailer")
         .then(|| AgentTraces::load(&[fixture("agent-trace")]).unwrap());
     let attestations = match mode {
+        "review-human" | "review-agent" | "review-kind-mismatch" => {
+            let dir = if mode == "review-human" {
+                "review-human"
+            } else {
+                "review-agent"
+            };
+            let mut a =
+                Attestations::load(&[], Some("gh attestation verify (test)".into())).unwrap();
+            a.load_verification(&fixture(&format!("attestations/{dir}/verification.json")))
+                .unwrap();
+            Some(a)
+        }
+        "review-unmatched" => Some(
+            Attestations::load(
+                &[fixture("attestations/review-unmatched")],
+                Some("x".into()),
+            )
+            .unwrap(),
+        ),
         "attested" | "attested-only" => Some(
             Attestations::load(
                 &[fixture("attestations/agree")],
@@ -224,6 +243,10 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
         }
         _ => None,
     };
+    let vendors = agent_change_control::provenance::vendor_registry(&BTreeMap::from([(
+        "review-agent".to_string(),
+        "acme".to_string(),
+    )]));
     Github::with_base(None, pages, &server.base)?.collect(
         "acme/api",
         from,
@@ -234,6 +257,7 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
             trailers: registry.as_ref(),
             traces: traces.as_ref(),
             attestations: attestations.as_ref(),
+            vendors: &vendors,
         },
     )
 }
@@ -346,6 +370,76 @@ fn verified_attestations_are_signed_evidence_and_must_agree_with_declarations() 
         err.to_string()
             .contains("conflicting attested and declared agent")
     );
+}
+
+#[test]
+fn review_attestations_upgrade_forge_reviews_and_never_create_them() {
+    // bob's forge approval of the head, attested by bob and verified: signed review evidence,
+    // no agent facts (bob is human), the label collected, vendors on agents.
+    let e = collect("review-human").unwrap();
+    let c = &e.changes[0];
+    assert_eq!(c.labels, vec!["low-risk".to_string()]);
+    assert_eq!(
+        e.actors["agent:claude-code"].vendor.as_deref(),
+        Some("anthropic")
+    );
+    assert!(e.actors["github:bob"].vendor.is_none());
+    let review = &c.reviews[0];
+    assert_eq!(review.actor_id, "github:bob");
+    assert!(review.agent.is_none());
+    let signed: Vec<_> = review
+        .provenance
+        .iter()
+        .filter(|p| p.kind == EvidenceKind::Signed)
+        .collect();
+    assert_eq!(signed.len(), 1);
+    let record = &e.attestations[&signed[0].r#ref];
+    assert!(record.matched);
+    assert_eq!(
+        record.signer.as_ref().map(|s| s.identity.as_str()),
+        Some("bob@example.com")
+    );
+    // The strict review policy is now satisfiable by a human review.
+    let strict = Policy {
+        minimum_review_evidence: EvidenceKind::Signed,
+        ..Policy::default()
+    };
+    let m = manifest::evaluate(e, strict).unwrap();
+    assert!(m.findings.is_empty());
+    manifest::validate(&m).unwrap();
+
+    // bob mapped as an agent reviewer: the agent facts come from the attestation, the operator
+    // and instructions owner resolve to a known human, the identity is the verified signer,
+    // and the vendor comes from the caller's registry.
+    let known = BTreeMap::from([("bob".to_string(), "review-agent".to_string())]);
+    let e = collect_with("review-agent", &known).unwrap();
+    assert_eq!(e.actors["github:bob"].kind, ActorKind::Agent);
+    assert_eq!(e.actors["github:bob"].vendor.as_deref(), Some("acme"));
+    let agent = e.changes[0].reviews[0].agent.as_ref().unwrap();
+    assert_eq!(agent.operator.as_deref(), Some("github:alice"));
+    assert_eq!(agent.instructions_owner.as_deref(), Some("github:alice"));
+    assert!(agent.identity.as_deref().unwrap().contains("review-bot"));
+    assert_eq!(agent.model.as_deref(), Some("claude-opus-5"));
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    manifest::validate(&m).unwrap();
+    // No rule reads the facts yet: an agent approval still does not qualify.
+    assert_eq!(
+        m.findings.iter().map(|f| f.rule_id).collect::<Vec<_>>(),
+        vec![RuleId::Acc001, RuleId::Acc003]
+    );
+
+    // A decision the forge never showed is recorded as unmatched and creates no review.
+    let e = collect("review-unmatched").unwrap();
+    assert_eq!(e.changes[0].reviews.len(), 1);
+    assert_eq!(e.changes[0].reviews[0].state, ReviewState::Approved);
+    let records: Vec<_> = e.attestations.values().collect();
+    assert_eq!(records.len(), 1);
+    assert!(!records[0].matched);
+    manifest::validate(&manifest::evaluate(e, Policy::default()).unwrap()).unwrap();
+
+    // An attestation calling a human account an agent is an error, not a reclassification.
+    let err = collect("review-kind-mismatch").unwrap_err();
+    assert!(err.to_string().contains("reviewer kind"));
 }
 
 #[test]

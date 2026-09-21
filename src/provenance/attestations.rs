@@ -15,7 +15,7 @@
 //! predicates that exist for them (`human-review`, gittuf's reference authorization) carry the
 //! reviewer in the signature, which is exactly what pre-verified input does not expose.
 
-use crate::model::{Attestation, Evidence, EvidenceKind};
+use crate::model::{ActorKind, Attestation, Evidence, EvidenceKind, ReviewState, Signer};
 use anyhow::{Context, Result, ensure};
 use base64::Engine;
 use serde_json::Value;
@@ -30,6 +30,11 @@ const DSSE_PAYLOAD_TYPE: &str = "application/vnd.in-toto+json";
 /// in-toto predicate, with the change's head commit as the subject.
 pub const PROVENANCE_PREDICATE_TYPE: &str =
     "https://noru.tech/spec/ai-change-provenance/provenance/v0.1";
+
+/// The predicate type of a signed review document: `schemas/review.schema.json` as an in-toto
+/// predicate, with the head commit as the subject. It names the reviewer in the predicate so
+/// that pre-verified input can use it; it upgrades a forge-observed review and never creates one.
+pub const REVIEW_PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/review/v0.1";
 
 /// The evidence source name used for every claim read from an attestation.
 pub const SOURCE: &str = "attestation";
@@ -50,6 +55,25 @@ pub struct Authorship {
     pub evidence: Vec<Evidence>,
     /// The registry entries to record with the export.
     pub records: BTreeMap<String, Attestation>,
+}
+
+/// One review attestation bound to a head commit, ready to be matched to a forge review.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReviewClaim {
+    /// The reviewer's actor identifier, lowercased (`github:acme-review[bot]`).
+    pub reviewer_id: String,
+    pub reviewer_kind: ActorKind,
+    /// The agent name the predicate gives for an agent reviewer.
+    pub agent: Option<String>,
+    pub decision: ReviewState,
+    pub operator: Option<String>,
+    pub instructions_owner: Option<String>,
+    pub model: Option<String>,
+    /// The verified signer's identity, when the attestation came from a verifier's output.
+    pub identity: Option<String>,
+    pub evidence: Evidence,
+    pub id: String,
+    pub record: Attestation,
 }
 
 /// Attestations read from disk, indexed for lookup by subject commit.
@@ -132,6 +156,90 @@ impl Attestations {
         self.loaded.is_empty()
     }
 
+    /// Load a verifier's JSON output (`gh attestation verify --format json`): each result
+    /// carries the verified Sigstore bundle and the certificate identity the verifier
+    /// established. The bundles are loaded as signed attestations with their signer recorded.
+    pub fn load_verification(&mut self, path: &Path) -> Result<()> {
+        let meta = std::fs::metadata(path)
+            .with_context(|| format!("unable to read {}", path.display()))?;
+        ensure!(
+            meta.len() <= MAX_FILE,
+            "verification file exceeds 32 MiB limit"
+        );
+        let data = std::fs::read_to_string(path)
+            .with_context(|| format!("unable to read {}", path.display()))?;
+        let value: Value = serde_json::from_str(&data)
+            .with_context(|| format!("{} is not valid JSON", path.display()))?;
+        let results = match value {
+            Value::Array(items) => items,
+            v => vec![v],
+        };
+        ensure!(!results.is_empty(), "verification file holds no results");
+        for (i, result) in results.into_iter().enumerate() {
+            let bundle = result
+                .get("attestation")
+                .and_then(|a| a.get("bundle"))
+                .cloned()
+                .ok_or_else(|| {
+                    anyhow::anyhow!("{}#{}: no attestation.bundle", path.display(), i + 1)
+                })?;
+            let certificate = &result["verificationResult"]["signature"]["certificate"];
+            let identity = certificate["subjectAlternativeName"]
+                .as_str()
+                .filter(|s| !s.trim().is_empty())
+                .ok_or_else(|| {
+                    anyhow::anyhow!("{}#{}: no verified signer identity", path.display(), i + 1)
+                })?;
+            let signer = Signer {
+                identity: identity.to_string(),
+                issuer: certificate["issuer"]
+                    .as_str()
+                    .or_else(|| certificate["certificateIssuer"].as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(String::from),
+            };
+            let c = container(bundle).with_context(|| format!("{}#{}", path.display(), i + 1))?;
+            ensure!(
+                c.signed,
+                "{}#{}: verified bundle carries no signature",
+                path.display(),
+                i + 1
+            );
+            self.push(c, path, i, Some(signer));
+        }
+        Ok(())
+    }
+
+    fn push(&mut self, c: Container, path: &Path, i: usize, signer: Option<Signer>) {
+        let digest = format!("sha256:{:x}", Sha256::digest(&c.payload));
+        let id = format!("attestation:{}", &digest[7..23]);
+        if let Some(existing) = self.loaded.iter_mut().find(|l| l.id == id) {
+            // The same payload seen again: keep the record that knows more.
+            if existing.record.signer.is_none() {
+                existing.record.signer = signer;
+                existing.record.signed |= c.signed;
+            }
+            return;
+        }
+        let predicate_type = c.statement["predicateType"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
+        self.loaded.push(Loaded {
+            id,
+            record: Attestation {
+                file: format!("{}#{}", path.display(), i + 1),
+                predicate_type,
+                payload_digest: digest,
+                signed: c.signed,
+                verified_by: self.verified_by.clone(),
+                signer,
+                matched: true,
+            },
+            statement: c.statement,
+        });
+    }
+
     fn load_path(&mut self, path: &Path) -> Result<()> {
         let meta = std::fs::metadata(path)
             .with_context(|| format!("unable to read {}", path.display()))?;
@@ -173,26 +281,7 @@ impl Attestations {
         };
         for (i, document) in documents.into_iter().enumerate() {
             let c = container(document).with_context(|| format!("{}#{}", path.display(), i + 1))?;
-            let digest = format!("sha256:{:x}", Sha256::digest(&c.payload));
-            let id = format!("attestation:{}", &digest[7..23]);
-            if self.loaded.iter().any(|l| l.id == id) {
-                continue;
-            }
-            let predicate_type = c.statement["predicateType"]
-                .as_str()
-                .unwrap_or_default()
-                .to_string();
-            self.loaded.push(Loaded {
-                id,
-                record: Attestation {
-                    file: format!("{}#{}", path.display(), i + 1),
-                    predicate_type,
-                    payload_digest: digest,
-                    signed: c.signed,
-                    verified_by: self.verified_by.clone(),
-                },
-                statement: c.statement,
-            });
+            self.push(c, path, i, None);
         }
         Ok(())
     }
@@ -206,6 +295,62 @@ impl Attestations {
                     .is_some_and(|sha| sha.eq_ignore_ascii_case(head))
             })
         })
+    }
+
+    /// Every review attestation bound to `head`, validated against the review schema. Matching
+    /// to forge reviews, and the actor kind and agent checks, are the collector's.
+    pub fn reviews(&self, head: &str) -> Result<Vec<ReviewClaim>> {
+        let mut out = Vec::new();
+        for l in &self.loaded {
+            if l.record.predicate_type != REVIEW_PREDICATE_TYPE || !Self::covers(&l.statement, head)
+            {
+                continue;
+            }
+            let p = &l.statement["predicate"];
+            crate::normalize::schema(p, "review")
+                .with_context(|| format!("attestation {}", l.record.file))?;
+            ensure!(
+                p["change"]["head_commit"].as_str() == Some(head),
+                "attestation {}: review head does not match change",
+                l.record.file
+            );
+            let reviewer_kind = match p["reviewer"]["kind"].as_str() {
+                Some("agent") => ActorKind::Agent,
+                _ => ActorKind::Human,
+            };
+            let decision = match p["decision"].as_str() {
+                Some("approved") => ReviewState::Approved,
+                Some("changes_requested") => ReviewState::ChangesRequested,
+                _ => ReviewState::Commented,
+            };
+            let text = |v: &Value| v.as_str().map(|s| s.to_ascii_lowercase());
+            let kind = if l.record.signed && l.record.verified_by.is_some() {
+                EvidenceKind::Signed
+            } else {
+                EvidenceKind::Declared
+            };
+            out.push(ReviewClaim {
+                reviewer_id: p["reviewer"]["id"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_ascii_lowercase(),
+                reviewer_kind,
+                agent: text(&p["reviewer"]["agent"]),
+                decision,
+                operator: text(&p["operator"]["id"]),
+                instructions_owner: text(&p["instructions"]["owner"]),
+                model: p["model"].as_str().map(String::from),
+                identity: l.record.signer.as_ref().map(|s| s.identity.clone()),
+                evidence: Evidence {
+                    source: SOURCE.into(),
+                    r#ref: l.id.clone(),
+                    kind,
+                },
+                id: l.id.clone(),
+                record: l.record.clone(),
+            });
+        }
+        Ok(out)
     }
 
     /// The authorship claim for the change whose head is `head`, from every loaded provenance
@@ -428,6 +573,166 @@ mod tests {
         assert!(Attestations::load(&[dir.path().to_path_buf()], None).is_err());
         assert!(Attestations::load(&[dir.path().join("missing.json")], None).is_err());
         assert!(Attestations::load(&[], None).unwrap().is_empty());
+    }
+
+    fn review(kind: &str, id: &str, decision: &str, head: &str) -> Value {
+        json!({
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "github:acme/api:pr:421", "digest": {"gitCommit": head}}],
+            "predicateType": REVIEW_PREDICATE_TYPE,
+            "predicate": {
+                "spec_version": "0.1",
+                "reviewer": {"kind": kind, "id": id, "agent": if kind == "agent" { json!("claude-code-review") } else { Value::Null }},
+                "decision": decision,
+                "change": {"head_commit": head},
+                "submitted_at": "2026-08-14T08:59:10Z",
+                "operator": if kind == "agent" { json!({"id": "github:Carol"}) } else { Value::Null },
+                "instructions": if kind == "agent" { json!({"owner": "github:security", "digest": null}) } else { Value::Null },
+                "model": if kind == "agent" { json!("claude-opus-5") } else { Value::Null }
+            }
+        })
+    }
+
+    fn verification(bundles: Vec<Value>, san: &str, issuer: &str) -> Value {
+        Value::Array(
+            bundles
+                .into_iter()
+                .map(|b| {
+                    json!({
+                        "attestation": {"bundle": {"mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json", "verificationMaterial": {}, "dsseEnvelope": b}},
+                        "verificationResult": {"signature": {"certificate": {"subjectAlternativeName": san, "issuer": issuer}}}
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn review_claims_are_read_and_bound() {
+        let a = load(
+            &[
+                (
+                    "agent.json",
+                    &envelope(
+                        &review("agent", "github:Acme-Review[bot]", "approved", "head"),
+                        1,
+                    ),
+                ),
+                (
+                    "human.json",
+                    &review("human", "github:bob", "changes_requested", "head"),
+                ),
+                (
+                    "other.json",
+                    &review("human", "github:bob", "approved", "elsewhere"),
+                ),
+            ],
+            Some("v"),
+        )
+        .unwrap();
+        let claims = a.reviews("head").unwrap();
+        assert_eq!(claims.len(), 2);
+        let agent = claims
+            .iter()
+            .find(|c| c.reviewer_kind == ActorKind::Agent)
+            .unwrap();
+        assert_eq!(agent.reviewer_id, "github:acme-review[bot]");
+        assert_eq!(agent.agent.as_deref(), Some("claude-code-review"));
+        assert_eq!(agent.decision, ReviewState::Approved);
+        assert_eq!(agent.operator.as_deref(), Some("github:carol"));
+        assert_eq!(agent.instructions_owner.as_deref(), Some("github:security"));
+        assert_eq!(agent.model.as_deref(), Some("claude-opus-5"));
+        assert_eq!(agent.evidence.kind, EvidenceKind::Signed);
+        assert!(agent.identity.is_none(), "no verifier output, no identity");
+        let human = claims
+            .iter()
+            .find(|c| c.reviewer_kind == ActorKind::Human)
+            .unwrap();
+        assert_eq!(human.decision, ReviewState::ChangesRequested);
+        assert_eq!(human.evidence.kind, EvidenceKind::Declared);
+        assert!(human.operator.is_none());
+        assert!(
+            a.authorship("head").unwrap().is_none(),
+            "review claims are not authorship"
+        );
+        // Bound but inconsistent, or invalid against the schema: errors.
+        let mut bad = review("human", "github:bob", "approved", "head");
+        bad["predicate"]["change"]["head_commit"] = "other".into();
+        assert!(
+            load(&[("x.json", &bad)], None)
+                .unwrap()
+                .reviews("head")
+                .is_err()
+        );
+        let mut bad = review("human", "github:bob", "approved", "head");
+        bad["predicate"]["decision"] = "dismissed".into();
+        assert!(
+            load(&[("x.json", &bad)], None)
+                .unwrap()
+                .reviews("head")
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn verifier_output_supplies_signed_bundles_with_their_signer() {
+        let s = review("agent", "github:acme-review[bot]", "approved", "head");
+        let v = verification(
+            vec![envelope(&s, 1)],
+            "https://github.com/acme/review-bot/.github/workflows/review.yml@refs/heads/main",
+            "https://token.actions.githubusercontent.com",
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("verify.json");
+        std::fs::write(&path, serde_json::to_string(&v).unwrap()).unwrap();
+        let mut a = Attestations::load(&[], Some("gh attestation verify".into())).unwrap();
+        a.load_verification(&path).unwrap();
+        let claims = a.reviews("head").unwrap();
+        assert_eq!(claims.len(), 1);
+        assert!(
+            claims[0]
+                .identity
+                .as_deref()
+                .unwrap()
+                .starts_with("https://github.com/acme/review-bot/")
+        );
+        assert_eq!(claims[0].evidence.kind, EvidenceKind::Signed);
+        let signer = claims[0].record.signer.as_ref().unwrap();
+        assert_eq!(
+            signer.issuer.as_deref(),
+            Some("https://token.actions.githubusercontent.com")
+        );
+        assert!(claims[0].record.matched);
+        // The same payload loaded again from a plain envelope keeps the signer.
+        let plain = dir.path().join("plain.json");
+        std::fs::write(&plain, serde_json::to_string(&envelope(&s, 1)).unwrap()).unwrap();
+        a.load_path(&plain).unwrap();
+        assert_eq!(a.reviews("head").unwrap().len(), 1);
+        assert!(a.reviews("head").unwrap()[0].identity.is_some());
+        // Missing identity or unsigned bundle: errors.
+        let bad = verification(vec![envelope(&s, 1)], "", "x");
+        std::fs::write(&path, serde_json::to_string(&bad).unwrap()).unwrap();
+        assert!(
+            Attestations::load(&[], None)
+                .unwrap()
+                .load_verification(&path)
+                .is_err()
+        );
+        let bad = verification(vec![envelope(&s, 0)], "someone", "x");
+        std::fs::write(&path, serde_json::to_string(&bad).unwrap()).unwrap();
+        assert!(
+            Attestations::load(&[], None)
+                .unwrap()
+                .load_verification(&path)
+                .is_err()
+        );
+        std::fs::write(&path, "[]").unwrap();
+        assert!(
+            Attestations::load(&[], None)
+                .unwrap()
+                .load_verification(&path)
+                .is_err()
+        );
     }
 
     #[test]

@@ -1,0 +1,33 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "github:acme/api:pr:421",
+      "digest": {
+        "gitCommit": "7c4a8d09ca3762af61e59520943dc26494f8941b"
+      }
+    }
+  ],
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/review/v0.1",
+  "predicate": {
+    "spec_version": "0.1",
+    "reviewer": {
+      "kind": "agent",
+      "id": "github:acme-review[bot]",
+      "agent": "claude-code-review"
+    },
+    "decision": "approved",
+    "change": {
+      "head_commit": "7c4a8d09ca3762af61e59520943dc26494f8941b"
+    },
+    "submitted_at": "2026-08-02T12:00:00Z",
+    "operator": {
+      "id": "github:carol"
+    },
+    "instructions": {
+      "owner": "github:security-team",
+      "digest": null
+    },
+    "model": "claude-opus-5"
+  }
+}

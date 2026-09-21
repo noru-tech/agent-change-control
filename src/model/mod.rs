@@ -196,6 +196,11 @@ pub struct Evidence {
 pub struct Actor {
     pub kind: ActorKind,
     pub display_name: Option<String>,
+    /// For agents: the organization that builds and operates the model behind the tool, from
+    /// the vendor registry. Null for other kinds and for unregistered agents. May be absent in
+    /// exports written before it existed.
+    #[serde(default)]
+    pub vendor: Option<String>,
 }
 
 /// The inclusive UTC collection window.
@@ -223,6 +228,21 @@ pub struct Operator {
     pub provenance: Vec<Evidence>,
 }
 
+/// What a signed review attestation says about the agent that produced a review. Every field
+/// may be null; none can be observed from the forge.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewAgent {
+    /// The human who directed the reviewing agent for this review.
+    pub operator: Option<String>,
+    /// The signing identity the caller's verifier established for the review attestation.
+    pub identity: Option<String>,
+    /// The actor that controls what the reviewer was instructed to check.
+    pub instructions_owner: Option<String>,
+    /// The model the attestation names; recorded, not an independence input.
+    pub model: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Review {
@@ -232,6 +252,10 @@ pub struct Review {
     pub at: Timestamp,
     pub commit_sha: String,
     pub provenance: Vec<Evidence>,
+    /// Present only for an agent reviewer with a matched review attestation. May be absent in
+    /// exports written before it existed.
+    #[serde(default)]
+    pub agent: Option<ReviewAgent>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -266,11 +290,29 @@ pub struct Change {
     pub reviews_complete: bool,
     pub merger: Option<Identity>,
     pub provenance: Vec<Evidence>,
+    /// The forge labels on the change, sorted and de-duplicated. May be absent in exports
+    /// written before it existed.
+    #[serde(default)]
+    pub labels: Vec<String>,
 }
 
 /// An attestation the collector consulted, as handed over by the caller. `acc` does not verify
 /// signatures: `signed` records that the container carried one, and `verified_by` records the
 /// caller's statement of who verified it. Evidence is `signed` only when both hold.
+/// The identity a verifier established for an attestation's signature.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Signer {
+    /// The certificate's subject alternative name, or the key identifier.
+    pub identity: String,
+    /// The OIDC issuer that vouched for the identity, or null for a raw key.
+    pub issuer: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Attestation {
@@ -282,6 +324,13 @@ pub struct Attestation {
     pub payload_digest: String,
     pub signed: bool,
     pub verified_by: Option<String>,
+    /// The signer, when the attestation came from a verifier's output (`--verification`).
+    #[serde(default)]
+    pub signer: Option<Signer>,
+    /// Whether the attestation matched a fact of the change it is bound to. False for a review
+    /// attestation with no corresponding forge review.
+    #[serde(default = "default_true")]
+    pub matched: bool,
 }
 
 /// A normalized export: the input to evaluation.

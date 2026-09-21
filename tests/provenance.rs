@@ -89,6 +89,30 @@ fn shipped_examples_are_valid() {
     let auth = attestations.authorship(&head).unwrap().unwrap();
     assert_eq!(auth.agent, "codex");
     assert_eq!(auth.operator.as_deref(), Some("github:alice"));
+    // The review document example binds to its head and names an agent reviewer.
+    let review: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("examples/review.intoto.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        review["predicateType"],
+        agent_change_control::provenance::attestations::REVIEW_PREDICATE_TYPE
+    );
+    normalize::schema(&review, "statement").unwrap();
+    normalize::schema(&review["predicate"], "review").unwrap();
+    let review_head = review["subject"][0]["digest"]["gitCommit"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let attestations = agent_change_control::provenance::attestations::Attestations::load(
+        &[root.join("examples/review.intoto.json")],
+        None,
+    )
+    .unwrap();
+    let claims = attestations.reviews(&review_head).unwrap();
+    assert_eq!(claims.len(), 1);
+    assert_eq!(claims[0].agent.as_deref(), Some("claude-code-review"));
+    assert_eq!(claims[0].operator.as_deref(), Some("github:carol"));
     let policy: Policy =
         serde_saphyr::from_str(&std::fs::read_to_string(root.join("examples/policy.yml")).unwrap())
             .unwrap();

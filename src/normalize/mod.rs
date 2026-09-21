@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Validate `value` against one of the embedded schemas: `events`, `manifest`, `policy`,
-/// `provenance` or `statement`.
+/// `provenance`, `statement` or `review`.
 pub fn schema(value: &Value, name: &str) -> Result<()> {
     let raw = match name {
         "events" => include_str!("../../schemas/change-events.schema.json"),
@@ -18,6 +18,7 @@ pub fn schema(value: &Value, name: &str) -> Result<()> {
         "policy" => include_str!("../../schemas/policy.schema.json"),
         "provenance" => include_str!("../../schemas/provenance.schema.json"),
         "statement" => include_str!("../../schemas/statement.schema.json"),
+        "review" => include_str!("../../schemas/review.schema.json"),
         _ => bail!("unknown schema"),
     };
     let definition: Value = serde_json::from_str(raw)?;
@@ -96,6 +97,14 @@ pub fn events(mut e: Events) -> Result<Events> {
             "ACV003 empty attestation verifier"
         );
     }
+    for a in e.attestations.values() {
+        ensure!(
+            a.signer
+                .as_ref()
+                .is_none_or(|s| !s.identity.trim().is_empty()),
+            "ACV003 empty attestation signer"
+        );
+    }
     let attestations = e.attestations.clone();
     let mut ids = BTreeSet::new();
     for c in &mut e.changes {
@@ -146,6 +155,8 @@ pub fn events(mut e: Events) -> Result<Events> {
             }
             evidence(&mut op.provenance, &attestations)?;
         }
+        c.labels.sort();
+        c.labels.dedup();
         let mut review_ids = BTreeSet::new();
         for r in &mut c.reviews {
             ensure!(
@@ -156,6 +167,21 @@ pub fn events(mut e: Events) -> Result<Events> {
                 e.actors.contains_key(&r.actor_id),
                 "ACV003 unresolved review actor"
             );
+            if let Some(agent) = &r.agent {
+                ensure!(
+                    e.actors[&r.actor_id].kind == ActorKind::Agent,
+                    "ACV003 agent review facts on a non-agent reviewer"
+                );
+                for id in [&agent.operator, &agent.instructions_owner]
+                    .into_iter()
+                    .flatten()
+                {
+                    ensure!(
+                        e.actors.get(id).is_some_and(|a| a.kind == ActorKind::Human),
+                        "ACV003 review agent operator or instructions owner must resolve to a human"
+                    );
+                }
+            }
             ensure!(r.at >= c.opened_at, "ACV004 review before opening");
             ensure!(
                 r.state != ReviewState::Approved || c.merged_at.is_none_or(|m| r.at <= m),

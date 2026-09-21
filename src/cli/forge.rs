@@ -51,6 +51,7 @@ pub fn collect(c: &Collect) -> Result<Events> {
     let registry = c.evidence.registry()?;
     let traces = c.evidence.traces()?;
     let attestations = c.evidence.attestations()?;
+    let vendors = c.evidence.vendors()?;
     Github::new(io::token(), c.max_pages)?.collect(
         &c.repository,
         from,
@@ -61,6 +62,7 @@ pub fn collect(c: &Collect) -> Result<Events> {
             trailers: registry.as_ref(),
             traces: traces.as_ref(),
             attestations: attestations.as_ref(),
+            vendors: &vendors,
         },
     )
 }

@@ -45,11 +45,26 @@ All notable changes to this project are documented here. The format is based on
   (default `observed`). An operator below the minimum does not name the effective human (ACC006
   fails, independence unknown); an approval below the minimum does not qualify.
 - `examples/provenance.intoto.json`, the provenance document as a Statement to sign.
+- The review document (`schemas/review.schema.json`, predicate type
+  `https://noru.tech/spec/ai-change-provenance/review/v0.1`): a signed statement of who
+  reviewed what and decided what, naming the reviewer in the predicate. Read by
+  `--attestations`, it upgrades the forge's matching review (evidence becomes `signed`) and
+  never creates one; unmatched documents are recorded with `matched: false`. For an agent
+  reviewer the review records `agent` (operator, identity, instructions owner, model).
+- `--verification PATH` (and the `verification` action input): the JSON that
+  `gh attestation verify --format json` writes, loaded as signed attestations with the `signer`
+  the verifier established (identity and issuer) recorded on the attestation.
+- Agent vendors: agent actors carry `vendor` from a built-in registry (`claude-code` →
+  `anthropic`, `copilot` → `github`, `codex` → `openai`, …) extended by
+  `--agent-vendor AGENT=VENDOR` and the `agent-vendor` action input.
+- Pull request labels are collected as `labels` on changes.
+- `examples/review.intoto.json`.
 
 ### Changed
 - Specification 0.1 revision 3: §4 records the merge commit, §7.3 defines both attestation
   forms and the verifier's subject check. Revision 4: §3.2 provenance attestations, §3.6
-  evidence strength and pre-verified input, §6.3 evidence minimums.
+  evidence strength and pre-verified input, §6.3 evidence minimums. Revision 5: §3.7 review
+  document, signer records, vendors, labels.
 
 ## [0.3.1] - 2026-09-19
 

@@ -122,6 +122,30 @@ signature, the claim is `declared`. `acc` never verifies a signature itself; the
 is your statement, and the manifest says so. In the GitHub Action the inputs are `attestations`
 and `verified-by`.
 
+## Signing a review
+
+A reviewer's tooling can sign what it decided, as a review document
+([spec §3.7](../spec/ai-change-provenance.md#37-review-document));
+[`examples/review.intoto.json`](../examples/review.intoto.json) is one for an agent reviewer. It
+names the reviewer, the decision and the head commit, and for an agent the human who operated it,
+who owns its instructions, and the model. Sign it exactly like the authorship claim, then verify
+and hand it back. The verifier's JSON output is the best way to do that, because it carries both
+the bundle and the identity the verifier established:
+
+```bash
+gh attestation verify --format json --bundle review.sigstore.json \
+  --predicate-type https://noru.tech/spec/ai-change-provenance/review/v0.1 \
+  --owner acme review.intoto.json > verified.json
+acc pr 421 --repo acme/api --verification verified.json \
+  --verified-by "gh attestation verify, workflow run 123"
+```
+
+`acc` matches the document to the review the forge recorded (reviewer account, head commit,
+decision) and adds its evidence to that review; a document with no matching review is recorded
+as unmatched and creates nothing. The signer from the verifier's output is recorded on the
+attestation and, for an agent reviewer, as the review's `identity`. A human review attested this
+way carries `signed` evidence, which is what `minimum_review_evidence: signed` requires.
+
 ## Verifying
 
 Verification has two halves: the signature, which says who signed, and the content, which says
@@ -149,8 +173,7 @@ predicate marks collection incomplete validates, but cannot be read as clean; ch
 What verification does not establish: that the events in the predicate are what the forge held at
 the time. The signer attests that this evaluator, run by this identity, saw these facts; a
 declaration inside them is still a declaration (see [agent authorship](agent-authorship.md)),
-unless it was itself attested and verified (previous section). Signed review evidence is future
-work.
+unless it was itself attested and verified (previous sections).
 
 ## Privacy
 

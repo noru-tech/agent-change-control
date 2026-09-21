@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/review.schema.json",
+  "$comment": "A review document: the predicate of https://noru.tech/spec/ai-change-provenance/review/v0.1, signed by the reviewer's tooling and bound to a head commit. Names the reviewer in the predicate so that a consumer reading pre-verified attestations can use it.",
+  "$ref": "#/$defs/review",
+  "$defs": {
+    "review": {
+      "type": "object",
+      "properties": {
+        "spec_version": {
+          "const": "0.1"
+        },
+        "reviewer": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "human",
+                "agent"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "agent": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "changes_requested",
+            "commented"
+          ]
+        },
+        "change": {
+          "type": "object",
+          "properties": {
+            "head_commit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "head_commit"
+          ],
+          "additionalProperties": false
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operator": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "owner": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "digest": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^sha256:[a-f0-9]{64}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "owner"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "started_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "started_at"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "spec_version",
+        "reviewer",
+        "decision",
+        "change",
+        "submitted_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
