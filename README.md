@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./docs/assets/agent-change-control-logo.png" alt="agent-change-control logo" width="480">
+</p>
+
 # agent-change-control
 
 > **Enforcing the four-eyes principle for coding agents.**
