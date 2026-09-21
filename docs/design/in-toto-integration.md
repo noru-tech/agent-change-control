@@ -349,3 +349,9 @@ as currently unsatisfiable.
 
 Also not done: gittuf as a source (same reason), and fetching attestations from the GitHub
 attestations API inside the collector (the plan defers it).
+
+## 12. Phase 4 (design under review)
+
+The design for agent reviewers, the independence dimensions, the review predicate that closes
+section 11's gap, and the policy and rules (ACC007 to ACC010) is in
+[agent-reviewers.md](agent-reviewers.md). No code until Bip has reviewed it.
