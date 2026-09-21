@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-21
+
 ### Added
 - `merge_commit_sha` on changes: the commit a merge produced, recorded by the GitHub collector
   for merged pull requests and null otherwise. The key is optional on input, so exports written
@@ -132,7 +134,8 @@ All notable changes to this project are documented here. The format is based on
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/agent-change-control/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/agent-change-control/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/noru-tech/agent-change-control/compare/v0.1.0...v0.2.0
