@@ -301,3 +301,51 @@ Signing stays outside `acc`. What changed, and what was decided:
 
 Not done: signature verification inside `acc` (Phase 3, section 5.6 of the plan), and
 pseudonymization.
+
+## 11. Phase 3 (implemented 2026-09-21)
+
+Bip chose pre-verified input. What landed:
+
+- **Evidence strength.** `signed` joins `EvidenceKind`; the trust ordering is
+  `derived < declared < observed < signed` (`EvidenceKind::strength`), separate from the string
+  order used to sort evidence lists. Forge-observed facts sit above declarations, which section
+  5.6 had not placed.
+- **Attestation input.** `--attestations PATH` reads bare Statements, DSSE envelopes and
+  Sigstore bundles (`.json`, `.jsonl`, directories); `--verified-by TEXT` is the caller's
+  statement of who verified the signatures. The export gains an `attestations` record (optional
+  on input) with file, predicate type, payload digest, whether a signature was present, and the
+  verifier. Evidence is `signed` only when both hold; validation rejects `signed` evidence that
+  does not resolve to such a record, so a manifest cannot claim more than its input stated.
+- **Authorship.** The spec's provenance document is the predicate
+  `https://noru.tech/spec/ai-change-provenance/provenance/v0.1` with the head commit as
+  subject. It joins the explicit tier: an attestation and an inline declaration must agree
+  (agent, and operator when both name one) and their evidence is merged; disagreement is an
+  error for the change. The operator resolves through the API exactly as for declarations, so
+  ACC006 clears when the attestation names a known human.
+- **Policy.** `minimum_authorship_evidence` (default `derived`) and `minimum_review_evidence`
+  (default `observed`). Below the authorship minimum the operator is treated as unknown with a
+  distinct reason; below the review minimum an approval does not qualify. Both only move a
+  verdict away from pass. Default goldens are unchanged except for the two new policy keys.
+
+**Review evidence was not delivered, and needs a decision.** The plan's item 4 (the
+`human-review` predicate) and item 5 (gittuf) both carry the reviewer in the *signature*: the
+human-review example has `result`, `reviewLink` and `timestamp` only, and gittuf's reference
+authorization has the target ref and tree. With pre-verified input `acc` never sees the
+signature, so it cannot name the reviewer, and an approval without an actor cannot be
+independent of anyone. The options, in the order I would rank them:
+
+1. Define a review predicate of our own that names the reviewer in the predicate
+   (`reviewer`, `decision`, `commit`, `at`), signed by the reviewer, verified by the caller like
+   authorship. Same trust model as Phase 3, but a new predicate that Bip should review, and it
+   overlaps Phase 4's agent-reviewer design.
+2. Verify signatures inside `acc` for review attestations only, mapping the certificate identity
+   to a forge account through a caller-supplied identity map. Reverses the Phase 3 decision for
+   one case and imports the trust-root problem.
+3. Leave review evidence at `observed` until Phase 4 settles reviewer identity for agents and
+   humans together.
+
+Option 3 is what this phase does; `minimum_review_evidence: signed` is accepted and documented
+as currently unsatisfiable.
+
+Also not done: gittuf as a source (same reason), and fetching attestations from the GitHub
+attestations API inside the collector (the plan defers it).

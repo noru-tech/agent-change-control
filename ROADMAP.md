@@ -54,8 +54,13 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 - **ACP trailers** (`Agent-Author:`, `Agent-Operator:`) as an explicit-tier declaration form for
   agents that commit but do not open pull requests. Reserved in spec 0.1; defined in 0.2 with
   precedence against the inline block.
-- **Signed provenance.** Verification of DSSE-wrapped provenance documents (§3.2) so that a
-  declaration can be authenticated, not merely recorded. Likely Sigstore first.
+- **Signature verification inside `acc`.** Signed provenance documents are read today as
+  pre-verified input with a recorded verifier (§3.6). Verifying them in `acc` needs a trust-root
+  configuration (which identities may sign which claims); until then the verifier statement is
+  the caller's. Likely Sigstore bundles first.
+- **Signed review evidence.** The review predicates in circulation carry the reviewer in the
+  signature, so they cannot be read without verification. Either a review predicate that names
+  the reviewer, or in-`acc` verification, unlocks `minimum_review_evidence: signed`.
 - **`acc verify`** for signed attestations: unwrap the DSSE envelope, then apply what
   `acc validate` already does for unsigned Statements (subjects match the predicate, the predicate
   re-validates), and check the subjects against a commit range.

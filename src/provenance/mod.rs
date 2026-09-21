@@ -1,8 +1,10 @@
 //! Agent authorship evidence: the fenced declaration in a change description, the separately
-//! published provenance-file convention, and the lower tier of vendor `Co-Authored-By` trailers
-//! that agents already write into commits.
+//! published provenance-file convention (bare, or as a signed attestation the caller verified),
+//! and the lower tier of vendor `Co-Authored-By` trailers that agents already write into
+//! commits.
 
 pub mod agent_trace;
+pub mod attestations;
 
 use crate::model::*;
 use anyhow::{Result, anyhow, ensure};

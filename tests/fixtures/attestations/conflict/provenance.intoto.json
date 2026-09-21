@@ -1,0 +1,30 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "github:acme/api:pr:421",
+      "digest": {
+        "gitCommit": "head"
+      }
+    }
+  ],
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/provenance/v0.1",
+  "predicate": {
+    "spec_version": "0.1",
+    "agent": {
+      "name": "codex",
+      "version": "2026.9.1"
+    },
+    "operator": {
+      "id": "github:alice"
+    },
+    "session": {
+      "id": "sess_7f3a",
+      "started_at": "2026-08-01T11:58:00Z"
+    },
+    "change": {
+      "base_commit": "base",
+      "head_commit": "head"
+    }
+  }
+}

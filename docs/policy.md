@@ -5,6 +5,8 @@ The evaluator uses defaults unless a policy is passed or `.agent-change-control/
 ```yaml
 version: "0.1"
 fail_on: medium
+minimum_authorship_evidence: derived   # derived | declared | observed | signed
+minimum_review_evidence: observed      # derived | declared | observed | signed
 rules:
   agent_change_without_independent_human:
     enabled: true
@@ -21,6 +23,8 @@ rules:
 ```
 
 Severity order is info < warning < medium < high; a finding at or above `fail_on` fails `check`. Incomplete collection takes exit-code precedence. ACC006 is advisory by default; unknown independence does not prove a violation.
+
+Evidence kinds are ordered derived < declared < observed < signed. `minimum_authorship_evidence` is the weakest kind an agent operator claim may rest on: below it the operator does not name the effective human, ACC006 fails with the reason "below the policy minimum", and ACC001, ACC002 and ACC003 are unknown. `minimum_review_evidence` is the weakest kind an approval may rest on: below it the approval does not qualify as independent. Forge-observed approvals are `observed`, so `signed` review evidence cannot be satisfied until signed review attestations can be read (see [agent authorship](agent-authorship.md#signed-tier)); the key exists so a policy can say what it requires. Both keys only move a verdict away from pass.
 
 ## Exact deterministic conditions
 

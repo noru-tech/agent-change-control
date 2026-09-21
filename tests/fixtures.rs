@@ -192,6 +192,111 @@ fn policy_override_changes_the_verdict_not_the_facts() {
 }
 
 #[test]
+fn evidence_minimums_turn_weak_facts_into_unknowns_not_passes() {
+    // claude-clean: declared operator, observed independent approval. Requiring signed
+    // authorship evidence makes the operator unknown for evaluation (ACC006 fails, ACC001 and
+    // ACC003 unknown); requiring signed review evidence disqualifies the approval (ACC001 and
+    // ACC003 fail). Neither can produce a pass.
+    let e: Events =
+        serde_json::from_str(include_str!("fixtures/claude-clean/events.json")).unwrap();
+    let signed_authorship = Policy {
+        minimum_authorship_evidence: EvidenceKind::Signed,
+        ..Policy::default()
+    };
+    let m = manifest::evaluate(e.clone(), signed_authorship).unwrap();
+    let codes: Vec<_> = m.findings.iter().map(|f| f.rule_id).collect();
+    assert_eq!(codes, vec![RuleId::Acc006]);
+    assert!(
+        m.findings[0]
+            .explanation
+            .contains("below the policy minimum")
+    );
+    let status = |id: RuleId| {
+        m.assessments
+            .iter()
+            .find(|a| a.rule_id == id)
+            .unwrap()
+            .status
+    };
+    assert_eq!(status(RuleId::Acc001), Status::Unknown);
+    assert_eq!(status(RuleId::Acc003), Status::Unknown);
+    assert_eq!(m.summary.clean, 0);
+    let signed_review = Policy {
+        minimum_review_evidence: EvidenceKind::Signed,
+        ..Policy::default()
+    };
+    let m = manifest::evaluate(e.clone(), signed_review).unwrap();
+    let codes: Vec<_> = m.findings.iter().map(|f| f.rule_id).collect();
+    assert_eq!(codes, vec![RuleId::Acc001, RuleId::Acc003]);
+    // The defaults accept everything the fixture carries.
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    assert!(m.findings.is_empty());
+    manifest::validate(&m).unwrap();
+}
+
+#[test]
+fn signed_evidence_must_resolve_to_a_verified_attestation() {
+    let base: Events =
+        serde_json::from_str(include_str!("fixtures/claude-clean/events.json")).unwrap();
+    let signed = Evidence {
+        source: "attestation".into(),
+        r#ref: "attestation:0123456789abcdef".into(),
+        kind: EvidenceKind::Signed,
+    };
+    let record = |signed: bool, verified: Option<&str>| Attestation {
+        file: "prov.json#1".into(),
+        predicate_type: "https://noru.tech/spec/ai-change-provenance/provenance/v0.1".into(),
+        payload_digest: format!("sha256:0123456789abcdef{}", "0".repeat(48)),
+        signed,
+        verified_by: verified.map(String::from),
+    };
+    // Unresolved reference.
+    let mut e = base.clone();
+    e.changes[0].author.provenance.push(signed.clone());
+    let err = normalize::events(e).unwrap_err().to_string();
+    assert!(err.contains("ACV003"), "{err}");
+    // Resolved, but the attestation carried no signature.
+    let mut e = base.clone();
+    e.changes[0].author.provenance.push(signed.clone());
+    e.attestations
+        .insert(signed.r#ref.clone(), record(false, Some("me")));
+    assert!(normalize::events(e).is_err());
+    // Resolved and signed, but nobody stated they verified it.
+    let mut e = base.clone();
+    e.changes[0].author.provenance.push(signed.clone());
+    e.attestations
+        .insert(signed.r#ref.clone(), record(true, None));
+    assert!(normalize::events(e).is_err());
+    // Signed evidence from any other source is rejected.
+    let mut e = base.clone();
+    e.changes[0].author.provenance.push(Evidence {
+        source: "pr_metadata".into(),
+        ..signed.clone()
+    });
+    assert!(normalize::events(e).is_err());
+    // A malformed or mismatched registry entry is rejected.
+    let mut e = base.clone();
+    e.attestations
+        .insert("attestation:nothex".into(), record(true, Some("me")));
+    assert!(normalize::events(e).is_err());
+    let mut e = base.clone();
+    e.attestations.insert(
+        "attestation:fedcba9876543210".into(),
+        record(true, Some("me")),
+    );
+    assert!(normalize::events(e).is_err());
+    // The consistent case validates, round-trips the schema and stays byte-stable.
+    let mut e = base;
+    e.changes[0].author.provenance.push(signed.clone());
+    e.attestations
+        .insert(signed.r#ref.clone(), record(true, Some("me")));
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    normalize::schema(&serde_json::to_value(&m).unwrap(), "manifest").unwrap();
+    manifest::validate(&m).unwrap();
+    assert_eq!(m.events.attestations.len(), 1);
+}
+
+#[test]
 fn schema_rejects_extra_fields() {
     let mut v: Value =
         serde_json::from_str(include_str!("fixtures/human-clean/events.json")).unwrap();

@@ -6,6 +6,7 @@
 use crate::model::*;
 use crate::normalize::timestamp;
 use crate::provenance::agent_trace::AgentTraces;
+use crate::provenance::attestations::{self, Attestations};
 use crate::{Exit, failure};
 use anyhow::{Result, ensure};
 use serde_json::Value;
@@ -28,6 +29,8 @@ pub struct Sources<'a> {
     pub trailers: Option<&'a BTreeMap<String, String>>,
     /// Agent Trace records to bind to commits, if any.
     pub traces: Option<&'a AgentTraces>,
+    /// Attestations to bind to head commits, if any.
+    pub attestations: Option<&'a Attestations>,
 }
 
 pub struct Github {
@@ -156,10 +159,10 @@ impl Github {
         Ok((all, false))
     }
 
-    /// Collect the pull requests merged in `[from, to]`, or the single pull request `pr`.
     /// Collect the pull requests merged in `from..=to` (or the single pull request `pr`),
-    /// establishing agent authorship from `sources` in tier order: declaration or verified
-    /// account first, then derived evidence (trailers, Agent Trace records).
+    /// establishing agent authorship from `sources` in tier order: attestation and declaration
+    /// (which must agree) or verified account first, then derived evidence (trailers, Agent
+    /// Trace records).
     pub fn collect(
         &self,
         repository: &str,
@@ -172,6 +175,7 @@ impl Github {
             known,
             trailers,
             traces,
+            attestations,
         } = sources;
         validate_repo(repository)?;
         if from > to {
@@ -187,6 +191,7 @@ impl Github {
                 reason: None,
             },
             actors: BTreeMap::new(),
+            attestations: BTreeMap::new(),
             changes: vec![],
         };
         let (numbers, complete) = match pr {
@@ -364,7 +369,44 @@ impl Github {
             let declared = crate::provenance::declaration(body)?;
             let login = p["user"]["login"].as_str().map(|l| l.to_ascii_lowercase());
             let mapped = login.as_deref().and_then(|l| known.get(l));
-            if let Some((agent, op)) = declared {
+            // The explicit tier: a provenance attestation bound to the head, the inline
+            // declaration, or both when they agree. Disagreement is an error, never a guess.
+            let attested = match attestations {
+                Some(a) => a.authorship(&head)?,
+                None => None,
+            };
+            let declaration_evidence = evidence(
+                &format!(
+                    "https://github.com/{repository}/pull/{n}#issue-{}",
+                    number(&p, "id")?
+                ),
+                EvidenceKind::Declared,
+            );
+            let explicit = match (attested, declared) {
+                (Some(att), Some((agent, op))) => {
+                    ensure!(
+                        att.agent == agent,
+                        "conflicting attested and declared agent"
+                    );
+                    if let (Some(a), Some(d)) = (&att.operator, &op) {
+                        ensure!(
+                            attestations::same_operator(a, d, "github"),
+                            "conflicting attested and declared operator"
+                        );
+                    }
+                    e.attestations.extend(att.records);
+                    let mut provenance = att.evidence;
+                    provenance.push(declaration_evidence);
+                    Some((agent, att.operator.or(op), provenance))
+                }
+                (Some(att), None) => {
+                    e.attestations.extend(att.records);
+                    Some((att.agent, att.operator, att.evidence))
+                }
+                (None, Some((agent, op))) => Some((agent, op, vec![declaration_evidence])),
+                (None, None) => None,
+            };
+            if let Some((agent, op, provenance)) = explicit {
                 if let Some(known_agent) = mapped {
                     ensure!(
                         *known_agent == agent,
@@ -387,13 +429,7 @@ impl Github {
                     agent,
                     op,
                     "github",
-                    vec![evidence(
-                        &format!(
-                            "https://github.com/{repository}/pull/{n}#issue-{}",
-                            number(&p, "id")?
-                        ),
-                        EvidenceKind::Declared,
-                    )],
+                    provenance,
                     Confidence::Explicit,
                 )?;
             } else if let (Some(login), Some(agent)) = (login.as_deref(), mapped) {
@@ -623,6 +659,7 @@ mod tests {
                 reason: None,
             },
             actors: BTreeMap::new(),
+            attestations: BTreeMap::new(),
             changes: vec![],
         };
         incomplete(&mut e, "a");

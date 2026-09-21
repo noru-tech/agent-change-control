@@ -38,6 +38,7 @@ predicate:
       "github:ci":
         display_name: CI
         kind: bot
+    attestations: {}
     changes:
       - agent_operator: ~
         author:
@@ -90,11 +91,13 @@ predicate:
       to: "2026-08-31T23:59:59Z"
   findings: []
   generated:
-    source_digest: "sha256:9e446623543210a6e9649f3269697eb953033783f5627a66248f5cb1a4fc1cfb"
+    source_digest: "sha256:ebe0e75449e89a1c78ff85329e02f3fab7b4dcb8bd8e45cbd6999c7733dd65f4"
     tool: agent-change-control
     version: 0.3.1
   policy:
     fail_on: medium
+    minimum_authorship_evidence: derived
+    minimum_review_evidence: observed
     rules:
       agent_change_without_independent_human:
         enabled: true

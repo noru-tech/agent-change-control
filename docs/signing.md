@@ -94,6 +94,34 @@ cosign attest-blob --predicate acc-manifest.json \
 Keyless signing through the public Sigstore instance writes an entry to Rekor, which is public
 and permanent. See the privacy note.
 
+## Signing an authorship claim
+
+The other direction: an agent's integration, or the operator, signs a provenance document
+([spec §3.2](../spec/ai-change-provenance.md#32-provenance-document)) so that the authorship
+claim is authenticated rather than merely declared. The document becomes the predicate of a
+Statement whose subject is the head commit; [`examples/provenance.intoto.json`](../examples/provenance.intoto.json)
+is one. Sign it as you would the verdict:
+
+```bash
+cosign attest-blob --statement provenance.intoto.json --bundle provenance.sigstore.json --yes -
+```
+
+Then hand the result back to `acc` when collecting, after verifying it with the signer's tooling:
+
+```bash
+cosign verify-blob-attestation --bundle provenance.sigstore.json ... && \
+acc pr 421 --repo acme/api --attestations provenance.sigstore.json \
+  --verified-by "cosign verify-blob-attestation, alice@example.com via GitHub OIDC"
+```
+
+`acc` binds the attestation to the change by its head commit, requires it to agree with any
+inline declaration, and records the file, predicate type, payload digest and your `--verified-by`
+text in the manifest. The claim then carries `signed` evidence, and a policy can require that
+(`minimum_authorship_evidence: signed`). Without `--verified-by`, or from a file that carries no
+signature, the claim is `declared`. `acc` never verifies a signature itself; the recorded verifier
+is your statement, and the manifest says so. In the GitHub Action the inputs are `attestations`
+and `verified-by`.
+
 ## Verifying
 
 Verification has two halves: the signature, which says who signed, and the content, which says
@@ -120,8 +148,9 @@ predicate marks collection incomplete validates, but cannot be read as clean; ch
 
 What verification does not establish: that the events in the predicate are what the forge held at
 the time. The signer attests that this evaluator, run by this identity, saw these facts; a
-declaration inside them is still a declaration (see [agent authorship](agent-authorship.md)).
-Signed authorship and review evidence, which would strengthen that, is future work.
+declaration inside them is still a declaration (see [agent authorship](agent-authorship.md)),
+unless it was itself attested and verified (previous section). Signed review evidence is future
+work.
 
 ## Privacy
 

@@ -48,6 +48,8 @@ with.
 | `agent-trailer` | none | Extra `Co-Authored-By` identities, one `EMAIL=AGENT` per line |
 | `ignore-trailers` | `false` | Do not read `Co-Authored-By` trailers |
 | `agent-trace` | none | Agent Trace record files or directories, one path per line |
+| `attestations` | none | Attestation files or directories (Statements, DSSE envelopes, Sigstore bundles), one path per line, bound by head commit; not verified by `acc` |
+| `verified-by` | none | Who verified the attestations' signatures in an earlier step, recorded verbatim; without it their claims are `declared` |
 | `format` | `sarif` | `sarif`, `json`, `yaml`, `table`, `in-toto` or `in-toto-jsonl` |
 | `output` | `acc-results.sarif` | Where the rendered output is written |
 | `fail-on-findings` | `true` | Fail the step on exit 1 (policy) or exit 4 (incomplete) |

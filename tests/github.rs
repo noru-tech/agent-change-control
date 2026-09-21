@@ -1,9 +1,12 @@
 //! The GitHub collector against a loopback HTTP server that replays fixture responses.
 
 use agent_change_control::collectors::github::{Github, Sources, UNAVAILABLE_ACTOR};
-use agent_change_control::model::{ActorKind, Confidence, Events, EvidenceKind, Policy, RuleId};
+use agent_change_control::model::{
+    ActorKind, Confidence, Events, EvidenceKind, Policy, RuleId, Status,
+};
 use agent_change_control::normalize::timestamp;
 use agent_change_control::provenance::agent_trace::AgentTraces;
+use agent_change_control::provenance::attestations::Attestations;
 use agent_change_control::provenance::trailer_registry;
 use agent_change_control::{Exit, exit_for, manifest};
 use serde_json::Value;
@@ -180,7 +183,7 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
         "deleted-merger" => edited(PULL, |v| v["merged_by"] = Value::Null),
         // No declaration in the body: only the commit trailer speaks to authorship.
         "trailer-only" | "trailer-bot-author" | "trailer-two-agents" | "trailers-ignored"
-        | "trace-only" | "trace-and-trailer" => {
+        | "trace-only" | "trace-and-trailer" | "attested-only" => {
             edited(PULL, |v| v["body"] = "Plain description".into())
         }
         _ => PULL.into(),
@@ -205,6 +208,22 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
     let registry = (mode != "trailers-ignored").then(|| trailer_registry(&BTreeMap::new()));
     let traces = matches!(mode, "trace-only" | "trace-and-trailer")
         .then(|| AgentTraces::load(&[fixture("agent-trace")]).unwrap());
+    let attestations = match mode {
+        "attested" | "attested-only" => Some(
+            Attestations::load(
+                &[fixture("attestations/agree")],
+                Some("gh attestation verify (test)".into()),
+            )
+            .unwrap(),
+        ),
+        "attested-unverified" => {
+            Some(Attestations::load(&[fixture("attestations/agree")], None).unwrap())
+        }
+        "attested-conflict" => {
+            Some(Attestations::load(&[fixture("attestations/conflict")], Some("x".into())).unwrap())
+        }
+        _ => None,
+    };
     Github::with_base(None, pages, &server.base)?.collect(
         "acme/api",
         from,
@@ -214,6 +233,7 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
             known,
             trailers: registry.as_ref(),
             traces: traces.as_ref(),
+            attestations: attestations.as_ref(),
         },
     )
 }
@@ -245,6 +265,87 @@ fn github_export_evaluate_and_check() {
     let m = manifest::evaluate(e, Policy::default()).unwrap();
     assert!(m.findings.is_empty());
     assert_eq!(manifest::check(&m, None, None).unwrap().1, Exit::Ok);
+}
+
+#[test]
+fn verified_attestations_are_signed_evidence_and_must_agree_with_declarations() {
+    // The declaration (claude-code, alice) and the DSSE-wrapped provenance attestation agree:
+    // the operator is explicit, and the attestation's evidence is signed because the container
+    // carried a signature and the caller stated who verified it.
+    let e = collect("attested").unwrap();
+    let c = &e.changes[0];
+    let op = c.agent_operator.as_ref().unwrap();
+    assert_eq!(op.actor_id.as_deref(), Some("github:alice"));
+    assert_eq!(op.confidence, Confidence::Explicit);
+    let signed: Vec<_> = op
+        .provenance
+        .iter()
+        .filter(|p| p.kind == EvidenceKind::Signed)
+        .collect();
+    assert_eq!(signed.len(), 1);
+    assert_eq!(signed[0].source, "attestation");
+    let record = &e.attestations[&signed[0].r#ref];
+    assert!(record.signed);
+    assert_eq!(
+        record.verified_by.as_deref(),
+        Some("gh attestation verify (test)")
+    );
+    assert!(record.file.ends_with("provenance.dsse.json#1"));
+    assert!(
+        op.provenance
+            .iter()
+            .any(|p| p.kind == EvidenceKind::Declared)
+    );
+    let m = manifest::evaluate(e.clone(), Policy::default()).unwrap();
+    assert!(m.findings.is_empty());
+    // A policy that requires signed authorship evidence is satisfied here...
+    let strict = Policy {
+        minimum_authorship_evidence: EvidenceKind::Signed,
+        ..Policy::default()
+    };
+    let m = manifest::evaluate(e, strict.clone()).unwrap();
+    assert!(m.findings.is_empty());
+    // ...and not by the same attestation without a stated verifier: the claims are declared.
+    let e = collect("attested-unverified").unwrap();
+    let op = e.changes[0].agent_operator.as_ref().unwrap();
+    assert!(op.provenance.iter().all(|p| p.kind != EvidenceKind::Signed));
+    assert!(
+        e.attestations
+            .values()
+            .all(|a| a.signed && a.verified_by.is_none())
+    );
+    let m = manifest::evaluate(e, strict).unwrap();
+    let acc006 = m
+        .findings
+        .iter()
+        .find(|f| f.rule_id == RuleId::Acc006)
+        .unwrap();
+    assert!(acc006.explanation.contains("below the policy minimum"));
+    assert!(
+        m.assessments
+            .iter()
+            .any(|a| a.rule_id == RuleId::Acc001 && a.status == Status::Unknown)
+    );
+    // An attestation alone (no declaration in the body) establishes explicit authorship.
+    let e = collect("attested-only").unwrap();
+    let c = &e.changes[0];
+    assert_eq!(c.author.actor_id, "agent:claude-code");
+    assert_eq!(
+        c.agent_operator.as_ref().unwrap().confidence,
+        Confidence::Explicit
+    );
+    assert!(
+        c.author
+            .provenance
+            .iter()
+            .all(|p| p.source == "attestation")
+    );
+    // An attestation naming another agent than the declaration is an error, never a guess.
+    let err = collect("attested-conflict").unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("conflicting attested and declared agent")
+    );
 }
 
 #[test]

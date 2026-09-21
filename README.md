@@ -101,7 +101,9 @@ Or gate every pull request with the [GitHub Action](docs/github-action.md):
    ````
 
    Accounts your organization has verified as agents can be mapped instead:
-   `--agent-account 'my-agent[bot]=codex'`.
+   `--agent-account 'my-agent[bot]=codex'`. A signed provenance document, handed over as an
+   attestation after you verified it (`--attestations PATH --verified-by TEXT`), makes the same
+   claim with `signed` evidence, which a policy can require.
 
    Below that sits a **derived tier**, read only when no declaration applies: the
    `Co-Authored-By` trailers that Claude Code and Copilot already write into commits, and
@@ -219,7 +221,9 @@ overrides it; mixed human authorship is not resolved in this release.
 
 `acc` does not detect AI-written code, does not treat bots as agents, does not guess that the
 merger operated the agent, and does not call a model. A declaration is declared evidence, not
-authenticated identity; a digest detects inconsistency, not forgery. A clean result is a statement
+authenticated identity; a digest detects inconsistency, not forgery. `acc` does not verify
+signatures: attestations are read as pre-verified input and the manifest records who said they
+verified them. A clean result is a statement
 about the recorded scope, not a compliance certification. See the
 [roadmap](ROADMAP.md) for what comes next, including GitLab collection and signed provenance.
 
