@@ -12,4 +12,5 @@ Synthetic inputs for the offline commands live in `tests/fixtures/`; for instanc
 ```bash
 acc evaluate tests/fixtures/claude-operator-self-approved/events.json --format table
 acc evaluate tests/fixtures/claude-clean/events.json --format in-toto
+acc evaluate tests/fixtures/claude-clean/events.json -o clean.intoto.jsonl && acc validate clean.intoto.jsonl
 ```

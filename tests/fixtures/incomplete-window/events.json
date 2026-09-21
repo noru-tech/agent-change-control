@@ -39,6 +39,7 @@
       "opened_at": "2026-08-01T12:00:00Z",
       "merged_at": "2026-08-03T12:00:00Z",
       "head_sha": "head",
+      "merge_commit_sha": null,
       "commits": [
         {
           "sha": "head",

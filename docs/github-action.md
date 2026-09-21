@@ -48,7 +48,7 @@ with.
 | `agent-trailer` | none | Extra `Co-Authored-By` identities, one `EMAIL=AGENT` per line |
 | `ignore-trailers` | `false` | Do not read `Co-Authored-By` trailers |
 | `agent-trace` | none | Agent Trace record files or directories, one path per line |
-| `format` | `sarif` | `sarif`, `json`, `yaml`, `table` or `in-toto` |
+| `format` | `sarif` | `sarif`, `json`, `yaml`, `table`, `in-toto` or `in-toto-jsonl` |
 | `output` | `acc-results.sarif` | Where the rendered output is written |
 | `fail-on-findings` | `true` | Fail the step on exit 1 (policy) or exit 4 (incomplete) |
 | `verify-attestation` | `true` | Verify the release archive with `gh attestation verify` before running it |
@@ -109,8 +109,10 @@ the [specification](../spec/ai-change-provenance.md).
 ## Attesting the verdict
 
 `format: in-toto` writes an unsigned in-toto Statement whose subjects are the pull request's head
-commit and whose predicate is the manifest. Sign it with the DSSE signer you already trust and
-store it next to the build provenance of the release that ships the change:
+commit and, once merged, its merge commit, and whose predicate is the manifest. Sign it with the
+DSSE signer you already trust and store it next to the build provenance of the release that ships
+the change (see [in-toto](in-toto.md) and, before publishing to a transparency log,
+[privacy](privacy.md)):
 
 ```yaml
       - uses: noru-tech/agent-change-control@v0.3.1

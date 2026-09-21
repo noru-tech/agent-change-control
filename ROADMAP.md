@@ -56,8 +56,9 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   precedence against the inline block.
 - **Signed provenance.** Verification of DSSE-wrapped provenance documents (§3.2) so that a
   declaration can be authenticated, not merely recorded. Likely Sigstore first.
-- **`acc verify`** for attestations produced by `--format in-toto`: unwrap, check subjects against
-  a commit range, re-validate the predicate.
+- **`acc verify`** for signed attestations: unwrap the DSSE envelope, then apply what
+  `acc validate` already does for unsigned Statements (subjects match the predicate, the predicate
+  re-validates), and check the subjects against a commit range.
 - **Dismissal timing** via GitHub's GraphQL timeline, so dismissed reviews stop forcing
   `reviews_complete: false`.
 - **Deployment and bypass rules** (ACC004, ACC005 reserved): merged without required checks,

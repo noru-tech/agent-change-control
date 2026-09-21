@@ -63,6 +63,7 @@ predicate:
               source: github_api
         head_sha: head
         id: "github:acme/api:pr:421"
+        merge_commit_sha: merge
         merged_at: "2026-08-03T12:00:00Z"
         merger:
           actor_id: "github:alice"
@@ -120,7 +121,7 @@ predicate:
       rule_id: ACC006
       severity: warning
   generated:
-    source_digest: "sha256:336cfba5231f6d816fa22dfd3a63f166d382b6c78cdad166388bb2f0d8387af7"
+    source_digest: "sha256:663e64753aee309d77ce38228c9b3f9ac4280f00496d872d647b1e0ec791166a"
     tool: agent-change-control
     version: 0.3.1
   policy:
@@ -154,3 +155,6 @@ subject:
   - digest:
       gitCommit: head
     name: "github:acme/api:pr:421"
+  - digest:
+      gitCommit: merge
+    name: "github:acme/api:pr:421:merge"

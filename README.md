@@ -44,10 +44,10 @@ The convention it implements is published as [AI Change Provenance 0.1](spec/ai-
 | Piece | Where |
 | --- | --- |
 | **Specification** — AI Change Provenance 0.1: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
-| **Schemas** — events, manifest, policy, provenance (JSON Schema 2020-12) | [`schemas/`](schemas/) |
+| **Schemas** — events, manifest, policy, provenance, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
-| **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 | [`src/output/`](src/output/) |
+| **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
 | **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
 
 ## Install
@@ -147,14 +147,15 @@ approval-after-merge data produces ACV001, separately from governance findings.
 | `acc scan github OWNER/REPO --since D --until D` | Collect merged PRs and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
 | `acc export github OWNER/REPO --since D --until D` | Write normalized events as JSON for offline evaluation |
 | `acc evaluate EVENTS` | Evaluate an export offline into a manifest (`--policy`, `-f`, `-o`) |
-| `acc validate MANIFEST` | Check schema, timeline, references and recomputed findings, summary and digest |
+| `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
 | `acc pr NUMBER --repo OWNER/REPO` | Collect and check one pull request (`GITHUB_REPOSITORY` is honored) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages |
 
 Global flags: `-q` silences status lines on stderr. Every evaluated command accepts
-`--format table|json|yaml|sarif|in-toto` and `--output FILE`; the format is inferred from the
-output extension when omitted. `export` emits normalized JSON only. `scan` without output flags
+`--format table|json|yaml|sarif|in-toto|in-toto-jsonl` and `--output FILE`; the format is inferred
+from the output name when omitted (`.intoto.json` and `.intoto.jsonl` select the attestation
+forms). `export` emits normalized JSON only. `scan` without output flags
 writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
 
 Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
@@ -166,17 +167,25 @@ exports or error messages.
 ## Attestations
 
 `--format in-toto` emits an unsigned [in-toto Statement v1](https://github.com/in-toto/attestation)
-whose subjects are the evaluated changes (`gitCommit` digests of their head commits) and whose
-predicate is the manifest:
+whose subjects are the evaluated changes and whose predicate is the manifest. Each change
+contributes its head commit (the commit the approvals are bound to) and, once merged with a known
+merge commit, that commit too, so the attestation is found by the commit that lands on the target
+branch after a squash or rebase merge. `--format in-toto-jsonl` writes one Statement per change,
+one per line, for signers and verifiers that handle a change at a time:
 
 ```bash
-acc evaluate events.json --format in-toto > change-control.intoto.json
+acc evaluate events.json -o change-control.intoto.json     # one Statement, every change
+acc scan github acme/api --since 2026-08-01 --until 2026-08-31 -o august.intoto.jsonl
+acc validate august.intoto.jsonl                            # subjects match, findings recompute
 ```
 
-Sign it with the DSSE signer you already use for build provenance. A verifier checks that the
-subjects cover the commits it cares about and runs `acc validate` on the predicate to confirm the
-findings follow from the embedded facts. The predicate type is
-`https://noru.tech/spec/ai-change-provenance/v0.1`.
+Sign them with the DSSE signer you already use for build provenance. A verifier checks that the
+subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
+that the subjects are exactly the predicate's changes and that the findings follow from the
+embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.1`; the
+predicate is documented in [docs/in-toto.md](docs/in-toto.md). Attestations carry the same
+personal data as manifests; see [privacy](docs/privacy.md) before publishing one to a transparency
+log.
 
 ## Exit codes
 

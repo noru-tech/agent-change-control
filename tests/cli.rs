@@ -79,6 +79,87 @@ fn formats_roundtrip() {
 }
 
 #[test]
+fn attestations_validate_and_are_inferred_from_their_suffix() {
+    let dir = tempfile::tempdir().unwrap();
+    let events = fixture("claude-operator-self-approved", "events.json");
+    // A merged change with a known merge commit: two subjects, and the Statement validates.
+    let statement = dir.path().join("change-control.intoto.json");
+    acc()
+        .args(["evaluate", "-o"])
+        .arg(&statement)
+        .arg(&events)
+        .assert()
+        .success();
+    let value: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&statement).unwrap()).unwrap();
+    assert_eq!(value["_type"], "https://in-toto.io/Statement/v1");
+    assert_eq!(value["subject"].as_array().unwrap().len(), 2);
+    assert_eq!(value["subject"][0]["digest"]["gitCommit"], "head");
+    assert_eq!(value["subject"][1]["name"], "github:acme/api:pr:421:merge");
+    assert_eq!(value["subject"][1]["digest"]["gitCommit"], "merge");
+    acc()
+        .arg("validate")
+        .arg(&statement)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Valid attestation"));
+    // JSON Lines: one Statement per change, validated as a set.
+    let lines = dir.path().join("change-control.intoto.jsonl");
+    acc()
+        .args(["evaluate", "-o"])
+        .arg(&lines)
+        .arg(&events)
+        .assert()
+        .success();
+    let text = std::fs::read_to_string(&lines).unwrap();
+    assert_eq!(text.lines().count(), 1);
+    assert!(text.ends_with('\n'));
+    // One line is indistinguishable from one Statement, and validates as one.
+    acc()
+        .arg("validate")
+        .arg(&lines)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Valid attestation"));
+    // Two lines out of order are rejected; so is a Statement whose subject was edited.
+    let one: serde_json::Value = serde_json::from_str(text.trim()).unwrap();
+    let mut other = one.clone();
+    other["predicate"]["events"]["changes"][0]["id"] = "github:acme/api:pr:9".into();
+    let unordered = dir.path().join("unordered.intoto.jsonl");
+    std::fs::write(
+        &unordered,
+        format!("{}\n{}\n", one, serde_json::to_string(&other).unwrap()),
+    )
+    .unwrap();
+    acc()
+        .arg("validate")
+        .arg(&unordered)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("line 2"));
+    let mut tampered = one.clone();
+    tampered["subject"][0]["digest"]["gitCommit"] = "other".into();
+    let path = dir.path().join("tampered.intoto.json");
+    std::fs::write(&path, serde_json::to_string(&tampered).unwrap()).unwrap();
+    acc()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("subjects"));
+    // A merged change without a merge commit, and an open change, have a head subject only.
+    for name in ["incomplete-window", "open-pr"] {
+        let out = acc()
+            .args(["evaluate", "--format", "in-toto"])
+            .arg(fixture(name, "events.json"))
+            .output()
+            .unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(value["subject"].as_array().unwrap().len(), 1, "{name}");
+    }
+}
+
+#[test]
 fn output_extension_selects_the_format() {
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("nested").join("manifest.yml");

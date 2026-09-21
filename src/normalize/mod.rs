@@ -9,14 +9,15 @@ use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Validate `value` against one of the embedded schemas: `events`, `manifest`, `policy` or
-/// `provenance`.
+/// Validate `value` against one of the embedded schemas: `events`, `manifest`, `policy`,
+/// `provenance` or `statement`.
 pub fn schema(value: &Value, name: &str) -> Result<()> {
     let raw = match name {
         "events" => include_str!("../../schemas/change-events.schema.json"),
         "manifest" => include_str!("../../schemas/manifest.schema.json"),
         "policy" => include_str!("../../schemas/policy.schema.json"),
         "provenance" => include_str!("../../schemas/provenance.schema.json"),
+        "statement" => include_str!("../../schemas/statement.schema.json"),
         _ => bail!("unknown schema"),
     };
     let definition: Value = serde_json::from_str(raw)?;
@@ -69,6 +70,10 @@ pub fn events(mut e: Events) -> Result<Events> {
         ensure!(
             c.merged_at.is_some() == c.merger.is_some(),
             "ACV004 merge actor/time mismatch"
+        );
+        ensure!(
+            c.merged_at.is_some() || c.merge_commit_sha.is_none(),
+            "ACV004 merge commit on unmerged change"
         );
         let mut identities = vec![&mut c.author, &mut c.forge_author];
         if let Some(m) = &mut c.merger {

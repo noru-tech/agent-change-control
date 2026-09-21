@@ -34,13 +34,7 @@ impl OutputArgs {
     /// The explicit format, else the one implied by the output extension, else `default`.
     pub fn format(&self, default: Format) -> Format {
         self.format
-            .or_else(|| {
-                self.output
-                    .as_ref()
-                    .and_then(|p| p.extension())
-                    .and_then(|s| s.to_str())
-                    .and_then(Format::from_extension)
-            })
+            .or_else(|| self.output.as_deref().and_then(Format::from_path))
             .unwrap_or(default)
     }
 
@@ -52,8 +46,8 @@ impl OutputArgs {
     }
 }
 
-/// Read a JSON or YAML document, validate it against the embedded `schema`, and deserialize it.
-pub fn read<T: DeserializeOwned>(path: &Path, schema: &str) -> Result<T> {
+/// Read a bounded UTF-8 text file.
+pub fn read_text(path: &Path) -> Result<String> {
     let mut data = String::new();
     std::fs::File::open(path)
         .with_context(|| format!("unable to open {}", path.display()))?
@@ -61,13 +55,23 @@ pub fn read<T: DeserializeOwned>(path: &Path, schema: &str) -> Result<T> {
         .read_to_string(&mut data)
         .context("unable to read UTF-8 input")?;
     ensure!(data.len() as u64 <= MAX_INPUT, "input exceeds 32 MiB limit");
+    Ok(data)
+}
+
+/// Parse one JSON or YAML document.
+pub fn parse(data: &str) -> Result<Value> {
     // YAML 1.2 is a superset of JSON; try the strict JSON parser first.
-    let value: Value = match serde_json::from_str(&data) {
-        Ok(v) => v,
+    match serde_json::from_str(data) {
+        Ok(v) => Ok(v),
         Err(_) => {
-            serde_saphyr::from_str(&data).map_err(|_| anyhow!("input is not valid JSON or YAML"))?
+            serde_saphyr::from_str(data).map_err(|_| anyhow!("input is not valid JSON or YAML"))
         }
-    };
+    }
+}
+
+/// Read a JSON or YAML document, validate it against the embedded `schema`, and deserialize it.
+pub fn read<T: DeserializeOwned>(path: &Path, schema: &str) -> Result<T> {
+    let value = parse(&read_text(path)?)?;
     crate::normalize::schema(&value, schema)?;
     Ok(serde_json::from_value(value)?)
 }
@@ -269,5 +273,10 @@ mod tests {
         };
         assert_eq!(args.format(Format::Json), Format::Table);
         assert_eq!(OutputArgs::default().format(Format::Yaml), Format::Yaml);
+        let args = OutputArgs {
+            format: None,
+            output: Some("change-control.intoto.jsonl".into()),
+        };
+        assert_eq!(args.format(Format::Json), Format::InTotoJsonl);
     }
 }

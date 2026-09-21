@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/statement.schema.json",
+  "$comment": "The in-toto Statement v1 shape that acc emits and validates: a strict subset of https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md. Subjects carry a name and a digest set only; the predicate is validated separately against manifest.schema.json.",
+  "$ref": "#/$defs/statement",
+  "$defs": {
+    "digest_set": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "resource_descriptor": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/digest_set"
+        }
+      },
+      "required": [
+        "name",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "statement": {
+      "type": "object",
+      "properties": {
+        "_type": {
+          "const": "https://in-toto.io/Statement/v1"
+        },
+        "subject": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resource_descriptor"
+          },
+          "minItems": 1
+        },
+        "predicateType": {
+          "type": "string",
+          "format": "uri",
+          "minLength": 1
+        },
+        "predicate": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "_type",
+        "subject",
+        "predicateType",
+        "predicate"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

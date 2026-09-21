@@ -6,6 +6,28 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- `merge_commit_sha` on changes: the commit a merge produced, recorded by the GitHub collector
+  for merged pull requests and null otherwise. The key is optional on input, so exports written
+  by earlier releases remain valid.
+- A merged change's merge commit is a second attestation subject (`<change id>:merge`), so an
+  attestation is found by the commit reachable from the target branch after a squash or rebase
+  merge as well as by the reviewed head. Open changes, and merged changes whose merge commit the
+  forge did not report, keep a head subject only.
+- `--format in-toto-jsonl`: JSON Lines, one unsigned in-toto Statement per change in change ID
+  order, each with a manifest covering that change alone as its predicate and unchanged finding
+  IDs. Output names ending in `.intoto.json`, `.intoto.jsonl` or `.jsonl` select the attestation
+  formats.
+- `acc validate` accepts an in-toto Statement or JSON Lines of Statements: it checks the Statement
+  schema (`schemas/statement.schema.json`), the predicate type, the predicate as a manifest, and
+  that the subjects are exactly those the predicate's changes produce.
+- `docs/in-toto.md` documents the predicate in the in-toto predicate template;
+  `docs/design/in-toto-integration.md` records the design.
+
+### Changed
+- Specification 0.1 revision 3: §4 records the merge commit, §7.3 defines both attestation
+  forms and the verifier's subject check.
+
 ## [0.3.1] - 2026-09-19
 
 ### Fixed

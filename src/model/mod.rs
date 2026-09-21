@@ -231,6 +231,11 @@ pub struct Change {
     pub opened_at: Timestamp,
     pub merged_at: Option<Timestamp>,
     pub head_sha: String,
+    /// The commit the merge produced, when merged and known. Null for an open change, and for a
+    /// merged change whose merge commit the forge did not report. The one key that may be absent
+    /// on input, so that exports written before it existed remain valid.
+    #[serde(default)]
+    pub merge_commit_sha: Option<String>,
     pub commits: Vec<Commit>,
     pub forge_author: Identity,
     pub author: Identity,

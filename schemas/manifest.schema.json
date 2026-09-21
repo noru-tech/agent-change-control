@@ -266,6 +266,17 @@
           "type": "string",
           "minLength": 1
         },
+        "merge_commit_sha": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "commits": {
           "type": "array",
           "items": {

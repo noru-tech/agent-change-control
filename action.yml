@@ -61,7 +61,7 @@ inputs:
     required: false
     default: ""
   format:
-    description: Output format written to `output` — sarif, json, yaml, table or in-toto.
+    description: Output format written to `output` — sarif, json, yaml, table, in-toto or in-toto-jsonl.
     required: false
     default: sarif
   output:
