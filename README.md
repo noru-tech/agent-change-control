@@ -1,9 +1,9 @@
 # agent-change-control
 
-> **The four-eyes principle is broken for coding agents. This is a machine-readable replacement.**
+> **Enforcing the four-eyes principle for coding agents.**
 >
-> `acc` records the agent, the human operator, the reviewers and the merger of every change, then
-> evaluates explicit separation-of-duty rules against those facts. Offline, reproducible, no LLM.
+> Different accounts do not necessarily represent independent humans. `acc` records the human
+> behind an agent's change and checks for independent human approval. Offline, reproducible, no LLM.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
@@ -30,12 +30,13 @@ and the engineer who directed it approves, the platform reports two different ac
 control is silently gone: one human judgment, two logins. When nobody recorded who directed the
 agent, no tool can tell whether the reviewer was independent at all.
 
-`acc` replaces "author ≠ approver" with the question the control was always about: **did a human
+`acc` enforces the four-eyes principle by checking more than whether the author and approver
+accounts differ: **did a human
 who is independent of the change's effective author approve its current head before merge, and
 what is the evidence?** Agent authorship alone is never a finding. An unknown operator is reported
 as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
 
-Read the argument in [The four-eyes principle is broken for coding agents](docs/four-eyes.md).
+Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
 The convention it implements is published as [AI Change Provenance 0.1](spec/ai-change-provenance.md).
 
 ## What is in this repository

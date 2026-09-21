@@ -1,7 +1,13 @@
-# The four-eyes principle is broken for coding agents
+# Enforcing the four-eyes principle for coding agents
 
-*Why account-based separation of duties stopped answering the question it was designed for, and
-what a machine-readable replacement looks like.*
+*Why different accounts do not necessarily represent independent humans, and how to check for
+independent human approval when coding agents contribute changes.*
+
+The four-eyes principle still applies: a change needs review and approval from an independent
+human. Coding agents expose a gap in how platforms enforce it, because the account that opens a
+pull request may belong to an agent directed by the same human who approves it. This project
+preserves the principle by recording the human operator and checking reviewer independence
+against that person.
 
 ## The control everyone has
 
@@ -47,7 +53,7 @@ that scales. Agents that open their own pull requests are the productivity featu
 shipping. Each one moves the operator from the author column to the reviewer column, and the
 platform rule rewards it.
 
-## What a replacement must do
+## What enforcing the principle requires
 
 The fix is not to detect AI-written code. Detection is unreliable, adversarial and, more to the
 point, irrelevant: agent-written code with a genuinely independent review is exactly what the
