@@ -106,9 +106,11 @@ and are embedded in the `acc` binary.
 - The Statement is canonical JSON: sorted keys, compact separators, UTF-8, one trailing newline.
   The bytes are what gets signed; do not re-serialize before signing.
 - A consumer MUST check that the subjects are exactly those the predicate's changes produce (head
-  commit, then merge commit when present and distinct), and SHOULD re-evaluate the predicate: the
-  embedded events under the embedded policy must reproduce the findings, assessments and summary
-  byte for byte. `acc validate` performs both checks.
+  commit, then merge commit when present and distinct), or that the Statement has a single subject
+  whose `sha256` digest is over the canonical bytes of the predicate (the form SHA-2-only signers
+  such as GitHub artifact attestations produce; see [signing](signing.md)). It SHOULD re-evaluate
+  the predicate: the embedded events under the embedded policy must reproduce the findings,
+  assessments and summary byte for byte. `acc validate` performs both checks.
 - A consumer MUST treat `events.window.complete: false` or any change with
   `reviews_complete: false` as an incomplete record that cannot be read as clean, whatever the
   findings say.

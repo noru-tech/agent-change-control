@@ -1,0 +1,55 @@
+# Sign the verdict for every merged pull request. This is the workflow docs/signing.md describes,
+# run on this repository as its own dogfood: the manifest for the merged pull request is attested
+# through GitHub artifact attestations, with the manifest file as the subject and the same file
+# as the predicate. Verify one with
+#   gh attestation verify acc-manifest.json --repo noru-tech/agent-change-control \
+#     --predicate-type https://noru.tech/spec/ai-change-provenance/v0.1
+# and re-evaluate its content with `acc validate` on the unwrapped statement.
+#
+# pull_request_target, not pull_request: a merged pull request from a fork would otherwise run
+# without the id-token permission the signer needs. No code from the pull request runs here; the
+# checkout is the base branch and the action only reads the pull request through the API.
+name: attest
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+  attestations: write
+
+jobs:
+  attest:
+    name: attest the verdict
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Evaluate the merged pull request
+        id: acc
+        uses: ./
+        with:
+          # The last *published* release; bump together with change-control.yml.
+          version: "0.3.1"
+          fail-on-findings: false
+          format: json
+          output: acc-manifest.json
+      - name: Attest the manifest
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: acc-manifest.json
+          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.1
+          predicate-path: acc-manifest.json
+      - name: Report
+        env:
+          CODE: ${{ steps.acc.outputs.exit-code }}
+          URL: ${{ steps.attest.outputs.attestation-url }}
+        run: |
+          {
+            echo "acc exit code: $CODE"
+            echo "attestation: $URL"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

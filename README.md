@@ -183,9 +183,15 @@ Sign them with the DSSE signer you already use for build provenance. A verifier 
 subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
 that the subjects are exactly the predicate's changes and that the findings follow from the
 embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.1`; the
-predicate is documented in [docs/in-toto.md](docs/in-toto.md). Attestations carry the same
-personal data as manifests; see [privacy](docs/privacy.md) before publishing one to a transparency
-log.
+predicate is documented in [docs/in-toto.md](docs/in-toto.md).
+
+[docs/signing.md](docs/signing.md) shows the two signing paths: GitHub artifact attestations
+through `actions/attest`, where the subject is the sha256 of the manifest file and
+`gh attestation verify` finds it, and cosign over the commit-subject Statement. This repository
+signs the verdict of every merged pull request that way
+([workflow](.github/workflows/attest.yml), [attestations](https://github.com/noru-tech/agent-change-control/attestations)).
+Attestations carry the same personal data as manifests; read the privacy note there before
+publishing one to a transparency log.
 
 ## Exit codes
 

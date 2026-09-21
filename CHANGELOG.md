@@ -23,6 +23,12 @@ All notable changes to this project are documented here. The format is based on
   that the subjects are exactly those the predicate's changes produce.
 - `docs/in-toto.md` documents the predicate in the in-toto predicate template;
   `docs/design/in-toto-integration.md` records the design.
+- `acc validate` also accepts a Statement whose single subject is the `sha256` of the canonical
+  predicate, the form GitHub artifact attestations and `cosign attest-blob` produce, and
+  recomputes that digest from the predicate.
+- `docs/signing.md`: signing the verdict with `actions/attest` (dogfooded on this repository for
+  every merged pull request by `.github/workflows/attest.yml`) or with cosign, and verifying it
+  with `gh attestation verify` plus `acc validate`.
 
 ### Changed
 - Specification 0.1 revision 3: §4 records the merge commit, §7.3 defines both attestation
