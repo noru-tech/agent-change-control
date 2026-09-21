@@ -48,7 +48,7 @@ The convention it implements is published as [AI Change Provenance 0.2](spec/ai-
 | Piece | Where |
 | --- | --- |
 | **Specification** — AI Change Provenance 0.2: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
-| **Schemas** — events, manifest, policy, provenance, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
+| **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
@@ -72,9 +72,10 @@ Try it offline, without credentials, on the synthetic fixtures:
 
 ```bash
 acc evaluate tests/fixtures/claude-operator-self-approved/events.json --format table
-# github:acme/api:pr:421  agent:claude-code  github:alice  FAIL   (ACC001, ACC002, ACC003)
+# github:acme/api:pr:421  agent:claude-code  github:alice  FAIL
+# (the per-rule counts under the table show ACC001, ACC002 and ACC003)
 acc evaluate tests/fixtures/claude-clean/events.json --format table
-# github:acme/api:pr:421  agent:codex        github:alice  PASS
+# github:acme/api:pr:421  agent:claude-code  github:alice  PASS
 ```
 
 Scan a repository for a reporting period, then check it:
@@ -145,8 +146,12 @@ A qualifying approval must be from a different **human**, apply to the current h
 equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
 withdraw approval. An agent's approval never counts as a human's; under the opt-in `agent_review`
 policy it can satisfy independence instead, when it is signed and independent of the author on
-operator, provider and verified identity ([policy](docs/policy.md#agent-reviewers)). Exact conditions, with the fixture that exercises each, are in
-[docs/policy.md](docs/policy.md) and [the specification](spec/ai-change-provenance.md#62-rules).
+operator, provider and verified identity ([policy](docs/policy.md#agent-reviewers)). A policy can
+also set the weakest evidence an operator claim or an approval may rest on
+(`minimum_authorship_evidence`, `minimum_review_evidence`; kinds order as
+`derived < declared < observed < signed`), which only ever moves a verdict away from pass. Exact
+conditions, with the fixture that exercises each, are in [docs/policy.md](docs/policy.md) and
+[the specification](spec/ai-change-provenance.md#62-rules).
 
 Unknown operators yield ACC006 and `unknown` independence assessments, not invented violations.
 Incomplete collection produces exit 4 and cannot yield a clean result. A review or merge whose
@@ -170,6 +175,13 @@ Global flags: `-q` silences status lines on stderr. Every evaluated command acce
 from the output name when omitted (`.intoto.json` and `.intoto.jsonl` select the attestation
 forms). `export` emits normalized JSON only. `scan` without output flags
 writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
+
+The collecting commands (`scan`, `export`, `pr`) take the evidence flags: `--agent-account
+LOGIN=AGENT` and `--agent-vendor AGENT=VENDOR` for accounts and vendors your organization has
+verified, `--agent-trailer`, `--ignore-trailers` and `--agent-trace PATH` for the derived tier,
+and `--attestations PATH`, `--verification PATH` (the JSON that `gh attestation verify --format
+json` writes, with the verified signer) and `--verified-by TEXT` for signed authorship and review
+documents ([signing](docs/signing.md)).
 
 Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
 the day. `pr` evaluates an open or merged PR directly. The token needs read access to repository
@@ -206,6 +218,17 @@ signs the verdict of every merged pull request that way
 Attestations carry the same personal data as manifests; read the privacy note there before
 publishing one to a transparency log.
 
+Attestations also flow the other way. Two predicates of `acc`'s own carry claims it reads back as
+evidence, each bound to a change by its head commit and handed over after you verified it:
+`https://noru.tech/spec/ai-change-provenance/provenance/v0.1` (an agent's integration or its
+operator states which agent wrote the change and who directed it) and
+`https://noru.tech/spec/ai-change-provenance/review/v0.1` (a reviewer's tooling states who
+reviewed what and decided what, naming the reviewer in the predicate; it upgrades the forge's
+matching review and never creates one). `acc` does not verify signatures: with `--verification`
+or `--verified-by` the claims count as `signed` and the manifest records who verified them;
+without, they count as `declared`. See [authorship](docs/agent-authorship.md#signed-tier) and
+the examples under [`examples/`](examples/).
+
 ## Exit codes
 
 | Code | Meaning |
@@ -236,7 +259,8 @@ authenticated identity; a digest detects inconsistency, not forgery. `acc` does 
 signatures: attestations are read as pre-verified input and the manifest records who said they
 verified them. A clean result is a statement
 about the recorded scope, not a compliance certification. See the
-[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signed provenance.
+[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signature verification
+inside `acc`.
 
 Manifests contain employee activity data; keep real exports out of public Git repositories. Read
 [the model](docs/model.md), [authorship](docs/agent-authorship.md), [privacy](docs/privacy.md) and
