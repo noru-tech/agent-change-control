@@ -976,7 +976,7 @@
               "const": "agent-change-control"
             },
             "version": {
-              "const": "0.3.1"
+              "const": "0.4.0"
             },
             "source_digest": {
               "type": "string",

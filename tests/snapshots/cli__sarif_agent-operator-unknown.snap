@@ -103,5 +103,5 @@ runs:
             name: agent_approval_unsigned
             shortDescription:
               text: agent approval unsigned
-        version: 0.3.1
+        version: 0.4.0
 version: 2.1.0
