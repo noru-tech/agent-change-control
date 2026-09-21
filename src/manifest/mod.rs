@@ -45,7 +45,7 @@ pub fn evaluate(e: Events, p: Policy) -> Result<Manifest> {
         source_digest: crate::normalize::digest(&e)?,
     };
     Ok(Manifest {
-        version: "0.1".into(),
+        version: "0.2".into(),
         events: e,
         policy: p,
         summary,

@@ -26,7 +26,7 @@ use std::collections::BTreeSet;
 /// The in-toto Statement layer this renderer emits.
 pub const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";
 /// The predicate type: an AI Change Provenance manifest, versioned with the specification.
-pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.1";
+pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.2";
 
 /// The subject entries one change contributes: its head commit, then its merge commit when
 /// merged, known and distinct from the head.

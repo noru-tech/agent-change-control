@@ -59,12 +59,28 @@ All notable changes to this project are documented here. The format is based on
   `--agent-vendor AGENT=VENDOR` and the `agent-vendor` action input.
 - Pull request labels are collected as `labels` on changes.
 - `examples/review.intoto.json`.
+- Rules for agent reviewers: ACC007 agent approval recorded (`info`, an observation), ACC008
+  same-vendor write and review (`high`), ACC009 agent approval lacks required independence
+  (`high`) and ACC010 agent approval without signed identity (`warning`). ACC007 and ACC008
+  evaluate under every policy; ACC009 and ACC010 only under `agent_review`.
+- The opt-in `agent_review` policy block (`satisfies_independence`, `require`,
+  `minimum_evidence`, `labels`). When on, a signed agent approval independent of the effective
+  author on every required dimension (operator, provider, identity; `instructions` opt-in)
+  satisfies ACC001 and ACC003 with a reason that names the policy. Unknown on a required
+  dimension never yields a clean result. Default policy behaviour is unchanged.
+- Fixtures `agent-review-*` for every case of the agent-reviewer design's worked table; fixture
+  directories may carry a `policy.yml`.
 
 ### Changed
-- Specification 0.1 revision 3: §4 records the merge commit, §7.3 defines both attestation
-  forms and the verifier's subject check. Revision 4: §3.2 provenance attestations, §3.6
-  evidence strength and pre-verified input, §6.3 evidence minimums. Revision 5: §3.7 review
-  document, signer records, vendors, labels.
+- **Specification 0.2.** The second form of qualifying approval under `agent_review` (§6.1),
+  the independence dimensions (§6.5), ACC007 to ACC010 (§6.2), version compatibility (§12).
+  Manifests and the resolved policy are version `0.2`; exports and policies written as `0.1`
+  remain valid input. The attestation predicate type is
+  `https://noru.tech/spec/ai-change-provenance/v0.2`; the provenance and review documents stay
+  at 0.1. Earlier in this release: specification 0.1 revision 3 (§4 merge commit, §7.3
+  attestation forms and the verifier's subject check), revision 4 (§3.2 provenance
+  attestations, §3.6 evidence strength and pre-verified input, §6.3 evidence minimums) and
+  revision 5 (§3.7 review document, signer records, vendors, labels).
 
 ## [0.3.1] - 2026-09-19
 

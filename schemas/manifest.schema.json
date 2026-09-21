@@ -512,7 +512,11 @@
       "type": "object",
       "properties": {
         "version": {
-          "const": "0.1"
+          "type": "string",
+          "enum": [
+            "0.1",
+            "0.2"
+          ]
         },
         "repository": {
           "type": "string",
@@ -574,11 +578,52 @@
       ],
       "additionalProperties": false
     },
+    "agent_review": {
+      "type": "object",
+      "properties": {
+        "satisfies_independence": {
+          "type": "boolean"
+        },
+        "require": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "operator",
+              "provider",
+              "identity",
+              "instructions"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "minimum_evidence": {
+          "type": "string",
+          "enum": [
+            "signed"
+          ]
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
     "policy": {
       "type": "object",
       "properties": {
         "version": {
-          "const": "0.1"
+          "type": "string",
+          "enum": [
+            "0.1",
+            "0.2"
+          ]
         },
         "fail_on": {
           "type": "string",
@@ -607,6 +652,9 @@
             "signed"
           ]
         },
+        "agent_review": {
+          "$ref": "#/$defs/agent_review"
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -620,6 +668,18 @@
               "$ref": "#/$defs/rule_policy"
             },
             "unknown_agent_operator": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "agent_approval_recorded": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "same_vendor_write_and_review": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "agent_approval_not_independent": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "agent_approval_unsigned": {
               "$ref": "#/$defs/rule_policy"
             }
           },
@@ -724,7 +784,11 @@
             "ACC001",
             "ACC002",
             "ACC003",
-            "ACC006"
+            "ACC006",
+            "ACC007",
+            "ACC008",
+            "ACC009",
+            "ACC010"
           ]
         },
         "rule": {
@@ -733,7 +797,11 @@
             "agent_change_without_independent_human",
             "approver_is_author",
             "merged_without_independent_approval",
-            "unknown_agent_operator"
+            "unknown_agent_operator",
+            "agent_approval_recorded",
+            "same_vendor_write_and_review",
+            "agent_approval_not_independent",
+            "agent_approval_unsigned"
           ]
         },
         "severity": {
@@ -797,7 +865,11 @@
             "ACC001",
             "ACC002",
             "ACC003",
-            "ACC006"
+            "ACC006",
+            "ACC007",
+            "ACC008",
+            "ACC009",
+            "ACC010"
           ]
         },
         "status": {
@@ -874,7 +946,7 @@
       "type": "object",
       "properties": {
         "version": {
-          "const": "0.1"
+          "const": "0.2"
         },
         "events": {
           "$ref": "#/$defs/events"

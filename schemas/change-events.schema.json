@@ -512,7 +512,11 @@
       "type": "object",
       "properties": {
         "version": {
-          "const": "0.1"
+          "type": "string",
+          "enum": [
+            "0.1",
+            "0.2"
+          ]
         },
         "repository": {
           "type": "string",

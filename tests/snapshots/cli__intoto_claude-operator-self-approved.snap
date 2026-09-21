@@ -21,6 +21,22 @@ predicate:
       reason: A human agent operator is recorded.
       rule_id: ACC006
       status: pass
+    - change_id: "github:acme/api:pr:421"
+      reason: No agent reviewed the current head.
+      rule_id: ACC007
+      status: not_applicable
+    - change_id: "github:acme/api:pr:421"
+      reason: A human approved the current head.
+      rule_id: ACC008
+      status: not_applicable
+    - change_id: "github:acme/api:pr:421"
+      reason: Agent approvals do not satisfy independence under this policy.
+      rule_id: ACC009
+      status: not_applicable
+    - change_id: "github:acme/api:pr:421"
+      reason: Agent approvals do not satisfy independence under this policy.
+      rule_id: ACC010
+      status: not_applicable
   events:
     actors:
       "agent:claude-code":
@@ -105,7 +121,7 @@ predicate:
         title: Example change
         url: "https://github.com/acme/api/pull/421"
     repository: acme/api
-    version: "0.1"
+    version: "0.2"
     window:
       complete: true
       from: "2026-08-01T00:00:00Z"
@@ -191,14 +207,31 @@ predicate:
       rule_id: ACC003
       severity: high
   generated:
-    source_digest: "sha256:1c8851dd5936f3ea9c8541440741cb87704746ece3a901b1b595664c9d993fd1"
+    source_digest: "sha256:5aca56ea13b0dd87ec34afab343b9565613232e086021ee0f1e4d4b05f3a24b4"
     tool: agent-change-control
     version: 0.3.1
   policy:
+    agent_review:
+      labels: []
+      minimum_evidence: signed
+      require:
+        - operator
+        - provider
+        - identity
+      satisfies_independence: false
     fail_on: medium
     minimum_authorship_evidence: derived
     minimum_review_evidence: observed
     rules:
+      agent_approval_not_independent:
+        enabled: true
+        severity: high
+      agent_approval_recorded:
+        enabled: true
+        severity: info
+      agent_approval_unsigned:
+        enabled: true
+        severity: warning
       agent_change_without_independent_human:
         enabled: true
         severity: high
@@ -208,10 +241,13 @@ predicate:
       merged_without_independent_approval:
         enabled: true
         severity: high
+      same_vendor_write_and_review:
+        enabled: true
+        severity: high
       unknown_agent_operator:
         enabled: true
         severity: warning
-    version: "0.1"
+    version: "0.2"
   summary:
     agent_authored: 1
     agent_operator_unknown: 0
@@ -221,8 +257,8 @@ predicate:
     human_authored: 0
     indeterminate: 0
     with_findings: 1
-  version: "0.1"
-predicateType: "https://noru.tech/spec/ai-change-provenance/v0.1"
+  version: "0.2"
+predicateType: "https://noru.tech/spec/ai-change-provenance/v0.2"
 subject:
   - digest:
       gitCommit: head

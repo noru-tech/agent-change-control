@@ -1,0 +1,173 @@
+{
+  "version": "0.2",
+  "repository": "acme/api",
+  "window": {
+    "from": "2026-08-01T00:00:00Z",
+    "to": "2026-08-31T23:59:59Z",
+    "complete": true,
+    "reason": null
+  },
+  "actors": {
+    "github:alice": {
+      "kind": "human",
+      "display_name": "Alice",
+      "vendor": null
+    },
+    "github:carol": {
+      "kind": "human",
+      "display_name": "Carol",
+      "vendor": null
+    },
+    "agent:claude-code": {
+      "kind": "agent",
+      "display_name": "Claude Code",
+      "vendor": "anthropic"
+    },
+    "github:review-bot": {
+      "kind": "agent",
+      "display_name": "review-bot",
+      "vendor": null
+    }
+  },
+  "attestations": {
+    "attestation:9d66140f98371329": {
+      "file": "attestations/agent-review-unknown-vendor-provenance.json#1",
+      "predicate_type": "https://noru.tech/spec/ai-change-provenance/provenance/v0.1",
+      "payload_digest": "sha256:9d66140f98371329cfece84d885616ed2bf5947c06fba87ee93d0ac74cf0d486",
+      "signed": true,
+      "verified_by": "gh attestation verify (fixture)",
+      "signer": {
+        "identity": "https://github.com/acme/author-bot/.github/workflows/author.yml@refs/heads/main",
+        "issuer": "https://token.actions.githubusercontent.com"
+      },
+      "matched": true
+    },
+    "attestation:1f198e071bb6ede4": {
+      "file": "attestations/agent-review-unknown-vendor-review.json#1",
+      "predicate_type": "https://noru.tech/spec/ai-change-provenance/review/v0.1",
+      "payload_digest": "sha256:1f198e071bb6ede4bce238c9dd83f485b0cdd0e68d71fd01496f054450118777",
+      "signed": true,
+      "verified_by": "gh attestation verify (fixture)",
+      "signer": {
+        "identity": "https://github.com/acme/review-bot/.github/workflows/review.yml@refs/heads/main",
+        "issuer": "https://token.actions.githubusercontent.com"
+      },
+      "matched": true
+    }
+  },
+  "changes": [
+    {
+      "id": "github:acme/api:pr:421",
+      "repository": "acme/api",
+      "forge": "github",
+      "title": "Example change",
+      "url": "https://github.com/acme/api/pull/421",
+      "opened_at": "2026-08-01T12:00:00Z",
+      "merged_at": "2026-08-03T12:00:00Z",
+      "head_sha": "head",
+      "merge_commit_sha": "merge",
+      "commits": [
+        {
+          "sha": "head",
+          "author": {
+            "actor_id": "github:alice",
+            "provenance": [
+              {
+                "source": "github_api",
+                "ref": "https://api.github.com/repos/acme/api/pulls/421",
+                "kind": "observed"
+              }
+            ]
+          }
+        }
+      ],
+      "forge_author": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "author": {
+        "actor_id": "agent:claude-code",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          },
+          {
+            "source": "attestation",
+            "ref": "attestation:9d66140f98371329",
+            "kind": "signed"
+          }
+        ]
+      },
+      "agent_operator": {
+        "actor_id": "github:alice",
+        "confidence": "explicit",
+        "provenance": [
+          {
+            "source": "pr_metadata",
+            "ref": "https://github.com/acme/api/pull/421",
+            "kind": "declared"
+          },
+          {
+            "source": "attestation",
+            "ref": "attestation:9d66140f98371329",
+            "kind": "signed"
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "1",
+          "actor_id": "github:review-bot",
+          "state": "approved",
+          "at": "2026-08-02T12:00:00Z",
+          "commit_sha": "head",
+          "provenance": [
+            {
+              "source": "github_api",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/1",
+              "kind": "observed"
+            },
+            {
+              "source": "attestation",
+              "ref": "attestation:1f198e071bb6ede4",
+              "kind": "signed"
+            }
+          ],
+          "agent": {
+            "operator": "github:carol",
+            "identity": "https://github.com/acme/review-bot/.github/workflows/review.yml@refs/heads/main",
+            "instructions_owner": "github:carol",
+            "model": "claude-opus-5"
+          }
+        }
+      ],
+      "reviews_complete": true,
+      "merger": {
+        "actor_id": "github:carol",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source": "github_api",
+          "ref": "https://api.github.com/repos/acme/api/pulls/421",
+          "kind": "observed"
+        }
+      ],
+      "labels": []
+    }
+  ]
+}

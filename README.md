@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
-[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.1-informational)](./spec/ai-change-provenance.md)
+[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.2-informational)](./spec/ai-change-provenance.md)
 
 ```yaml
 # .github/workflows/change-control.yml — gate every pull request on an independent human review
@@ -37,13 +37,13 @@ what is the evidence?** Agent authorship alone is never a finding. An unknown op
 as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
 
 Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
-The convention it implements is published as [AI Change Provenance 0.1](spec/ai-change-provenance.md).
+The convention it implements is published as [AI Change Provenance 0.2](spec/ai-change-provenance.md).
 
 ## What is in this repository
 
 | Piece | Where |
 | --- | --- |
-| **Specification** — AI Change Provenance 0.1: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
+| **Specification** — AI Change Provenance 0.2: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
 | **Schemas** — events, manifest, policy, provenance, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
@@ -132,10 +132,16 @@ Or gate every pull request with the [GitHub Action](docs/github-action.md):
 | ACC002 | Effective human author/operator approved own change | high |
 | ACC003 | Merged change without independent human approval | high |
 | ACC006 | Agent operator unknown | warning |
+| ACC007 | Agent approval recorded (observation) | info |
+| ACC008 | Same-vendor write and review | high |
+| ACC009 | Agent approval lacks required independence (under `agent_review`) | high |
+| ACC010 | Agent approval without signed identity (under `agent_review`) | warning |
 
 A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
 equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
-withdraw approval. Exact conditions, with the fixture that exercises each, are in
+withdraw approval. An agent's approval never counts as a human's; under the opt-in `agent_review`
+policy it can satisfy independence instead, when it is signed and independent of the author on
+operator, provider and verified identity ([policy](docs/policy.md#agent-reviewers)). Exact conditions, with the fixture that exercises each, are in
 [docs/policy.md](docs/policy.md) and [the specification](spec/ai-change-provenance.md#62-rules).
 
 Unknown operators yield ACC006 and `unknown` independence assessments, not invented violations.
@@ -185,7 +191,7 @@ acc validate august.intoto.jsonl                            # subjects match, fi
 Sign them with the DSSE signer you already use for build provenance. A verifier checks that the
 subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
 that the subjects are exactly the predicate's changes and that the findings follow from the
-embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.1`; the
+embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.2`; the
 predicate is documented in [docs/in-toto.md](docs/in-toto.md).
 
 [docs/signing.md](docs/signing.md) shows the two signing paths: GitHub artifact attestations

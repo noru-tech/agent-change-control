@@ -422,10 +422,10 @@ fn review_attestations_upgrade_forge_reviews_and_never_create_them() {
     assert_eq!(agent.model.as_deref(), Some("claude-opus-5"));
     let m = manifest::evaluate(e, Policy::default()).unwrap();
     manifest::validate(&m).unwrap();
-    // No rule reads the facts yet: an agent approval still does not qualify.
+    // Under the default policy an agent approval still does not qualify; ACC007 records it.
     assert_eq!(
         m.findings.iter().map(|f| f.rule_id).collect::<Vec<_>>(),
-        vec![RuleId::Acc001, RuleId::Acc003]
+        vec![RuleId::Acc001, RuleId::Acc003, RuleId::Acc007]
     );
 
     // A decision the forge never showed is recorded as unmatched and creates no review.
@@ -594,6 +594,6 @@ fn known_agent_reviewers_cannot_count_as_humans() {
     let m = manifest::evaluate(events, Policy::default()).unwrap();
     assert_eq!(
         m.findings.iter().map(|f| f.rule_id).collect::<Vec<_>>(),
-        vec![RuleId::Acc001, RuleId::Acc003]
+        vec![RuleId::Acc001, RuleId::Acc003, RuleId::Acc007]
     );
 }

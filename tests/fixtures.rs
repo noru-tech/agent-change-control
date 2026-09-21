@@ -3,8 +3,19 @@ mod common;
 use agent_change_control::{Exit, manifest, model::*, normalize, output::intoto};
 use serde_json::Value;
 
-/// Every fixture directory with an `events.json` is evaluated under the default policy and
-/// compared with its reviewed expectations and byte-exact goldens.
+/// The policy a fixture is evaluated under: its `policy.yml` when present, else the default.
+fn fixture_policy(dir: &std::path::Path) -> Policy {
+    let path = dir.join("policy.yml");
+    if !path.exists() {
+        return Policy::default();
+    }
+    let p: Policy = serde_saphyr::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    agent_change_control::policy::resolve(p).unwrap()
+}
+
+/// Every fixture directory with an `events.json` is evaluated under its policy (the default
+/// unless the directory has a `policy.yml`) and compared with its reviewed expectations and
+/// byte-exact goldens.
 #[test]
 fn fixtures_and_golden_outputs() {
     let mut seen = 0;
@@ -14,13 +25,14 @@ fn fixtures_and_golden_outputs() {
             continue;
         }
         seen += 1;
+        let policy = fixture_policy(&dir);
         let input = std::fs::read_to_string(dir.join("events.json")).unwrap();
         let e: Events = serde_json::from_str(&input).unwrap();
         let spec: Value = serde_json::from_str(
             &std::fs::read_to_string(dir.join("expected-rules.json")).unwrap(),
         )
         .unwrap();
-        let result = manifest::evaluate(e.clone(), Policy::default());
+        let result = manifest::evaluate(e.clone(), policy.clone());
         if let Some(code) = spec["validation_error"].as_str() {
             let err = result.unwrap_err();
             assert!(err.to_string().contains(code), "{}: {err}", dir.display());
@@ -46,8 +58,7 @@ fn fixtures_and_golden_outputs() {
         }
         assert_eq!(
             normalize::canonical(&m).unwrap(),
-            normalize::canonical(&manifest::evaluate(shuffled, Policy::default()).unwrap())
-                .unwrap()
+            normalize::canonical(&manifest::evaluate(shuffled, policy).unwrap()).unwrap()
         );
         let canonical = normalize::canonical(&m).unwrap();
         if std::env::var_os("UPDATE_GOLDENS").is_some() {
@@ -328,6 +339,21 @@ fn agent_review_facts_need_an_agent_reviewer_and_human_references() {
     let m = manifest::evaluate(normalized, Policy::default()).unwrap();
     normalize::schema(&serde_json::to_value(&m).unwrap(), "manifest").unwrap();
     manifest::validate(&m).unwrap();
+}
+
+#[test]
+fn exports_written_under_0_1_still_evaluate() {
+    let e: Events =
+        serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
+    assert_eq!(e.version, "0.1");
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    assert_eq!(m.version, "0.2");
+    assert_eq!(m.events.version, "0.1");
+    manifest::validate(&m).unwrap();
+    let mut v: Value =
+        serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
+    v["version"] = "0.3".into();
+    assert!(normalize::schema(&v, "events").is_err());
 }
 
 #[test]
