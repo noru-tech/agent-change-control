@@ -128,14 +128,28 @@ pub struct EvidenceArgs {
     /// Who verified the attestations' signatures before this run, recorded verbatim (for
     /// example "gh attestation verify, run 123"). Without it attestation claims count as
     /// declared, not signed.
-    #[arg(long, value_name = "TEXT", requires = "attestations")]
+    #[arg(long, value_name = "TEXT")]
     pub verified_by: Option<String>,
+    /// A verifier's JSON output (`gh attestation verify --format json`): its bundles are loaded
+    /// as signed attestations with the certificate identity the verifier established
+    /// (repeatable; requires --verified-by).
+    #[arg(long, value_name = "PATH", requires = "verified_by")]
+    pub verification: Vec<PathBuf>,
+    /// Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry).
+    #[arg(long, value_name = "AGENT=VENDOR")]
+    pub agent_vendor: Vec<String>,
 }
 
 impl EvidenceArgs {
-    /// The attestations, when any path was given.
+    /// The attestations, when any path or verification was given.
     pub fn attestations(&self) -> Result<Option<Attestations>> {
-        if self.attestations.is_empty() {
+        if self.attestations.is_empty() && self.verification.is_empty() {
+            if self.verified_by.is_some() {
+                return Err(failure(
+                    Exit::Usage,
+                    "verified-by requires --attestations or --verification",
+                ));
+            }
             return Ok(None);
         }
         if self
@@ -145,10 +159,31 @@ impl EvidenceArgs {
         {
             return Err(failure(Exit::Usage, "verified-by must not be empty"));
         }
-        Ok(Some(Attestations::load(
-            &self.attestations,
-            self.verified_by.clone(),
-        )?))
+        let mut loaded = Attestations::load(&self.attestations, self.verified_by.clone())?;
+        for path in &self.verification {
+            loaded.load_verification(path)?;
+        }
+        Ok(Some(loaded))
+    }
+
+    /// The vendor registry: built-in entries plus `--agent-vendor` mappings.
+    pub fn vendors(&self) -> Result<BTreeMap<String, String>> {
+        let mut extra = BTreeMap::new();
+        for v in &self.agent_vendor {
+            let (agent, vendor) = v
+                .split_once('=')
+                .ok_or_else(|| failure(Exit::Usage, "agent-vendor must be AGENT=VENDOR"))?;
+            if agent.is_empty() || vendor.is_empty() {
+                return Err(failure(Exit::Usage, "invalid agent vendor mapping"));
+            }
+            if extra
+                .insert(agent.to_ascii_lowercase(), vendor.to_string())
+                .is_some()
+            {
+                return Err(failure(Exit::Usage, "duplicate agent vendor mapping"));
+            }
+        }
+        Ok(crate::provenance::vendor_registry(&extra))
     }
 
     /// The Agent Trace records, when any path was given.
@@ -277,6 +312,31 @@ mod tests {
             crate::exit_for(&blank.attestations().unwrap_err()),
             Exit::Usage
         );
+        let alone = EvidenceArgs {
+            verified_by: Some("me".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            crate::exit_for(&alone.attestations().unwrap_err()),
+            Exit::Usage
+        );
+        let vendors = EvidenceArgs {
+            agent_vendor: vec!["House-Agent=acme".into()],
+            ..Default::default()
+        };
+        assert_eq!(vendors.vendors().unwrap()["house-agent"], "acme");
+        assert_eq!(vendors.vendors().unwrap()["codex"], "openai");
+        for bad in ["nope", "=x", "a="] {
+            let args = EvidenceArgs {
+                agent_vendor: vec![bad.into()],
+                ..Default::default()
+            };
+            assert_eq!(
+                crate::exit_for(&args.vendors().unwrap_err()),
+                Exit::Usage,
+                "{bad}"
+            );
+        }
         for bad in ["nope", "=x", "a@b=", "noat=x"] {
             let args = EvidenceArgs {
                 agent_trailer: vec![bad.into()],

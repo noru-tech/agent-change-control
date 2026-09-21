@@ -36,9 +36,23 @@ signature *and* has a recorded verifier yields `signed` evidence; without `--ver
 claims are `declared`, the same as a provenance document found on disk. A policy can require
 `signed` authorship evidence with `minimum_authorship_evidence` ([policy](policy.md)).
 
-Review claims are not read from attestations yet. The predicates that exist for reviews
-(`human-review`, gittuf's reference authorization) put the reviewer in the signature, which is
-exactly what pre-verified input does not expose. See [signing](signing.md).
+Reviews have their own document ([spec §3.7](../spec/ai-change-provenance.md#37-review-document),
+predicate type `https://noru.tech/spec/ai-change-provenance/review/v0.1`), which names the
+reviewer in the predicate because the predicates in circulation put the reviewer in the
+signature. `--attestations` reads it too, and `--verification PATH` reads the JSON that
+`gh attestation verify --format json` writes, loading its bundles as signed attestations with the
+signer the verifier established. A review document upgrades the forge's review (its evidence
+becomes `signed`, which is what `minimum_review_evidence: signed` needs) and never creates one.
+For an agent reviewer it also records the operator, instructions owner, model and signing
+identity on the review; no rule reads those facts yet. See [signing](signing.md).
+
+## Agent reviewers
+
+A reviewer account mapped with `--agent-account` is an agent and its approval never counts as a
+human's. Agent actors carry a vendor from a built-in registry extended by
+`--agent-vendor AGENT=VENDOR`; unregistered agents have none. The facts a review document states
+about an agent reviewer are recorded on the review as `agent` (operator, identity,
+instructions owner, model) for the independence rules that follow in the next release.
 
 ## Derived tier
 

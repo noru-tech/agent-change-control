@@ -5,6 +5,7 @@
 | `pull-request-body.md` | The inline declaration a producer puts in a pull request description (spec §3.1) |
 | `provenance.json` | A standalone provenance document bound to a head commit (spec §3.2); validate with the `provenance` schema |
 | `provenance.intoto.json` | The same document as an in-toto Statement to sign and hand back with `--attestations` (spec §3.2, §3.6) |
+| `review.intoto.json` | A review document for an agent reviewer, as a Statement to sign (spec §3.7); validate the predicate with the `review` schema |
 | `policy.yml` | A policy that fails on unknown operators |
 | `workflow-required-check.yml` | The GitHub Action as a merge gate with SARIF upload |
 

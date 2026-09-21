@@ -73,6 +73,18 @@ inputs:
       manifest. Without it attestation claims count as declared, not signed.
     required: false
     default: ""
+  verification:
+    description: >-
+      Verifier JSON output files (`gh attestation verify --format json`), one path per line:
+      their bundles are loaded as signed attestations with the verified signer identity.
+      Requires verified-by.
+    required: false
+    default: ""
+  agent-vendor:
+    description: >-
+      Additional agent vendors, one AGENT=VENDOR per line, extending the built-in registry.
+    required: false
+    default: ""
   format:
     description: Output format written to `output` — sarif, json, yaml, table, in-toto or in-toto-jsonl.
     required: false
@@ -163,6 +175,8 @@ runs:
         ACC_AGENT_TRACES: ${{ inputs.agent-trace }}
         ACC_ATTESTATIONS: ${{ inputs.attestations }}
         ACC_VERIFIED_BY: ${{ inputs.verified-by }}
+        ACC_VERIFICATIONS: ${{ inputs.verification }}
+        ACC_AGENT_VENDORS: ${{ inputs.agent-vendor }}
         ACC_FORMAT: ${{ inputs.format }}
         ACC_OUTPUT: ${{ inputs.output }}
         ACC_FAIL: ${{ inputs.fail-on-findings }}
@@ -194,6 +208,14 @@ runs:
           if [ -n "$attestation" ]; then args+=(--attestations "$attestation"); fi
         done <<< "$ACC_ATTESTATIONS"
         if [ -n "$ACC_VERIFIED_BY" ]; then args+=(--verified-by "$ACC_VERIFIED_BY"); fi
+        while IFS= read -r verification; do
+          verification="${verification//[$'\r']}"
+          if [ -n "$verification" ]; then args+=(--verification "$verification"); fi
+        done <<< "$ACC_VERIFICATIONS"
+        while IFS= read -r mapping; do
+          mapping="${mapping//[$'\r']}"
+          if [ -n "$mapping" ]; then args+=(--agent-vendor "$mapping"); fi
+        done <<< "$ACC_AGENT_VENDORS"
         if [ "$ACC_IGNORE_TRAILERS" = "true" ]; then args+=(--ignore-trailers); fi
         acc "${args[@]}"
         code=$?

@@ -54,6 +54,17 @@
               "type": "null"
             }
           ]
+        },
+        "vendor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -154,6 +165,62 @@
       ],
       "additionalProperties": false
     },
+    "review_agent": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "identity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instructions_owner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operator",
+        "identity",
+        "instructions_owner",
+        "model"
+      ],
+      "additionalProperties": false
+    },
     "review": {
       "type": "object",
       "properties": {
@@ -188,6 +255,16 @@
             "$ref": "#/$defs/evidence"
           },
           "minItems": 1
+        },
+        "agent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/review_agent"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -325,6 +402,13 @@
             "$ref": "#/$defs/evidence"
           },
           "minItems": 1
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "required": [
@@ -344,6 +428,31 @@
         "reviews_complete",
         "merger",
         "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "signer": {
+      "type": "object",
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issuer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "identity",
+        "issuer"
       ],
       "additionalProperties": false
     },
@@ -375,6 +484,19 @@
               "type": "null"
             }
           ]
+        },
+        "signer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "matched": {
+          "type": "boolean"
         }
       },
       "required": [

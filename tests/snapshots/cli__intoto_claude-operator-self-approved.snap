@@ -26,18 +26,23 @@ predicate:
       "agent:claude-code":
         display_name: Claude Code
         kind: agent
+        vendor: anthropic
       "agent:codex":
         display_name: Codex
         kind: agent
+        vendor: openai
       "github:alice":
         display_name: Alice
         kind: human
+        vendor: ~
       "github:bob":
         display_name: Bob
         kind: human
+        vendor: ~
       "github:ci":
         display_name: CI
         kind: bot
+        vendor: ~
     attestations: {}
     changes:
       - agent_operator:
@@ -70,6 +75,7 @@ predicate:
               source: github_api
         head_sha: head
         id: "github:acme/api:pr:421"
+        labels: []
         merge_commit_sha: merge
         merged_at: "2026-08-03T12:00:00Z"
         merger:
@@ -86,6 +92,7 @@ predicate:
         repository: acme/api
         reviews:
           - actor_id: "github:alice"
+            agent: ~
             at: "2026-08-02T12:00:00Z"
             commit_sha: head
             id: "1"
@@ -184,7 +191,7 @@ predicate:
       rule_id: ACC003
       severity: high
   generated:
-    source_digest: "sha256:0cacdfe0ae462c5cf31fb5b9775edebcecd72fbc19de3d54f9bf61a47dc8a930"
+    source_digest: "sha256:1c8851dd5936f3ea9c8541440741cb87704746ece3a901b1b595664c9d993fd1"
     tool: agent-change-control
     version: 0.3.1
   policy:

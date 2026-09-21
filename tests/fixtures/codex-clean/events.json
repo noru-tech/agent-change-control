@@ -10,23 +10,28 @@
   "actors": {
     "github:alice": {
       "kind": "human",
-      "display_name": "Alice"
+      "display_name": "Alice",
+      "vendor": null
     },
     "github:bob": {
       "kind": "human",
-      "display_name": "Bob"
+      "display_name": "Bob",
+      "vendor": null
     },
     "agent:claude-code": {
       "kind": "agent",
-      "display_name": "Claude Code"
+      "display_name": "Claude Code",
+      "vendor": "anthropic"
     },
     "agent:codex": {
       "kind": "agent",
-      "display_name": "Codex"
+      "display_name": "Codex",
+      "vendor": "openai"
     },
     "github:ci": {
       "kind": "bot",
-      "display_name": "CI"
+      "display_name": "CI",
+      "vendor": null
     }
   },
   "changes": [
@@ -99,7 +104,8 @@
               "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/1",
               "kind": "observed"
             }
-          ]
+          ],
+          "agent": null
         }
       ],
       "reviews_complete": true,
@@ -119,7 +125,8 @@
           "ref": "https://api.github.com/repos/acme/api/pulls/421",
           "kind": "observed"
         }
-      ]
+      ],
+      "labels": []
     }
   ]
 }

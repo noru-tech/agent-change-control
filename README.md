@@ -103,7 +103,8 @@ Or gate every pull request with the [GitHub Action](docs/github-action.md):
    Accounts your organization has verified as agents can be mapped instead:
    `--agent-account 'my-agent[bot]=codex'`. A signed provenance document, handed over as an
    attestation after you verified it (`--attestations PATH --verified-by TEXT`), makes the same
-   claim with `signed` evidence, which a policy can require.
+   claim with `signed` evidence, which a policy can require. Reviewers can sign what they decided
+   the same way (a review document, matched to the forge's review, never replacing it).
 
    Below that sits a **derived tier**, read only when no declaration applies: the
    `Co-Authored-By` trailers that Claude Code and Copilot already write into commits, and

@@ -25,6 +25,34 @@ pub const BUILTIN_TRAILERS: &[(&str, &str)] = &[
     ("copilot@users.noreply.github.com", "copilot"),
 ];
 
+/// The organizations that build and operate the models behind common agents, keyed by agent
+/// name. Vendor is the granularity of the provider independence dimension: a tool's model
+/// changes under the same name and the forge never records it, so anything finer would be a
+/// guess. `--agent-vendor AGENT=VENDOR` extends the registry.
+pub const BUILTIN_VENDORS: &[(&str, &str)] = &[
+    ("claude-code", "anthropic"),
+    ("claude-code-review", "anthropic"),
+    ("copilot", "github"),
+    ("copilot-review", "github"),
+    ("codex", "openai"),
+    ("gemini-cli", "google"),
+    ("gemini-code-assist", "google"),
+    ("cursor", "cursor"),
+];
+
+/// The vendor registry: the built-in entries plus caller-supplied `AGENT=VENDOR` mappings,
+/// which win on the same agent. Keys are lowercase agent names.
+pub fn vendor_registry(extra: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    let mut registry: BTreeMap<String, String> = BUILTIN_VENDORS
+        .iter()
+        .map(|(agent, vendor)| ((*agent).to_string(), (*vendor).to_string()))
+        .collect();
+    for (agent, vendor) in extra {
+        registry.insert(agent.to_ascii_lowercase(), vendor.to_ascii_lowercase());
+    }
+    registry
+}
+
 /// The trailer registry: the built-in vendor identities plus caller-supplied `EMAIL=AGENT`
 /// mappings, which win on the same email.
 pub fn trailer_registry(extra: &BTreeMap<String, String>) -> BTreeMap<String, String> {
@@ -140,8 +168,15 @@ pub fn convention(value: &Value, head: &str) -> Result<(String, Option<String>)>
     Ok((agent.into(), Some(operator.into())))
 }
 
+/// The collecting forge's namespace (e.g. `github`) and the vendor registry.
+#[derive(Debug, Clone, Copy)]
+pub struct Registries<'a> {
+    pub namespace: &'a str,
+    pub vendors: &'a BTreeMap<String, String>,
+}
+
 /// Record `agent` as the effective author of `c` and try to resolve `operator` in the
-/// `namespace` (e.g. `github`) of the collecting forge, citing `provenance`.
+/// namespace of the collecting forge, citing `provenance`.
 ///
 /// Only identities already observed as humans resolve, and a resolved operator gets
 /// `confidence` (`explicit` for a declaration or mapping, `derived` for trailer evidence).
@@ -152,10 +187,11 @@ pub fn apply(
     actors: &mut BTreeMap<String, Actor>,
     agent: String,
     operator: Option<String>,
-    namespace: &str,
+    forge: Registries<'_>,
     provenance: Vec<Evidence>,
     confidence: Confidence,
 ) -> Result<()> {
+    let Registries { namespace, vendors } = forge;
     ensure!(!provenance.is_empty(), "agent authorship needs evidence");
     ensure!(
         agent
@@ -168,6 +204,7 @@ pub fn apply(
         id.clone(),
         Actor {
             kind: ActorKind::Agent,
+            vendor: vendors.get(&agent.to_ascii_lowercase()).cloned(),
             display_name: Some(agent),
         },
     );
@@ -268,6 +305,16 @@ mod tests {
         // Two vendors in one commit are two distinct agents.
         let msg = "x\n\nCo-Authored-By: A <noreply@anthropic.com>\nCo-Authored-By: C <1+copilot@users.noreply.github.com>";
         assert_eq!(trailer_agents(msg, &registry).len(), 2);
+    }
+
+    #[test]
+    fn vendor_registry_is_lowercase_and_extensible() {
+        let registry = vendor_registry(&BTreeMap::new());
+        assert_eq!(registry["claude-code"], "anthropic");
+        assert_eq!(registry["codex"], "openai");
+        assert!(!registry.contains_key("house-agent"));
+        let extra = BTreeMap::from([("House-Agent".to_string(), "Acme".to_string())]);
+        assert_eq!(vendor_registry(&extra)["house-agent"], "acme");
     }
 
     #[test]

@@ -50,6 +50,8 @@ with.
 | `agent-trace` | none | Agent Trace record files or directories, one path per line |
 | `attestations` | none | Attestation files or directories (Statements, DSSE envelopes, Sigstore bundles), one path per line, bound by head commit; not verified by `acc` |
 | `verified-by` | none | Who verified the attestations' signatures in an earlier step, recorded verbatim; without it their claims are `declared` |
+| `verification` | none | Verifier JSON output files (`gh attestation verify --format json`), one path per line; bundles are loaded as signed attestations with the verified signer. Requires `verified-by` |
+| `agent-vendor` | none | Extra agent vendors, one `AGENT=VENDOR` per line, extending the built-in registry |
 | `format` | `sarif` | `sarif`, `json`, `yaml`, `table`, `in-toto` or `in-toto-jsonl` |
 | `output` | `acc-results.sarif` | Where the rendered output is written |
 | `fail-on-findings` | `true` | Fail the step on exit 1 (policy) or exit 4 (incomplete) |

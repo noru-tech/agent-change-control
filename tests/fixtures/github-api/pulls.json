@@ -21,6 +21,11 @@
     "updated_at": "2026-08-03T12:00:00Z",
     "merged_at": "2026-08-03T12:00:00Z",
     "merge_commit_sha": "merge",
-    "commits": 1
+    "commits": 1,
+    "labels": [
+      {
+        "name": "low-risk"
+      }
+    ]
   }
 ]

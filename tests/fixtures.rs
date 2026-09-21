@@ -249,6 +249,8 @@ fn signed_evidence_must_resolve_to_a_verified_attestation() {
         payload_digest: format!("sha256:0123456789abcdef{}", "0".repeat(48)),
         signed,
         verified_by: verified.map(String::from),
+        signer: None,
+        matched: true,
     };
     // Unresolved reference.
     let mut e = base.clone();
@@ -294,6 +296,38 @@ fn signed_evidence_must_resolve_to_a_verified_attestation() {
     normalize::schema(&serde_json::to_value(&m).unwrap(), "manifest").unwrap();
     manifest::validate(&m).unwrap();
     assert_eq!(m.events.attestations.len(), 1);
+}
+
+#[test]
+fn agent_review_facts_need_an_agent_reviewer_and_human_references() {
+    let base: Events =
+        serde_json::from_str(include_str!("fixtures/claude-clean/events.json")).unwrap();
+    // bob, a human, cannot carry agent facts.
+    let mut e = base.clone();
+    e.changes[0].reviews[0].agent = Some(ReviewAgent::default());
+    let err = normalize::events(e).unwrap_err().to_string();
+    assert!(err.contains("ACV003"), "{err}");
+    // An agent reviewer may; its operator must resolve to a human.
+    let mut e = base.clone();
+    e.actors.get_mut("github:bob").unwrap().kind = ActorKind::Agent;
+    e.changes[0].reviews[0].agent = Some(ReviewAgent {
+        operator: Some("github:nobody".into()),
+        ..ReviewAgent::default()
+    });
+    assert!(normalize::events(e).is_err());
+    let mut e = base.clone();
+    e.actors.get_mut("github:bob").unwrap().kind = ActorKind::Agent;
+    e.changes[0].reviews[0].agent = Some(ReviewAgent {
+        operator: Some("github:alice".into()),
+        identity: Some("key:abc".into()),
+        ..ReviewAgent::default()
+    });
+    e.changes[0].labels = vec!["Zeta".into(), "alpha".into(), "alpha".into()];
+    let normalized = normalize::events(e).unwrap();
+    assert_eq!(normalized.changes[0].labels, vec!["Zeta", "alpha"]);
+    let m = manifest::evaluate(normalized, Policy::default()).unwrap();
+    normalize::schema(&serde_json::to_value(&m).unwrap(), "manifest").unwrap();
+    manifest::validate(&m).unwrap();
 }
 
 #[test]

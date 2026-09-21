@@ -58,9 +58,12 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   pre-verified input with a recorded verifier (§3.6). Verifying them in `acc` needs a trust-root
   configuration (which identities may sign which claims); until then the verifier statement is
   the caller's. Likely Sigstore bundles first.
-- **Signed review evidence.** The review predicates in circulation carry the reviewer in the
-  signature, so they cannot be read without verification. Either a review predicate that names
-  the reviewer, or in-`acc` verification, unlocks `minimum_review_evidence: signed`.
+- **Agent reviewer independence rules.** The review document (§3.7) and the facts it records
+  about agent reviewers are read; the rules that evaluate them (ACC007 to ACC010: agent
+  approval recorded, same-vendor write and review, agent approval lacking required
+  independence, agent approval without signed identity; an opt-in `agent_review` policy block
+  requiring signed evidence and independence on operator, provider and identity; spec 0.2)
+  follow in the next release.
 - **`acc verify`** for signed attestations: unwrap the DSSE envelope, then apply what
   `acc validate` already does for unsigned Statements (subjects match the predicate, the predicate
   re-validates), and check the subjects against a commit range.

@@ -1,0 +1,28 @@
+[
+  {
+    "attestation": {
+      "bundle": {
+        "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+        "verificationMaterial": {},
+        "dsseEnvelope": {
+          "payloadType": "application/vnd.in-toto+json",
+          "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiY2hhbmdlIjp7ImhlYWRfY29tbWl0IjoiaGVhZCJ9LCJkZWNpc2lvbiI6ImFwcHJvdmVkIiwiaW5zdHJ1Y3Rpb25zIjpudWxsLCJtb2RlbCI6bnVsbCwib3BlcmF0b3IiOm51bGwsInJldmlld2VyIjp7ImFnZW50IjpudWxsLCJpZCI6ImdpdGh1YjpCb2IiLCJraW5kIjoiaHVtYW4ifSwic3BlY192ZXJzaW9uIjoiMC4xIiwic3VibWl0dGVkX2F0IjoiMjAyNi0wOC0wMlQxMjowMDowMFoifSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8vbm9ydS50ZWNoL3NwZWMvYWktY2hhbmdlLXByb3ZlbmFuY2UvcmV2aWV3L3YwLjEiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsiZ2l0Q29tbWl0IjoiaGVhZCJ9LCJuYW1lIjoiZ2l0aHViOmFjbWUvYXBpOnByOjQyMSJ9XX0=",
+          "signatures": [
+            {
+              "keyid": "",
+              "sig": "c3ludGhldGljLXNpZ25hdHVyZS1ub3QtdmVyaWZpZWQtYnktYWNj"
+            }
+          ]
+        }
+      }
+    },
+    "verificationResult": {
+      "signature": {
+        "certificate": {
+          "subjectAlternativeName": "bob@example.com",
+          "issuer": "https://github.com/login/oauth"
+        }
+      }
+    }
+  }
+]

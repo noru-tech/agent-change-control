@@ -244,6 +244,7 @@ mod tests {
                 Actor {
                     kind: ActorKind::Human,
                     display_name: Some(name.into()),
+                    vendor: None,
                 },
             );
         }
@@ -288,6 +289,7 @@ mod tests {
             reviews_complete: true,
             merger: merged.map(|_| alice),
             provenance: vec![evidence()],
+            labels: vec![],
         }
     }
 

@@ -185,10 +185,51 @@ evidence. The record travels with the export, so a manifest states the trust ass
 every `signed` fact and a validator rejects `signed` evidence that does not resolve to such a
 record.
 
-Only authorship claims (§3.2) are read from attestations in this version. Review claims are not:
-the predicates in circulation for them carry the reviewer's identity in the signature rather than
-in the predicate, which pre-verified input does not expose. Reading them is deferred until either
-a review predicate names the reviewer or the consumer verifies signatures itself.
+A consumer that reads a verifier's output (the reference implementation reads
+`gh attestation verify --format json`) MAY also record the **signer** the verifier established
+(the certificate's subject alternative name and issuer) on the attestation record. The signer is
+what the verifier found, never what the predicate says about itself.
+
+Authorship claims (§3.2) and review claims (§3.7) are read from attestations in this version.
+Predicates in circulation for reviews (`human-review`, gittuf's reference authorization) carry
+the reviewer's identity in the signature rather than in the predicate, which pre-verified input
+does not expose; §3.7 defines a predicate that names the reviewer instead.
+
+### 3.7 Review document
+
+A reviewer's tooling MAY emit a review document conforming to
+[`schemas/review.schema.json`](../schemas/review.schema.json), carried as the predicate of an
+in-toto Statement with predicate type `https://noru.tech/spec/ai-change-provenance/review/v0.1`
+and the head commit as a `gitCommit` subject:
+
+```json
+{
+  "spec_version": "0.1",
+  "reviewer": {"kind": "agent", "id": "github:acme-review[bot]", "agent": "claude-code-review"},
+  "decision": "approved",
+  "change": {"head_commit": "c3d4…"},
+  "submitted_at": "2026-08-14T08:59:10Z",
+  "operator": {"id": "github:carol"},
+  "instructions": {"owner": "github:security-team", "digest": "sha256:…"},
+  "model": "claude-opus-5"
+}
+```
+
+A review document **upgrades a forge review and never creates one**. A consumer MUST match it to
+a review the forge recorded by reviewer account, head commit and decision; a document with no
+matching review is recorded as unmatched and yields no review, because a signed file must not
+approve a change the platform never showed as approved. The reviewer's `kind` MUST agree with
+the account's kind, and for an agent reviewer the named `agent` MUST agree with any verified
+account mapping (§3.3); either disagreement is an error for the change.
+
+A matched document adds its evidence (`signed` or `declared` per §3.6) to the review. For an
+agent reviewer it also records, on the review, the facts only the reviewer's tooling can state:
+the **operator** who directed the reviewing agent, the **instructions owner** who controls what
+it was told to check, the **model**, and the **identity** the verifier established for the
+document's signature. Operator and instructions owner resolve only to accounts the forge
+confirms are human (§4), else they are null. A human reviewer's document MUST NOT name an
+operator or instructions. These facts are recorded in this version; the rules that read them
+(independence between an agent reviewer and the effective author) are defined in 0.2.
 
 ## 4. Collection
 
@@ -204,6 +245,7 @@ scope it MUST record:
   submitted against;
 - the effective author and, when the effective author is an agent, the operator with its
   confidence (`explicit`, `derived`, `unknown`);
+- the forge labels on the change;
 - evidence references for each of the above, and the record of every attestation consulted
   (§3.6).
 
@@ -226,6 +268,12 @@ An actor is `human` only when the forge asserts a user account. Apps, installati
 the forge marks as bots are `bot`. Agents (`agent:*`) never appear as forge accounts; they are
 introduced by §3. A bot is not an agent unless §3.3 says so, and a bot's approval is never a human
 approval.
+
+An agent actor carries its **vendor**, the organization that builds and operates the model
+behind the tool, from a registry keyed by agent name (`claude-code` → `anthropic`, `copilot` →
+`github`, `codex` → `openai`, …) that a consumer MAY extend. An unregistered agent has a null
+vendor. Vendor is the granularity: a tool's model changes under the same name and the forge never
+records it, so nothing finer is asserted.
 
 ## 6. Evaluation
 
@@ -410,6 +458,10 @@ are never reused.
 
 ## Changelog
 
+- **0.1, revision 5 (2026-09-21)** — the review document (§3.7) and its predicate type; the
+  signer recorded from a verifier's output (§3.6); agent vendors (§5); labels (§4); review
+  facts for agent reviewers (`agent` on reviews) and `matched` on attestation records. All
+  optional on input; no rule changes. Additive.
 - **0.1, revision 4 (2026-09-21)** — the provenance document as a signed in-toto predicate
   (§3.2); evidence strength and pre-verified attestations with a recorded verifier (§3.6,
   `signed` evidence kind, `attestations` record in the export, optional on input); the

@@ -31,6 +31,8 @@ pub struct Sources<'a> {
     pub traces: Option<&'a AgentTraces>,
     /// Attestations to bind to head commits, if any.
     pub attestations: Option<&'a Attestations>,
+    /// The vendor registry, `agent -> vendor`.
+    pub vendors: &'a BTreeMap<String, String>,
 }
 
 pub struct Github {
@@ -176,6 +178,7 @@ impl Github {
             trailers,
             traces,
             attestations,
+            vendors,
         } = sources;
         validate_repo(repository)?;
         if from > to {
@@ -236,7 +239,7 @@ impl Github {
             let p = self.object(&path)?;
             let head = string(&p["head"], "sha")?;
             let source = evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed);
-            let author = match actor(&p["user"], &mut e.actors, &source, known)? {
+            let author = match actor(&p["user"], &mut e.actors, &source, known, vendors)? {
                 Some(a) => a,
                 None => {
                     incomplete(&mut e, "Pull request author unavailable");
@@ -244,7 +247,7 @@ impl Github {
                 }
             };
             let merger = if p["merged_at"].is_string() {
-                let m = actor(&p["merged_by"], &mut e.actors, &source, known)?;
+                let m = actor(&p["merged_by"], &mut e.actors, &source, known, vendors)?;
                 Some(m.unwrap_or_else(|| unavailable(&mut e.actors, &source)))
             } else {
                 None
@@ -266,7 +269,8 @@ impl Github {
                     &format!("{ORIGIN}{path}/reviews/{id}"),
                     EvidenceKind::Observed,
                 );
-                let reviewer = match actor(&r["user"], &mut e.actors, &provenance, known)? {
+                let reviewer = match actor(&r["user"], &mut e.actors, &provenance, known, vendors)?
+                {
                     Some(a) => a,
                     None => {
                         // A review without an account cannot establish independence.
@@ -286,7 +290,79 @@ impl Github {
                     at: timestamp(&string(&r, "submitted_at")?)?,
                     commit_sha: string(&r, "commit_id")?,
                     provenance: reviewer.provenance,
+                    agent: None,
                 });
+            }
+            // Review attestations upgrade the forge's reviews and never create one: a matched
+            // review gains the attestation's evidence and, for an agent reviewer, the facts the
+            // predicate states about it; an unmatched attestation is recorded as such.
+            if let Some(a) = attestations {
+                for claim in a.reviews(&head)? {
+                    let mut record = claim.record.clone();
+                    let matched = normalized.iter().position(|r| {
+                        r.actor_id == claim.reviewer_id
+                            && r.commit_sha == head
+                            && r.state == claim.decision
+                    });
+                    let Some(index) = matched else {
+                        record.matched = false;
+                        e.attestations.insert(claim.id.clone(), record);
+                        continue;
+                    };
+                    let kind = e.actors[&claim.reviewer_id].kind;
+                    ensure!(
+                        kind == claim.reviewer_kind,
+                        "review attestation reviewer kind does not match the account"
+                    );
+                    let facts = if kind == ActorKind::Agent {
+                        let login = claim.reviewer_id.trim_start_matches("github:");
+                        if let (Some(mapped), Some(named)) = (known.get(login), &claim.agent) {
+                            ensure!(
+                                mapped == named,
+                                "review attestation names another agent than the account mapping"
+                            );
+                        }
+                        let mut resolve = |id: &Option<String>| -> Result<Option<String>> {
+                            let Some(id) = id else { return Ok(None) };
+                            let login = id.strip_prefix("github:").unwrap_or(id);
+                            if valid_login(login)
+                                && let Response::Found(user, _) =
+                                    self.get(&format!("/users/{login}"))?
+                            {
+                                actor(&user, &mut e.actors, &source, known, vendors)?;
+                            }
+                            let id = format!("github:{}", login.to_ascii_lowercase());
+                            Ok(e.actors
+                                .get(&id)
+                                .filter(|a| a.kind == ActorKind::Human)
+                                .map(|_| id))
+                        };
+                        Some(ReviewAgent {
+                            operator: resolve(&claim.operator)?,
+                            identity: claim.identity.clone(),
+                            instructions_owner: resolve(&claim.instructions_owner)?,
+                            model: claim.model.clone(),
+                        })
+                    } else {
+                        ensure!(
+                            claim.operator.is_none() && claim.instructions_owner.is_none(),
+                            "review attestation for a human names an operator or instructions"
+                        );
+                        None
+                    };
+                    let review = &mut normalized[index];
+                    if let (Some(existing), Some(new)) = (&review.agent, &facts) {
+                        ensure!(
+                            existing == new,
+                            "conflicting review attestations for one review"
+                        );
+                    }
+                    if facts.is_some() {
+                        review.agent = facts;
+                    }
+                    review.provenance.push(claim.evidence.clone());
+                    e.attestations.insert(claim.id.clone(), record);
+                }
             }
             let (commits, commits_complete) = self.pages(&format!("{path}/commits"), |_| false)?;
             if !commits_complete || commits.len() as u64 != number(&p, "commits")? {
@@ -300,7 +376,7 @@ impl Github {
                 let sha = string(&commit, "sha")?;
                 let commit_ref = format!("{ORIGIN}/repos/{repository}/commits/{sha}");
                 let source = evidence(&commit_ref, EvidenceKind::Observed);
-                let author = actor(&commit["author"], &mut e.actors, &source, known)?;
+                let author = actor(&commit["author"], &mut e.actors, &source, known, vendors)?;
                 if let Some(registry) = trailers {
                     let message = commit["commit"]["message"].as_str().unwrap_or("");
                     let agents = crate::provenance::trailer_agents(message, registry);
@@ -358,6 +434,16 @@ impl Github {
                     source.clone(),
                     evidence(&format!("{ORIGIN}{path}/reviews"), EvidenceKind::Observed),
                 ],
+                labels: p["labels"]
+                    .as_array()
+                    .map(|labels| {
+                        labels
+                            .iter()
+                            .filter_map(|l| l["name"].as_str())
+                            .map(String::from)
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             };
             if !history_complete {
                 incomplete(
@@ -420,7 +506,7 @@ impl Github {
                     if valid_login(login)
                         && let Response::Found(user, _) = self.get(&format!("/users/{login}"))?
                     {
-                        actor(&user, &mut e.actors, &source, known)?;
+                        actor(&user, &mut e.actors, &source, known, vendors)?;
                     }
                 }
                 crate::provenance::apply(
@@ -428,7 +514,10 @@ impl Github {
                     &mut e.actors,
                     agent,
                     op,
-                    "github",
+                    crate::provenance::Registries {
+                        namespace: "github",
+                        vendors,
+                    },
                     provenance,
                     Confidence::Explicit,
                 )?;
@@ -438,7 +527,10 @@ impl Github {
                     &mut e.actors,
                     agent.clone(),
                     None,
-                    "github",
+                    crate::provenance::Registries {
+                        namespace: "github",
+                        vendors,
+                    },
                     vec![Evidence {
                         source: "known_agent_account".into(),
                         r#ref: format!("github:{login}={agent}"),
@@ -474,7 +566,10 @@ impl Github {
                         &mut e.actors,
                         agent,
                         operator,
-                        "github",
+                        crate::provenance::Registries {
+                            namespace: "github",
+                            vendors,
+                        },
                         provenance,
                         Confidence::Derived,
                     )?;
@@ -536,6 +631,7 @@ fn actor(
     actors: &mut BTreeMap<String, Actor>,
     source: &Evidence,
     known: &BTreeMap<String, String>,
+    vendors: &BTreeMap<String, String>,
 ) -> Result<Option<Identity>> {
     if user.is_null() {
         return Ok(None);
@@ -556,6 +652,7 @@ fn actor(
         Actor {
             kind,
             display_name: Some(login.clone()),
+            vendor: known.get(&login).and_then(|a| vendors.get(a)).cloned(),
         },
     );
     let mut provenance = vec![source.clone()];
@@ -578,6 +675,7 @@ fn unavailable(actors: &mut BTreeMap<String, Actor>, source: &Evidence) -> Ident
         Actor {
             kind: ActorKind::Unknown,
             display_name: None,
+            vendor: None,
         },
     );
     Identity {
