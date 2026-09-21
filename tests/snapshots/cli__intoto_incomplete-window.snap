@@ -63,6 +63,7 @@ predicate:
               source: github_api
         head_sha: head
         id: "github:acme/api:pr:421"
+        merge_commit_sha: ~
         merged_at: "2026-08-03T12:00:00Z"
         merger:
           actor_id: "github:alice"
@@ -89,7 +90,7 @@ predicate:
       to: "2026-08-31T23:59:59Z"
   findings: []
   generated:
-    source_digest: "sha256:3c8eb9a63db29ada77550ff3a8f2a6b5e4c1402d3aab6669ef9647a4c7893869"
+    source_digest: "sha256:9e446623543210a6e9649f3269697eb953033783f5627a66248f5cb1a4fc1cfb"
     tool: agent-change-control
     version: 0.3.1
   policy:

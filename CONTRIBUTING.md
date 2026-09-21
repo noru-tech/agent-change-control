@@ -34,7 +34,7 @@ src/collectors/   forge collectors; github/ is the only one in Phase 1
 src/output/       json, yaml, table, sarif and in-toto renderers
 schemas/          public JSON Schemas (draft 2020-12), embedded into the binary
 spec/             the AI Change Provenance specification; versioned with the schemas
-docs/             model, policy, authorship, privacy, action and control-mapping notes
+docs/             model, policy, authorship, privacy, action, control-mapping and in-toto notes; design/ for design records
 examples/         producer-facing examples, validated by tests/provenance.rs
 action.yml        the composite GitHub Action; no logic beyond install, run and report
 tests/            integration tests (assert_cmd), insta snapshots, fixtures under tests/fixtures

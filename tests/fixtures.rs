@@ -1,6 +1,6 @@
 mod common;
 
-use agent_change_control::{Exit, manifest, model::*, normalize};
+use agent_change_control::{Exit, manifest, model::*, normalize, output::intoto};
 use serde_json::Value;
 
 /// Every fixture directory with an `events.json` is evaluated under the default policy and
@@ -70,8 +70,53 @@ fn fixtures_and_golden_outputs() {
             "{}",
             dir.display()
         );
+        // Every emitted Statement validates against the statement schema and round-trips
+        // through statement validation; the JSON Lines form does too, line by line.
+        let statement: Value = serde_json::from_str(&intoto::render(&m).unwrap()).unwrap();
+        normalize::schema(&statement, "statement").unwrap();
+        intoto::validate_statement(&statement).unwrap();
+        let lines = intoto::render_jsonl(&m).unwrap();
+        let parts = intoto::validate_jsonl(&lines).unwrap();
+        assert_eq!(parts.len(), m.events.changes.len());
+        for part in &parts {
+            manifest::validate(part).unwrap();
+        }
+        assert_eq!(
+            parts
+                .iter()
+                .flat_map(|p| p.findings.iter().map(|f| &f.id))
+                .collect::<Vec<_>>(),
+            m.findings.iter().map(|f| &f.id).collect::<Vec<_>>(),
+            "{}: finding IDs survive the split",
+            dir.display()
+        );
     }
     assert!(seen >= 20, "expected the fixture set, saw {seen}");
+}
+
+/// Byte-exact attestation goldens for a failing and a clean agent change.
+#[test]
+fn attestation_goldens() {
+    for name in ["claude-operator-self-approved", "claude-clean"] {
+        let dir = common::fixtures().join(name);
+        let e: Events =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("events.json")).unwrap())
+                .unwrap();
+        let m = manifest::evaluate(e, Policy::default()).unwrap();
+        for (file, rendered) in [
+            ("expected.intoto.json", intoto::render(&m).unwrap()),
+            ("expected.intoto.jsonl", intoto::render_jsonl(&m).unwrap()),
+        ] {
+            if std::env::var_os("UPDATE_GOLDENS").is_some() {
+                std::fs::write(dir.join(file), &rendered).unwrap();
+            }
+            assert_eq!(
+                rendered,
+                std::fs::read_to_string(dir.join(file)).unwrap(),
+                "{name}/{file}"
+            );
+        }
+    }
 }
 
 fn example() -> Manifest {

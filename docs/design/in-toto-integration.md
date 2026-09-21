@@ -1,8 +1,9 @@
 # in-toto integration: Phase 0 findings
 
-Status: orientation complete, nothing implemented. This document records what the repository
-already does, where the `acc x in-toto` implementation plan is out of date, and the decisions that
-need Bip's answer before Phase 1 starts. Each later phase appends its own section.
+Status: Phase 0 (orientation) and Phase 1 (attestation output and validation) complete; see
+section 9. Sections 1 to 8 are the Phase 0 record: what the repository already did, where the
+`acc x in-toto` implementation plan was out of date, and the decisions Bip made before Phase 1.
+Each later phase appends its own section.
 
 ## 1. The plan is one release behind the repository
 
@@ -243,3 +244,30 @@ installed on this machine; snapshot updates go through `INSTA_UPDATE` or an inst
 - CHANGELOG, README, `docs/privacy.md` note on attestation contents.
 
 Not in Phase 1: signing, evidence kinds, redaction, any rule change.
+
+## 9. Phase 1 (implemented 2026-09-21)
+
+Bip accepted every recommendation in section 7. What landed, and the two places the
+implementation refined the proposal:
+
+- `merge_commit_sha` on changes, recorded by the collector for merged pull requests only (GitHub
+  reports a throwaway test merge for open ones), rejected on unmerged changes (ACV004), and
+  **optional on input** rather than required: the schema change is then genuinely additive and
+  0.3.x exports still validate, which section 5.3 had not considered. Output always carries it.
+- Subjects: head commit first, then `<change id>:merge` with the merge commit when merged, known
+  and different from the head. The `:merge` suffix keeps subject names unique per entry.
+- `--format in-toto-jsonl`, one Statement per change in change ID order. Each line's predicate is
+  a manifest re-evaluated over that change alone and **only the actors it refers to**, so a
+  per-change attestation does not carry unrelated reviewers' identities. Finding IDs are
+  unchanged by the split, which the fixture test asserts for every fixture; dispositions are
+  carried over by ID.
+- `.intoto.json`, `.intoto.jsonl` and `.jsonl` output names select the attestation formats.
+- `schemas/statement.schema.json`, a strict subset of Statement v1, and `acc validate` on a
+  Statement or JSON Lines: schema, predicate type, predicate as manifest, subjects exactly equal
+  to what the predicate's changes produce, one change per line, ascending order.
+- `docs/in-toto.md` in the upstream predicate template structure; spec 0.1 revision 3.
+- Goldens `expected.intoto.json` and `expected.intoto.jsonl` for `claude-operator-self-approved`
+  and `claude-clean`; every fixture's Statement validates against the statement schema.
+
+Not done, by design: signing, evidence kinds, redaction, rule changes. The release that ships
+this is 0.4.0, cut separately per the repository's release convention.

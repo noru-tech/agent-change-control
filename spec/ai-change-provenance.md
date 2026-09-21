@@ -165,8 +165,8 @@ A collector turns forge data into the normalized event model
 ([`schemas/change-events.schema.json`](../schemas/change-events.schema.json)). For each change in
 scope it MUST record:
 
-- the change identity, repository, title, URL, opening time, merge time (if merged) and current
-  head commit;
+- the change identity, repository, title, URL, opening time, merge time (if merged), current
+  head commit, and the merge commit when the change is merged and the forge reports one;
 - the forge author, every commit author the forge exposes, and the merger (if merged);
 - the complete review history: for each review decision its stable identifier, actor, state
   (`approved`, `changes_requested`, `commented`, `dismissed`), time, and the commit it was
@@ -277,16 +277,27 @@ properties. `invocations[].executionSuccessful` is `false` when collection was i
 An [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md)
 with:
 
-- `subject`: one entry per evaluated change, `name` set to the change identifier and `digest`
-  `{"gitCommit": <head commit>}`;
+- `subject`: for each evaluated change, an entry with `name` set to the change identifier and
+  `digest` `{"gitCommit": <head commit>}`, followed, when the change is merged and its merge
+  commit is known and differs from the head, by an entry with `name` set to the change identifier
+  plus `:merge` and `digest` `{"gitCommit": <merge commit>}`. The head commit is the commit the
+  approvals are bound to; the merge commit is the one reachable from the target branch after a
+  squash or rebase merge. A merge commit the forge did not report is not invented;
 - `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.1`;
 - `predicate`: the manifest of §7.1.
 
-The statement is emitted unsigned and in canonical form. Signing is done by wrapping the bytes in
-a [DSSE](https://github.com/secure-systems-lab/dsse) envelope with a key or identity the
-organization trusts. A verifier MUST check that the subject digests cover the commits it is asking
-about and SHOULD validate the predicate as in §7.1 before trusting its findings. An attestation
-over an empty change set is not produced.
+Two forms are emitted, both unsigned and in canonical form: one Statement whose subjects cover
+every change in the manifest, and JSON Lines with one Statement per change in change identifier
+order, where each predicate is a manifest covering that change alone and carrying only the actors
+it refers to. Finding identifiers are identical in both forms. Signing is done by wrapping a
+Statement's bytes in a [DSSE](https://github.com/secure-systems-lab/dsse) envelope with a key or
+identity the organization trusts. A verifier MUST check that the subject digests cover the commits
+it is asking about, MUST check that the subjects are exactly those the predicate's changes produce,
+and SHOULD validate the predicate as in §7.1 before trusting its findings; the reference
+implementation performs the last two checks with `acc validate`. An attestation over an empty
+change set is not produced. The Statement shape is published as
+[`schemas/statement.schema.json`](../schemas/statement.schema.json), and the predicate is
+documented in the in-toto predicate template in [`docs/in-toto.md`](../docs/in-toto.md).
 
 ## 8. Determinism
 
@@ -350,6 +361,10 @@ are never reused.
 
 ## Changelog
 
+- **0.1, revision 3 (2026-09-21)** — the merge commit is recorded for merged changes
+  (`merge_commit_sha`, optional on input so earlier exports stay valid) and becomes a second
+  attestation subject; JSON Lines attestations with one Statement per change; verifier
+  requirements for subjects; the Statement schema. Additive.
 - **0.1, revision 2 (2026-09-19)** — the derived evidence tier (vendor `Co-Authored-By`
   trailers, Agent Trace records) with operator derivation from commit authorship; relationship to
   Agent Trace (§11). Additive; schemas unchanged.

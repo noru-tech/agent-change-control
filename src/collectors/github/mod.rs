@@ -335,6 +335,13 @@ impl Github {
                 opened_at: timestamp(&string(&p, "created_at")?)?,
                 merged_at: p["merged_at"].as_str().map(timestamp).transpose()?,
                 head_sha: head.clone(),
+                // GitHub reports a merge commit for open pull requests too, but that is a test
+                // merge that is recreated on every push; only a merged change's is a fact.
+                merge_commit_sha: p["merged_at"]
+                    .as_str()
+                    .and_then(|_| p["merge_commit_sha"].as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(String::from),
                 commits: normalized_commits,
                 forge_author: author.clone(),
                 author,
@@ -443,6 +450,7 @@ impl Github {
             if after["head"]["sha"] != p["head"]["sha"]
                 || after["updated_at"] != p["updated_at"]
                 || after["merged_at"] != p["merged_at"]
+                || after["merge_commit_sha"] != p["merge_commit_sha"]
             {
                 c.reviews_complete = false;
                 incomplete(&mut e, "Pull request changed during collection; retry");
