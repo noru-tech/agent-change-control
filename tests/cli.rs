@@ -147,6 +147,43 @@ fn attestations_validate_and_are_inferred_from_their_suffix() {
         .assert()
         .code(3)
         .stderr(predicate::str::contains("subjects"));
+    // The subject form GitHub artifact attestations produce: the sha256 of the manifest file,
+    // which `--format json` writes in canonical form, so the digest is reproducible.
+    let manifest_path = dir.path().join("acc-manifest.json");
+    acc()
+        .args(["evaluate", "-o"])
+        .arg(&manifest_path)
+        .arg(&events)
+        .assert()
+        .success();
+    let bytes = std::fs::read(&manifest_path).unwrap();
+    let m: Manifest = serde_json::from_slice(&bytes).unwrap();
+    let digest = agent_change_control::normalize::digest(&m).unwrap();
+    assert_eq!(
+        format!(
+            "sha256:{:x}",
+            <sha2::Sha256 as sha2::Digest>::digest(&bytes)
+        ),
+        digest,
+        "the file's digest is the canonical digest"
+    );
+    let attested = serde_json::json!({
+        "_type": "https://in-toto.io/Statement/v1",
+        "subject": [{
+            "name": "acc-manifest.json",
+            "digest": {"sha256": digest.trim_start_matches("sha256:")}
+        }],
+        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.1",
+        "predicate": m,
+    });
+    let path = dir.path().join("attested.intoto.json");
+    std::fs::write(&path, serde_json::to_string(&attested).unwrap()).unwrap();
+    acc()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Valid attestation"));
     // A merged change without a merge commit, and an open change, have a head subject only.
     for name in ["incomplete-window", "open-pr"] {
         let out = acc()

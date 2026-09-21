@@ -111,8 +111,8 @@ the [specification](../spec/ai-change-provenance.md).
 `format: in-toto` writes an unsigned in-toto Statement whose subjects are the pull request's head
 commit and, once merged, its merge commit, and whose predicate is the manifest. Sign it with the
 DSSE signer you already trust and store it next to the build provenance of the release that ships
-the change (see [in-toto](in-toto.md) and, before publishing to a transparency log,
-[privacy](privacy.md)):
+the change. [Signing](signing.md) shows how to do that with `actions/attest`, which needs
+`format: json` instead, and what to read before publishing to a transparency log:
 
 ```yaml
       - uses: noru-tech/agent-change-control@v0.3.1

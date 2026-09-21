@@ -295,7 +295,14 @@ identity the organization trusts. A verifier MUST check that the subject digests
 it is asking about, MUST check that the subjects are exactly those the predicate's changes produce,
 and SHOULD validate the predicate as in §7.1 before trusting its findings; the reference
 implementation performs the last two checks with `acc validate`. An attestation over an empty
-change set is not produced. The Statement shape is published as
+change set is not produced.
+
+A signer that accepts only SHA-2 subject digests (GitHub artifact attestations, `cosign
+attest-blob`) MAY instead produce a Statement whose single subject carries a `sha256` digest over
+the canonical bytes of the predicate, which is the manifest as the reference implementation's
+JSON output writes it. The commits are then found inside the predicate (`head_sha`,
+`merge_commit_sha`), and a verifier MUST recompute that digest from the predicate before trusting
+the subject. `acc validate` accepts both subject forms. The Statement shape is published as
 [`schemas/statement.schema.json`](../schemas/statement.schema.json), and the predicate is
 documented in the in-toto predicate template in [`docs/in-toto.md`](../docs/in-toto.md).
 
@@ -364,7 +371,8 @@ are never reused.
 - **0.1, revision 3 (2026-09-21)** — the merge commit is recorded for merged changes
   (`merge_commit_sha`, optional on input so earlier exports stay valid) and becomes a second
   attestation subject; JSON Lines attestations with one Statement per change; verifier
-  requirements for subjects; the Statement schema. Additive.
+  requirements for subjects, including the `sha256`-of-predicate subject form for SHA-2-only
+  signers; the Statement schema. Additive.
 - **0.1, revision 2 (2026-09-19)** — the derived evidence tier (vendor `Co-Authored-By`
   trailers, Agent Trace records) with operator derivation from commit authorship; relationship to
   Agent Trace (§11). Additive; schemas unchanged.

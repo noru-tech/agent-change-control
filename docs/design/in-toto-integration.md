@@ -271,3 +271,33 @@ implementation refined the proposal:
 
 Not done, by design: signing, evidence kinds, redaction, rule changes. The release that ships
 this is 0.4.0, cut separately per the repository's release convention.
+
+## 10. Phase 2 (implemented 2026-09-21)
+
+Signing stays outside `acc`. What changed, and what was decided:
+
+- **Two subject forms, both accepted by `validate`.** Section 5.8 found that `actions/attest` and
+  `gh attestation verify` identify artifacts by SHA-2 digest only, so a `gitCommit` subject
+  cannot go through them. Rather than a `--predicate-only` flag, the manifest file itself is the
+  artifact: `acc … --format json` writes canonical bytes, `actions/attest` hashes that file for
+  the subject and parses it for the predicate, and `acc validate` accepts a Statement whose single
+  subject is the sha256 of the canonical predicate by recomputing it. The commit binding survives
+  through `head_sha` and `merge_commit_sha` inside the predicate. Spec §7.3 says so.
+- **cosign path.** `cosign attest-blob --statement` signs the commit-subject Statement as `acc`
+  wrote it (cosign validates the Statement's shape, not its digest algorithms), which is the path
+  for verifiers that walk commits.
+- **sigstore-python.** #1018 was closed as a duplicate of #982, which is still open; its DSSE
+  digest list was not extended. Treat it as SHA-2 only and use the digest form with it.
+- **Dogfood.** `.github/workflows/attest.yml` attests the manifest of every merged pull request
+  of this repository on `pull_request_target: closed` (fork pull requests would lack `id-token`
+  under `pull_request`; no pull request code runs). It pins the last published release, so its
+  manifests gain `merge_commit_sha` once 0.4.0 is out and the pin is bumped. The README links the
+  repository's attestation listing rather than one attestation, since none exists before this
+  merges.
+- **Privacy.** `docs/signing.md` states plainly that the attestation store is readable by
+  everyone who can read the repository and that Rekor is permanent; private review history should
+  be signed with an organization key into an organization store until the pseudonymization mode
+  exists.
+
+Not done: signature verification inside `acc` (Phase 3, section 5.6 of the plan), and
+pseudonymization.

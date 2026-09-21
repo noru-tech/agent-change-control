@@ -135,9 +135,28 @@ pub fn per_change(m: &Manifest) -> Result<Vec<Manifest>> {
         .collect()
 }
 
+/// Whether a Statement's subjects fit its predicate. Two forms are accepted: exactly the commit
+/// subjects the predicate's changes produce, or, for signers that accept only SHA-2 digests
+/// (GitHub artifact attestations, `cosign attest-blob`), a single subject whose `sha256` digest
+/// is over the canonical bytes of the predicate, which is the manifest as `--format json` writes
+/// it. The commits are then found inside the predicate.
+fn subjects_match(v: &Value, m: &Manifest) -> Result<bool> {
+    let commits: Vec<Value> = m.events.changes.iter().flat_map(subjects).collect();
+    if v["subject"] == Value::Array(commits) {
+        return Ok(true);
+    }
+    let Some([one]) = v["subject"].as_array().map(Vec::as_slice) else {
+        return Ok(false);
+    };
+    let Some(hex) = one["digest"]["sha256"].as_str() else {
+        return Ok(false);
+    };
+    Ok(crate::normalize::digest(m)? == format!("sha256:{}", hex.to_ascii_lowercase()))
+}
+
 /// Validate one Statement: the statement schema, the predicate type, the predicate as a manifest
-/// (schema, timeline and byte-identical re-evaluation), and subjects that are exactly the ones
-/// the predicate's changes produce. Returns the predicate.
+/// (schema, timeline and byte-identical re-evaluation), and subjects that fit the predicate (see
+/// [`subjects_match`]). Returns the predicate.
 pub fn validate_statement(v: &Value) -> Result<Manifest> {
     crate::normalize::schema(v, "statement")?;
     ensure!(
@@ -147,9 +166,8 @@ pub fn validate_statement(v: &Value) -> Result<Manifest> {
     crate::normalize::schema(&v["predicate"], "manifest")?;
     let m: Manifest = serde_json::from_value(v["predicate"].clone())?;
     crate::manifest::validate(&m)?;
-    let expected: Vec<Value> = m.events.changes.iter().flat_map(subjects).collect();
     ensure!(
-        v["subject"] == Value::Array(expected),
+        subjects_match(v, &m)?,
         "statement subjects do not match the predicate's changes"
     );
     Ok(m)
@@ -310,6 +328,28 @@ mod tests {
         let full: Vec<&str> = m.findings.iter().map(|f| f.id.as_str()).collect();
         assert_eq!(ids, full);
         assert_eq!(render_jsonl(&m).unwrap(), out, "byte-stable");
+    }
+
+    #[test]
+    fn a_single_sha256_subject_over_the_canonical_predicate_is_accepted() {
+        let m = manifest(vec![change(1, Some("m1"))]);
+        let digest = crate::normalize::digest(&m).unwrap();
+        let hex = digest.trim_start_matches("sha256:");
+        let mut v: Value = serde_json::from_str(&render(&m).unwrap()).unwrap();
+        v["subject"] = json!([{"name": "acc-manifest.json", "digest": {"sha256": hex}}]);
+        validate_statement(&v).unwrap();
+        // Signers may upper-case hex; a wrong digest, or two such subjects, are rejected.
+        v["subject"][0]["digest"]["sha256"] = hex.to_ascii_uppercase().into();
+        validate_statement(&v).unwrap();
+        v["subject"][0]["digest"]["sha256"] = "0".repeat(64).into();
+        assert!(validate_statement(&v).is_err());
+        v["subject"] = json!([
+            {"name": "a", "digest": {"sha256": hex}},
+            {"name": "b", "digest": {"sha256": hex}}
+        ]);
+        assert!(validate_statement(&v).is_err());
+        v["subject"] = json!([{"name": "a", "digest": {"sha512": hex}}]);
+        assert!(validate_statement(&v).is_err());
     }
 
     #[test]
