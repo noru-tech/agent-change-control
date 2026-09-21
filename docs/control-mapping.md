@@ -39,6 +39,10 @@ Two properties matter for evidence handling:
 | ACC002 | The effective human author, or the agent's operator, approved the change themselves | Self-approval; the same response as for any author-approved change |
 | ACC003 | A merged change has no qualifying independent approval | Missed review or an approval that did not cover the merged head |
 | ACC006 | An agent wrote the change and no human operator is recorded | Not a violation; a gap in provenance. Fix the declaration at the source (agent integration or PR template) |
+| ACC007 | An agent approved the change (observation, info) | None by itself; the population of agent-approved changes for sampling |
+| ACC008 | An agent wrote the change and only agents of the same vendor approved it | One model checking its own work; treat as a missed independent review |
+| ACC009 | Under `agent_review`, the only agent approvals are dependent on the author (operator, vendor, signing identity or instructions) | Missed independence; the same response as for self-approval |
+| ACC010 | Under `agent_review`, an agent approval is not backed by a verified signed review document | Do not count the approval; fix the reviewer's signing integration |
 | exit 4 (incomplete) | Part of the population or a review history could not be retrieved | Do not report the window as clean; re-collect, or document the gap |
 
 Dispositions (`accepted`, `remediated`, `false_positive`, with owner, date, rationale and optional

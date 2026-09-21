@@ -12,7 +12,9 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 
 ## Shipped since 0.1
 
-- **AI Change Provenance 0.1** published for comment: `spec/ai-change-provenance.md`.
+- **AI Change Provenance 0.1** published for comment, then **0.2** with agent reviewers
+  (`spec/ai-change-provenance.md`): signed authorship and review documents as pre-verified
+  input, evidence strength, and the opt-in `agent_review` mode with rules ACC007 to ACC010.
 - **GitHub Action** (`noru-tech/agent-change-control@v0.2.0`) and **in-toto output**
   (`--format in-toto`), released in 0.2.0.
 - **Derived evidence tier** (0.3.0): vendor `Co-Authored-By` trailers and Agent Trace records
@@ -20,22 +22,6 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 
 ## Next
 
-- **AI reviewer classification.** Teams already let an AI reviewer approve low-risk changes, and
-  `acc` can currently only say "not a human". Proposed design, for discussion in an issue before
-  any rule ships:
-  - *Classification.* A reviewer account mapped with `--agent-account` is already an agent and
-    never counts as a human approval. Add a vendor to agent actors (registry: `claude-code` and
-    `claude-code-review` → `anthropic`, `copilot` → `github`, …) so two agents can be compared.
-  - *ACC007, agent approval recorded* (`info`): an agent's approval is on the current head. Not a
-    violation; makes the population of AI-reviewed changes visible.
-  - *ACC008, same-vendor write and review* (`high`): the effective author is an agent and the only
-    approvals of the head are by agents of the same vendor. One model checking its own work is
-    the agent-era self-approval and deserves its own identifier.
-  - *Policy.* `agent_review.satisfies_independence: false` by default. When a team sets it to
-    `true` for changes carrying an allow-listed forge label (collected as a new `labels` field),
-    an agent approval by a *different* vendor may satisfy ACC001/ACC003 for those changes only,
-    and the manifest records that the policy, not a human, made the call. Risk classification
-    itself stays outside `acc`.
 - **Adapters for more third-party provenance.** Agent Trace is read today (§3.4 of the spec).
   git-ai (an Agent Trace partner) and AgentDiff next, once their record formats are reviewed
   against the same requirement: written at authoring time, bound to a revision, naming the tool.
@@ -58,12 +44,10 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   pre-verified input with a recorded verifier (§3.6). Verifying them in `acc` needs a trust-root
   configuration (which identities may sign which claims); until then the verifier statement is
   the caller's. Likely Sigstore bundles first.
-- **Agent reviewer independence rules.** The review document (§3.7) and the facts it records
-  about agent reviewers are read; the rules that evaluate them (ACC007 to ACC010: agent
-  approval recorded, same-vendor write and review, agent approval lacking required
-  independence, agent approval without signed identity; an opt-in `agent_review` policy block
-  requiring signed evidence and independence on operator, provider and identity; spec 0.2)
-  follow in the next release.
+- **In-toto layout export.** A layout fragment from a policy: `write` and `review` steps with
+  the author and reviewer signing identities as functionaries and a threshold, mapping the
+  `identity` dimension of `agent_review` to in-toto verification. Only worth it for users who
+  already run in-toto verification.
 - **`acc verify`** for signed attestations: unwrap the DSSE envelope, then apply what
   `acc validate` already does for unsigned Statements (subjects match the predicate, the predicate
   re-validates), and check the subjects against a commit range.

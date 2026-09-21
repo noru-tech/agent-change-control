@@ -1,6 +1,6 @@
 # AI Change Provenance
 
-**Version 0.1** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
+**Version 0.2** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
 Reference implementation: [`acc`](../README.md)
 
 AI Change Provenance (ACP) is a small, machine-readable convention for answering one question
@@ -294,6 +294,13 @@ A change has a **qualifying independent approval** when some reviewer's latest d
 reviewer is not *H*, and the decision's evidence reaches the policy's minimum review evidence
 (§6.3).
 
+Under the opt-in `agent_review` policy (§6.3) there is a second form: an **agent's** latest
+decision is `approved` on the current head, its evidence reaches `agent_review.minimum_evidence`,
+and every dimension the policy requires is `independent` (§6.5). The assessment reason then
+states that policy, not a human, made the call. If no approval qualifies but some agent approval
+with sufficient evidence is `unknown` on a required dimension and `dependent` on none,
+independence is `unknown`, never `pass`.
+
 If *H* is unknown, independence is `unknown`, never `pass`. If review collection for the change is
 incomplete, independence is `unknown`: an approval that was later withdrawn could be missing.
 
@@ -305,9 +312,14 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | **ACC002** Approver is author | Any `approved` review, at any point, is by *H*. A stale self-approval still counts: the act, not its current effect, is the finding. | never | *H* unknown; or reviews incomplete with no self-approval seen. |
 | **ACC003** Merged without independent approval | The change is merged, *H* is known, reviews complete, and no qualifying approval exists. | The change is not merged. | *H* unknown, or reviews incomplete. |
 | **ACC006** Unknown agent operator | Effective author is an agent and no human operator is recorded. | Effective author is not an agent. | never |
+| **ACC007** Agent approval recorded (`info`) | An agent's latest decision at or before merge is `approved` on the current head. Not a violation: it makes the population of agent-approved changes visible. | No agent reviewed the current head. | never |
+| **ACC008** Same-vendor write and review | Effective author is an agent, at least one approval of the current head exists, no human approved it, and every approving agent has the author agent's vendor. | Effective author is not an agent, a human approved the head, or nothing approved it. | The author's or an approving agent's vendor is null. |
+| **ACC009** Agent approval lacks required independence | `agent_review` applies, no human independent approval exists, at least one agent approval carries the required evidence, and every such approval is `dependent` on a required dimension. | `agent_review` is off or out of scope, a human independent approval exists, or no agent approval carries the required evidence. | Some such approval is `unknown` on a required dimension and `dependent` on none. |
+| **ACC010** Agent approval without signed identity (`warning`) | `agent_review` applies and an agent approval of the current head has evidence below `agent_review.minimum_evidence`. | `agent_review` is off or out of scope, or no agent approved the head. | never |
 
 ACC004 and ACC005 are reserved (deployment and bypass rules). Retired identifiers are never
-reused.
+reused. ACC007 and ACC008 evaluate under every policy, as observations; ACC009 and ACC010 only
+under `agent_review`.
 
 Note the design choices these encode:
 
@@ -330,6 +342,44 @@ it does not name the effective human, so ACC006 fails with that reason and indep
 `unknown`, never `pass`. `minimum_review_evidence` (default `observed`) applies to approvals: a
 decision whose strongest evidence is below it does not qualify (§6.1). Neither key changes the
 facts; both can only move a verdict away from `pass`.
+
+The `agent_review` block lets an agent approval satisfy independence:
+
+```yaml
+agent_review:
+  satisfies_independence: false        # default: agent approvals never qualify
+  require: [operator, provider, identity]
+  minimum_evidence: signed             # not lowerable in this version
+  labels: []                           # when set, only changes carrying one are in scope
+```
+
+`require` names the dimensions (§6.5) that MUST be `independent`; it MUST NOT be empty, and its
+default is the three a signed review document (§3.7) plus the vendor registry (§5) can establish.
+`instructions` is opt-in because few producers can declare instruction ownership yet, and a
+policy author who leaves it out accepts that a clean result under the mode says nothing about who
+wrote the reviewer's instructions. `minimum_evidence` MUST be `signed`: a declared agent reviewer
+is never enough. `labels` scopes the mode to changes carrying one of the listed forge labels;
+risk classification itself stays outside this specification.
+
+### 6.5 Independence dimensions
+
+For an agent's approval of the current head, each dimension is `independent`, `dependent` or
+`unknown`. `unknown` on a required dimension never yields a clean result.
+
+| Dimension | Independent when | Dependent when | Unknown when |
+| --- | --- | --- | --- |
+| `operator` | The review's recorded operator differs from *H* | They are the same actor | Either is unknown |
+| `provider` | The reviewing agent's vendor differs from the author agent's vendor; for a human author, always | Same vendor | Either vendor is null |
+| `identity` | The review document's verified signer differs from every verified signer behind the authorship claim | It is one of them | The review has no verified signer, or the authorship claim has none |
+| `instructions` | The review's recorded instructions owner differs from *H* | It is *H* | Either is unknown |
+
+`operator` and `instructions` look alike and are not: the same human can direct a reviewer they
+did not configure, and a different human can run a reviewer whose instructions the author wrote;
+only `instructions` catches the second case. `identity` is the in-toto notion of distinct
+functionaries with distinct keys and the one dimension that rests on a verified fact rather than
+a declared one. `provider` is deliberately coarse (§5): it answers whether one model checked its
+own work and nothing finer. A human approval is never evaluated on these dimensions; §6.1's first
+form is its whole test.
 
 ### 6.4 Dispositions
 
@@ -371,7 +421,7 @@ with:
   plus `:merge` and `digest` `{"gitCommit": <merge commit>}`. The head commit is the commit the
   approvals are bound to; the merge commit is the one reachable from the target branch after a
   squash or rebase merge. A merge commit the forge did not report is not invented;
-- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.1`;
+- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.2`;
 - `predicate`: the manifest of §7.1.
 
 Two forms are emitted, both unsigned and in canonical form: one Statement whose subjects cover
@@ -454,10 +504,18 @@ revision, naming the tool, written when the code was produced.
 The specification, the schemas and the predicate type share a version. Additive changes (new
 optional fields, new rules with new identifiers) increment the minor version. Changes to the
 meaning of an existing rule, identifier or format increment the major version. Rule identifiers
-are never reused.
+are never reused. Exports and policies written under the previous minor version remain valid
+input (`version` accepts `0.1` and `0.2`); manifests and attestations are validated by the
+release that produced them. The provenance (§3.2) and review (§3.7) documents are versioned on
+their own and stay at 0.1.
 
 ## Changelog
 
+- **0.2 (2026-09-21)** — agent reviewers: the second form of qualifying approval under the
+  opt-in `agent_review` policy (§6.1, §6.3), the independence dimensions (§6.5), rules ACC007
+  to ACC010 (§6.2), predicate type `v0.2` (§7.3). Version compatibility rules (§12). Defaults
+  are unchanged: without `agent_review`, an agent approval never qualifies, and ACC007 and
+  ACC008 are observations.
 - **0.1, revision 5 (2026-09-21)** — the review document (§3.7) and its predicate type; the
   signer recorded from a verifier's output (§3.6); agent vendors (§5); labels (§4); review
   facts for agent reviewers (`agent` on reviews) and `matched` on attestation records. All

@@ -24,6 +24,22 @@ runs:
           reason: Effective author is not an agent.
           rule_id: ACC006
           status: not_applicable
+        - change_id: "github:acme/api:pr:421"
+          reason: No agent reviewed the current head.
+          rule_id: ACC007
+          status: not_applicable
+        - change_id: "github:acme/api:pr:421"
+          reason: Effective author is not an agent.
+          rule_id: ACC008
+          status: not_applicable
+        - change_id: "github:acme/api:pr:421"
+          reason: Agent approvals do not satisfy independence under this policy.
+          rule_id: ACC009
+          status: not_applicable
+        - change_id: "github:acme/api:pr:421"
+          reason: Agent approvals do not satisfy independence under this policy.
+          rule_id: ACC010
+          status: not_applicable
     results: []
     tool:
       driver:
@@ -45,5 +61,21 @@ runs:
             name: unknown_agent_operator
             shortDescription:
               text: unknown agent operator
+          - id: ACC007
+            name: agent_approval_recorded
+            shortDescription:
+              text: agent approval recorded
+          - id: ACC008
+            name: same_vendor_write_and_review
+            shortDescription:
+              text: same vendor write and review
+          - id: ACC009
+            name: agent_approval_not_independent
+            shortDescription:
+              text: agent approval not independent
+          - id: ACC010
+            name: agent_approval_unsigned
+            shortDescription:
+              text: agent approval unsigned
         version: 0.3.1
 version: 2.1.0

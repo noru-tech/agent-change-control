@@ -52,7 +52,10 @@ A reviewer account mapped with `--agent-account` is an agent and its approval ne
 human's. Agent actors carry a vendor from a built-in registry extended by
 `--agent-vendor AGENT=VENDOR`; unregistered agents have none. The facts a review document states
 about an agent reviewer are recorded on the review as `agent` (operator, identity,
-instructions owner, model) for the independence rules that follow in the next release.
+instructions owner, model). Under the opt-in `agent_review` policy an agent approval can satisfy
+independence when it is signed and independent of the effective author on the required
+dimensions; see [policy](policy.md#agent-reviewers) and spec §6.5. Without it, ACC007 records
+the approval and ACC008 catches a model checking its own vendor's work.
 
 ## Derived tier
 

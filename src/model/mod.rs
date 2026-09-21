@@ -123,6 +123,14 @@ pub enum RuleId {
     Acc003,
     #[serde(rename = "ACC006")]
     Acc006,
+    #[serde(rename = "ACC007")]
+    Acc007,
+    #[serde(rename = "ACC008")]
+    Acc008,
+    #[serde(rename = "ACC009")]
+    Acc009,
+    #[serde(rename = "ACC010")]
+    Acc010,
 }
 
 /// Human-readable rule names, used as policy keys.
@@ -133,6 +141,43 @@ pub enum RuleName {
     ApproverIsAuthor,
     MergedWithoutIndependentApproval,
     UnknownAgentOperator,
+    AgentApprovalRecorded,
+    SameVendorWriteAndReview,
+    AgentApprovalNotIndependent,
+    AgentApprovalUnsigned,
+}
+
+/// The dimensions along which an agent reviewer's independence from the effective author is
+/// evaluated. Each is `independent`, `dependent` or `unknown` per approval.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Dimension {
+    /// The reviewing agent's operator differs from the effective human.
+    Operator,
+    /// The reviewing agent's vendor differs from the author agent's vendor.
+    Provider,
+    /// The review attestation's verified signer differs from the authorship attestation's.
+    Identity,
+    /// The reviewer's instructions owner is not the effective human.
+    Instructions,
+}
+
+/// The opt-in policy under which an agent approval can satisfy independence.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct AgentReview {
+    /// Off by default: agent approvals never qualify unless a policy says so.
+    #[serde(default)]
+    pub satisfies_independence: bool,
+    /// The dimensions that must be `independent` for an agent approval to qualify.
+    #[serde(default = "crate::policy::default_require")]
+    pub require: Vec<Dimension>,
+    /// The weakest evidence an agent approval may rest on; `signed` in this version.
+    #[serde(default = "crate::policy::default_agent_minimum")]
+    pub minimum_evidence: EvidenceKind,
+    /// When non-empty, only changes carrying one of these forge labels are in scope.
+    #[serde(default)]
+    pub labels: Vec<String>,
 }
 
 impl RuleId {
@@ -143,6 +188,10 @@ impl RuleId {
             RuleId::Acc002 => "ACC002",
             RuleId::Acc003 => "ACC003",
             RuleId::Acc006 => "ACC006",
+            RuleId::Acc007 => "ACC007",
+            RuleId::Acc008 => "ACC008",
+            RuleId::Acc009 => "ACC009",
+            RuleId::Acc010 => "ACC010",
         }
     }
 
@@ -153,6 +202,10 @@ impl RuleId {
             RuleId::Acc002 => RuleName::ApproverIsAuthor,
             RuleId::Acc003 => RuleName::MergedWithoutIndependentApproval,
             RuleId::Acc006 => RuleName::UnknownAgentOperator,
+            RuleId::Acc007 => RuleName::AgentApprovalRecorded,
+            RuleId::Acc008 => RuleName::SameVendorWriteAndReview,
+            RuleId::Acc009 => RuleName::AgentApprovalNotIndependent,
+            RuleId::Acc010 => RuleName::AgentApprovalUnsigned,
         }
     }
 }
@@ -166,6 +219,10 @@ impl RuleName {
             RuleName::ApproverIsAuthor => "approver_is_author",
             RuleName::MergedWithoutIndependentApproval => "merged_without_independent_approval",
             RuleName::UnknownAgentOperator => "unknown_agent_operator",
+            RuleName::AgentApprovalRecorded => "agent_approval_recorded",
+            RuleName::SameVendorWriteAndReview => "same_vendor_write_and_review",
+            RuleName::AgentApprovalNotIndependent => "agent_approval_not_independent",
+            RuleName::AgentApprovalUnsigned => "agent_approval_unsigned",
         }
     }
 }
@@ -368,6 +425,9 @@ pub struct Policy {
     /// The weakest evidence an approval may rest on and still qualify as independent approval.
     #[serde(default = "crate::policy::default_review_minimum")]
     pub minimum_review_evidence: EvidenceKind,
+    /// Whether, and on what conditions, an agent approval satisfies independence.
+    #[serde(default)]
+    pub agent_review: AgentReview,
     pub rules: BTreeMap<RuleName, RulePolicy>,
 }
 

@@ -185,7 +185,7 @@ impl Github {
             return Err(failure(Exit::Usage, "window is reversed"));
         }
         let mut e = Events {
-            version: "0.1".into(),
+            version: "0.2".into(),
             repository: repository.into(),
             window: Window {
                 from,

@@ -48,7 +48,7 @@ fn policy_default_threshold_and_unknown_rules() {
     let policy: Policy = serde_json::from_value(v).unwrap();
     let policy = agent_change_control::policy::resolve(policy).unwrap();
     assert_eq!(policy.fail_on, Severity::Medium);
-    assert_eq!(policy.rules.len(), 4);
+    assert_eq!(policy.rules.len(), 8);
     let v = json!({"version": "0.1", "rules": {"typo": {"enabled": false, "severity": "warning"}}});
     assert!(normalize::schema(&v, "policy").is_err());
 }

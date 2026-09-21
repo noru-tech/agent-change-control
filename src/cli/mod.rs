@@ -20,7 +20,7 @@ const LONG_ABOUT: &str = "\
 acc — change control for software written with coding agents.
 
 Records the agent, human operator, reviewers and merger of each pull request, then evaluates
-explicit separation-of-duty rules (ACC001, ACC002, ACC003, ACC006) deterministically and offline.
+explicit separation-of-duty rules (ACC001 to ACC010) deterministically and offline.
 Only `scan`, `export` and `pr` contact GitHub; `evaluate`, `validate` and `check` never touch the
 network or the clock. No LLM is involved, and agent authorship alone is never a finding.
 

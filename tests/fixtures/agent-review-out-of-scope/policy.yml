@@ -1,0 +1,5 @@
+version: "0.2"
+agent_review:
+  satisfies_independence: true
+  labels: [low-risk]
+rules: {}

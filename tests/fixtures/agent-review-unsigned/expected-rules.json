@@ -1,0 +1,9 @@
+{
+  "rules": [
+    "ACC001",
+    "ACC003",
+    "ACC007",
+    "ACC010"
+  ],
+  "validation_error": null
+}

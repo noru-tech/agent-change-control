@@ -1,8 +1,8 @@
 # Predicate type: AI Change Provenance
 
-Type URI: `https://noru.tech/spec/ai-change-provenance/v0.1`
+Type URI: `https://noru.tech/spec/ai-change-provenance/v0.2`
 
-Version: 0.1 (revision 3)
+Version: 0.2
 
 This page describes the predicate `acc` emits inside an
 [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md),
@@ -52,7 +52,7 @@ Statement
 ├── subject: for each change
 │   ├── <change id>        gitCommit = head commit (what the approvals are bound to)
 │   └── <change id>:merge  gitCommit = merge commit (when merged, known and distinct)
-├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.1
+├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.2
 └── predicate (manifest)
     ├── events      repository, window, actors, changes (facts with evidence references)
     ├── policy      the resolved rules, severities and threshold
@@ -84,9 +84,9 @@ and are embedded in the `acc` binary.
     {"name": "github:acme/api:pr:421", "digest": {"gitCommit": "<head sha>"}},
     {"name": "github:acme/api:pr:421:merge", "digest": {"gitCommit": "<merge sha>"}}
   ],
-  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.1",
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.2",
   "predicate": {
-    "version": "0.1",
+    "version": "0.2",
     "events": { "...": "repository, window, actors, changes" },
     "policy": { "...": "resolved policy" },
     "summary": { "...": "counts" },
@@ -126,7 +126,7 @@ in the specification section cited.
 
 | Field | Meaning |
 | --- | --- |
-| `version` | Predicate and schema version, `0.1`. |
+| `version` | Predicate and schema version, `0.2`. |
 | `events.repository` | The forge repository, `OWNER/REPO`. |
 | `events.window` | Inclusive UTC window of merge times the changes were selected from, whether collection was complete, and why not. Spec §4. |
 | `events.actors` | Actor registry keyed by `namespace:name`: `kind` (`human`, `agent`, `bot`, `service`, `unknown`) and display name. Spec §2, §5. |
@@ -142,7 +142,7 @@ in the specification section cited.
 | `events.changes[].reviews_complete` | Whether the review history was fully retrieved. |
 | `events.changes[].merger` | Who merged, when merged. |
 | `*.provenance[]` | Evidence references: `source`, `ref`, and `kind` (`observed`, `derived`, `declared`). Spec §2. |
-| `policy` | The resolved policy: `fail_on` threshold and, per rule, `enabled` and `severity`. Spec §6.3. |
+| `policy` | The resolved policy: `fail_on` threshold, evidence minimums, the `agent_review` block and, per rule, `enabled` and `severity`. Spec §6.3. |
 | `findings[]` | One per failing rule per change: stable `id`, `rule_id`, `rule`, `severity`, `change_id`, `actor_ids`, `explanation`, `provenance`, `disposition`. Spec §6.2, §6.4, §7.1. |
 | `assessments[]` | Per rule per change: `pass`, `fail`, `unknown` or `not_applicable`, with a reason. Spec §6. |
 | `summary` | Counts of changes, human- and agent-authored changes, unknown operators, clean, with findings, indeterminate, and findings. |
@@ -171,6 +171,8 @@ evidence (`--attestations`). See [signing](signing.md#signing-an-authorship-clai
 
 ## Changelog and Migrations
 
+- **0.2** — type URI `v0.2`; the policy gains `agent_review`, and assessments and findings gain
+  ACC007 to ACC010. A `v0.1` Statement is validated by the release that produced it.
 - **0.1 revision 4** — the predicate's `events` gains an `attestations` record and evidence
   may be `signed`; the policy gains `minimum_authorship_evidence` and `minimum_review_evidence`.
 - **0.1 revision 3** — second subject for the merge commit; JSON Lines form; verifier subject
