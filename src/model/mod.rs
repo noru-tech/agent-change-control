@@ -12,13 +12,35 @@ use std::fmt;
 /// A UTC instant. Serialized as RFC 3339 with a `Z` suffix; any offset is accepted on input.
 pub type Timestamp = DateTime<Utc>;
 
-/// How a piece of evidence was obtained.
+/// How a piece of evidence was obtained. The derived ordering is the string order used for
+/// sorting evidence lists; [`EvidenceKind::strength`] is the trust ordering policies use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EvidenceKind {
     Declared,
     Derived,
     Observed,
+    /// Carried by an attestation whose signature the caller verified before handing it over.
+    Signed,
+}
+
+impl EvidenceKind {
+    /// Trust ordering: `derived < declared < observed < signed`. A computed inference is weaker
+    /// than a party's explicit claim, which is weaker than what the forge itself recorded, which
+    /// is weaker than a claim under a verified signature.
+    pub const fn strength(self) -> u8 {
+        match self {
+            EvidenceKind::Derived => 0,
+            EvidenceKind::Declared => 1,
+            EvidenceKind::Observed => 2,
+            EvidenceKind::Signed => 3,
+        }
+    }
+}
+
+/// The strongest kind among `evidence`, or `None` when there is none.
+pub fn strongest(evidence: &[Evidence]) -> Option<EvidenceKind> {
+    evidence.iter().map(|e| e.kind).max_by_key(|k| k.strength())
 }
 
 /// What kind of principal an actor is.
@@ -246,6 +268,22 @@ pub struct Change {
     pub provenance: Vec<Evidence>,
 }
 
+/// An attestation the collector consulted, as handed over by the caller. `acc` does not verify
+/// signatures: `signed` records that the container carried one, and `verified_by` records the
+/// caller's statement of who verified it. Evidence is `signed` only when both hold.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Attestation {
+    /// `<file>#<n>`: the file and the 1-based document or line within it.
+    pub file: String,
+    pub predicate_type: String,
+    /// `sha256:<hex>` over the DSSE payload bytes, or over the canonical bytes of a bare
+    /// Statement.
+    pub payload_digest: String,
+    pub signed: bool,
+    pub verified_by: Option<String>,
+}
+
 /// A normalized export: the input to evaluation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -254,6 +292,10 @@ pub struct Events {
     pub repository: String,
     pub window: Window,
     pub actors: BTreeMap<String, Actor>,
+    /// Attestations that produced evidence, keyed by `attestation:<16 hex>` of their payload
+    /// digest. May be absent in exports written before it existed.
+    #[serde(default)]
+    pub attestations: BTreeMap<String, Attestation>,
     pub changes: Vec<Change>,
 }
 
@@ -270,6 +312,13 @@ pub struct Policy {
     pub version: String,
     #[serde(default = "crate::policy::default_threshold")]
     pub fail_on: Severity,
+    /// The weakest evidence an agent operator claim may rest on and still name the effective
+    /// human. Below it the operator is treated as unknown.
+    #[serde(default = "crate::policy::default_authorship_minimum")]
+    pub minimum_authorship_evidence: EvidenceKind,
+    /// The weakest evidence an approval may rest on and still qualify as independent approval.
+    #[serde(default = "crate::policy::default_review_minimum")]
+    pub minimum_review_evidence: EvidenceKind,
     pub rules: BTreeMap<RuleName, RulePolicy>,
 }
 
@@ -375,12 +424,16 @@ mod tests {
             EvidenceKind::Declared,
             EvidenceKind::Derived,
             EvidenceKind::Observed,
+            EvidenceKind::Signed,
         ];
         let strings: Vec<String> = kinds
             .iter()
             .map(|k| serde_json::to_string(k).unwrap())
             .collect();
         assert!(strings.windows(2).all(|w| w[0] < w[1]));
+        assert!(EvidenceKind::Derived.strength() < EvidenceKind::Declared.strength());
+        assert!(EvidenceKind::Declared.strength() < EvidenceKind::Observed.strength());
+        assert!(EvidenceKind::Observed.strength() < EvidenceKind::Signed.strength());
         assert!(Severity::Info < Severity::Warning);
         assert!(Severity::Warning < Severity::Medium);
         assert!(Severity::Medium < Severity::High);

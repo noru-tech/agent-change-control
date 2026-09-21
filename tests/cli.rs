@@ -320,6 +320,12 @@ fn invalid_inputs_rejected_without_panicking() {
         .assert()
         .code(2)
         .stderr(predicate::str::contains("--repo"));
+    // A verifier statement without attestations to apply it to is a usage error.
+    acc()
+        .args(["pr", "1", "--repo", "acme/api", "--verified-by", "me"])
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("--attestations"));
 }
 
 #[test]

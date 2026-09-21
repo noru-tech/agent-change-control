@@ -19,7 +19,8 @@
           "enum": [
             "observed",
             "derived",
-            "declared"
+            "declared",
+            "signed"
           ]
         }
       },
@@ -346,6 +347,45 @@
       ],
       "additionalProperties": false
     },
+    "attestation": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predicate_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "payload_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "signed": {
+          "type": "boolean"
+        },
+        "verified_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "file",
+        "predicate_type",
+        "payload_digest",
+        "signed",
+        "verified_by"
+      ],
+      "additionalProperties": false
+    },
     "events": {
       "type": "object",
       "properties": {
@@ -363,6 +403,15 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/actor"
+          }
+        },
+        "attestations": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^attestation:[a-f0-9]{16}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/attestation"
           }
         },
         "changes": {
@@ -416,6 +465,24 @@
             "medium",
             "warning",
             "info"
+          ]
+        },
+        "minimum_authorship_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
+          ]
+        },
+        "minimum_review_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
           ]
         },
         "rules": {

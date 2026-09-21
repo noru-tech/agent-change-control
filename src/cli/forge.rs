@@ -50,6 +50,7 @@ pub fn collect(c: &Collect) -> Result<Events> {
     let known = io::known(&c.agent_account)?;
     let registry = c.evidence.registry()?;
     let traces = c.evidence.traces()?;
+    let attestations = c.evidence.attestations()?;
     Github::new(io::token(), c.max_pages)?.collect(
         &c.repository,
         from,
@@ -59,6 +60,7 @@ pub fn collect(c: &Collect) -> Result<Events> {
             known: &known,
             trailers: registry.as_ref(),
             traces: traces.as_ref(),
+            attestations: attestations.as_ref(),
         },
     )
 }

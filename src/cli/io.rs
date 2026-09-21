@@ -3,6 +3,7 @@
 use crate::model::*;
 use crate::output::Format;
 use crate::provenance::agent_trace::AgentTraces;
+use crate::provenance::attestations::Attestations;
 use crate::{Exit, failure};
 use anyhow::{Context, Result, anyhow, ensure};
 use chrono::NaiveDate;
@@ -119,9 +120,37 @@ pub struct EvidenceArgs {
     /// Agent Trace record files or directories, bound to commits by vcs.revision (repeatable).
     #[arg(long, value_name = "PATH")]
     pub agent_trace: Vec<PathBuf>,
+    /// Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore
+    /// bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does
+    /// not verify signatures; see --verified-by.
+    #[arg(long, value_name = "PATH")]
+    pub attestations: Vec<PathBuf>,
+    /// Who verified the attestations' signatures before this run, recorded verbatim (for
+    /// example "gh attestation verify, run 123"). Without it attestation claims count as
+    /// declared, not signed.
+    #[arg(long, value_name = "TEXT", requires = "attestations")]
+    pub verified_by: Option<String>,
 }
 
 impl EvidenceArgs {
+    /// The attestations, when any path was given.
+    pub fn attestations(&self) -> Result<Option<Attestations>> {
+        if self.attestations.is_empty() {
+            return Ok(None);
+        }
+        if self
+            .verified_by
+            .as_deref()
+            .is_some_and(|v| v.trim().is_empty())
+        {
+            return Err(failure(Exit::Usage, "verified-by must not be empty"));
+        }
+        Ok(Some(Attestations::load(
+            &self.attestations,
+            self.verified_by.clone(),
+        )?))
+    }
+
     /// The Agent Trace records, when any path was given.
     pub fn traces(&self) -> Result<Option<AgentTraces>> {
         if self.agent_trace.is_empty() {
@@ -238,6 +267,16 @@ mod tests {
         };
         assert!(off.registry().unwrap().is_none());
         assert!(off.traces().unwrap().is_none());
+        assert!(off.attestations().unwrap().is_none());
+        let blank = EvidenceArgs {
+            attestations: vec!["x".into()],
+            verified_by: Some("  ".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            crate::exit_for(&blank.attestations().unwrap_err()),
+            Exit::Usage
+        );
         for bad in ["nope", "=x", "a@b=", "noat=x"] {
             let args = EvidenceArgs {
                 agent_trailer: vec![bad.into()],

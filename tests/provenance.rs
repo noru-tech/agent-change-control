@@ -69,6 +69,26 @@ fn shipped_examples_are_valid() {
     let (agent, operator) = provenance::convention(&v, &head).unwrap();
     assert_eq!(agent, "codex");
     assert_eq!(operator.as_deref(), Some("github:alice"));
+    // The same document as a signed attestation's predicate: bound by subject and predicate.
+    let statement: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("examples/provenance.intoto.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        statement["predicateType"],
+        agent_change_control::provenance::attestations::PROVENANCE_PREDICATE_TYPE
+    );
+    assert_eq!(statement["subject"][0]["digest"]["gitCommit"], head);
+    normalize::schema(&statement, "statement").unwrap();
+    assert_eq!(statement["predicate"], v);
+    let attestations = agent_change_control::provenance::attestations::Attestations::load(
+        &[root.join("examples/provenance.intoto.json")],
+        None,
+    )
+    .unwrap();
+    let auth = attestations.authorship(&head).unwrap().unwrap();
+    assert_eq!(auth.agent, "codex");
+    assert_eq!(auth.operator.as_deref(), Some("github:alice"));
     let policy: Policy =
         serde_saphyr::from_str(&std::fs::read_to_string(root.join("examples/policy.yml")).unwrap())
             .unwrap();

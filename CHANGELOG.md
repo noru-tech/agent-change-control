@@ -30,9 +30,26 @@ All notable changes to this project are documented here. The format is based on
   every merged pull request by `.github/workflows/attest.yml`) or with cosign, and verifying it
   with `gh attestation verify` plus `acc validate`.
 
+- `--attestations PATH` (repeatable) on `scan`, `export` and `pr`, and matching action inputs:
+  in-toto Statements, DSSE envelopes or Sigstore bundles (`.json`, `.jsonl`, files or
+  directories) bound to changes by head commit. A Statement of predicate type
+  `https://noru.tech/spec/ai-change-provenance/provenance/v0.1` establishes agent authorship at
+  the explicit tier and must agree with any inline declaration.
+- `--verified-by TEXT`: the caller's statement of who verified the attestations' signatures,
+  recorded verbatim. `acc` does not verify signatures. Evidence is `signed` only from a container
+  that carried a signature and with a recorded verifier; otherwise the claims are `declared`.
+- Evidence kind `signed`, the trust ordering `derived < declared < observed < signed`, and an
+  `attestations` record in exports (optional on input) that every `signed` evidence entry must
+  resolve to; validation rejects `signed` evidence without a signed, verified record (ACV003).
+- Policy keys `minimum_authorship_evidence` (default `derived`) and `minimum_review_evidence`
+  (default `observed`). An operator below the minimum does not name the effective human (ACC006
+  fails, independence unknown); an approval below the minimum does not qualify.
+- `examples/provenance.intoto.json`, the provenance document as a Statement to sign.
+
 ### Changed
 - Specification 0.1 revision 3: §4 records the merge commit, §7.3 defines both attestation
-  forms and the verifier's subject check.
+  forms and the verifier's subject check. Revision 4: §3.2 provenance attestations, §3.6
+  evidence strength and pre-verified input, §6.3 evidence minimums.
 
 ## [0.3.1] - 2026-09-19
 

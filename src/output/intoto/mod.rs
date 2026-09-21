@@ -18,7 +18,7 @@
 //! predicate and the findings follow from the embedded facts. See `docs/in-toto.md` and
 //! `spec/ai-change-provenance.md` §7.3.
 
-use crate::model::{Change, Events, Manifest};
+use crate::model::{Change, Events, Evidence, Manifest};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
@@ -76,6 +76,23 @@ pub fn render_jsonl(m: &Manifest) -> Result<String> {
     Ok(out)
 }
 
+/// Every evidence entry of a change.
+fn all_evidence(c: &Change) -> impl Iterator<Item = &Evidence> {
+    c.provenance
+        .iter()
+        .chain(&c.author.provenance)
+        .chain(&c.forge_author.provenance)
+        .chain(c.agent_operator.iter().flat_map(|o| &o.provenance))
+        .chain(c.merger.iter().flat_map(|m| &m.provenance))
+        .chain(
+            c.commits
+                .iter()
+                .filter_map(|k| k.author.as_ref())
+                .flat_map(|a| &a.provenance),
+        )
+        .chain(c.reviews.iter().flat_map(|r| &r.provenance))
+}
+
 /// The actors a change refers to.
 fn referenced_actors(c: &Change) -> BTreeSet<&str> {
     let mut ids: BTreeSet<&str> = BTreeSet::new();
@@ -120,6 +137,13 @@ pub fn per_change(m: &Manifest) -> Result<Vec<Manifest>> {
                     .actors
                     .iter()
                     .filter(|(id, _)| referenced.contains(id.as_str()))
+                    .map(|(id, a)| (id.clone(), a.clone()))
+                    .collect(),
+                attestations: m
+                    .events
+                    .attestations
+                    .iter()
+                    .filter(|(id, _)| all_evidence(c).any(|ev| ev.r#ref == **id))
                     .map(|(id, a)| (id.clone(), a.clone()))
                     .collect(),
                 changes: vec![c.clone()],
@@ -233,6 +257,7 @@ mod tests {
                 reason: None,
             },
             actors,
+            attestations: std::collections::BTreeMap::new(),
             changes,
         };
         crate::manifest::evaluate(events, Policy::default()).unwrap()

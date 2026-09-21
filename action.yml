@@ -60,6 +60,19 @@ inputs:
       pull request's commits by vcs.revision.
     required: false
     default: ""
+  attestations:
+    description: >-
+      Attestation files or directories in the checkout (in-toto Statements, DSSE envelopes or
+      Sigstore bundles), one path per line, bound to the pull request by its head commit. acc
+      does not verify signatures; verify them in an earlier step and say so in verified-by.
+    required: false
+    default: ""
+  verified-by:
+    description: >-
+      Who verified the attestations' signatures before this run, recorded verbatim in the
+      manifest. Without it attestation claims count as declared, not signed.
+    required: false
+    default: ""
   format:
     description: Output format written to `output` — sarif, json, yaml, table, in-toto or in-toto-jsonl.
     required: false
@@ -148,6 +161,8 @@ runs:
         ACC_AGENT_TRAILERS: ${{ inputs.agent-trailer }}
         ACC_IGNORE_TRAILERS: ${{ inputs.ignore-trailers }}
         ACC_AGENT_TRACES: ${{ inputs.agent-trace }}
+        ACC_ATTESTATIONS: ${{ inputs.attestations }}
+        ACC_VERIFIED_BY: ${{ inputs.verified-by }}
         ACC_FORMAT: ${{ inputs.format }}
         ACC_OUTPUT: ${{ inputs.output }}
         ACC_FAIL: ${{ inputs.fail-on-findings }}
@@ -174,6 +189,11 @@ runs:
           trace="${trace//[$'\r']}"
           if [ -n "$trace" ]; then args+=(--agent-trace "$trace"); fi
         done <<< "$ACC_AGENT_TRACES"
+        while IFS= read -r attestation; do
+          attestation="${attestation//[$'\r']}"
+          if [ -n "$attestation" ]; then args+=(--attestations "$attestation"); fi
+        done <<< "$ACC_ATTESTATIONS"
+        if [ -n "$ACC_VERIFIED_BY" ]; then args+=(--verified-by "$ACC_VERIFIED_BY"); fi
         if [ "$ACC_IGNORE_TRAILERS" = "true" ]; then args+=(--ignore-trailers); fi
         acc "${args[@]}"
         code=$?

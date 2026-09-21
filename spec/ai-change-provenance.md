@@ -58,7 +58,7 @@ head, before merge, with the evidence recorded, or an explicit `unknown`."**
 | **Effective author** | The actor that produced the change: a human, or an agent when agent authorship is established. |
 | **Effective human** | The human whose judgment the change embodies: the effective author when human, the operator when the effective author is an agent. May be unknown. |
 | **Qualifying approval** | An approval by a human other than the effective human, on the change's current head commit, at or before merge, not later withdrawn by that reviewer (§6.1). |
-| **Evidence** | A reference to where a fact came from, with a kind: `observed` (read from the forge API), `declared` (asserted by a party), `derived` (computed). |
+| **Evidence** | A reference to where a fact came from, with a kind: `observed` (read from the forge API), `declared` (asserted by a party), `derived` (computed), `signed` (asserted in an attestation whose signature the consumer's operator verified, §3.6). |
 | **Complete** | A collection whose window and per-change review history were fully retrieved. Anything short of that is *incomplete* and can never yield a clean result. |
 
 Actor identifiers are `namespace:name`, lowercase where the namespace is case-insensitive:
@@ -109,8 +109,16 @@ A producer MAY emit a standalone provenance document conforming to
 
 A consumer MUST reject a provenance document whose `change.head_commit` differs from the head of
 the change it is applied to. Binding to the head commit is what prevents a document from being
-replayed against a later, different change. How the document is transported (a file in the
-repository, an attestation, a check-run payload) is out of scope for 0.1.
+replayed against a later, different change.
+
+The document MAY be carried as the predicate of an in-toto Statement v1 with predicate type
+`https://noru.tech/spec/ai-change-provenance/provenance/v0.1` and the head commit as a
+`gitCommit` subject, wrapped in a DSSE envelope and signed by the agent's integration or the
+operator. A consumer MUST require the subject commit and `change.head_commit` to agree. The
+claims count as `signed` evidence under the conditions of §3.6, otherwise as `declared`. An
+attestation and an inline declaration (§3.1) for the same change MUST name the same agent, and
+the same operator when both name one; disagreement is an error for that change, never a choice.
+Other transports (a check-run payload, a file in the repository) are out of scope for 0.1.
 
 ### 3.3 Verified agent accounts
 
@@ -156,8 +164,31 @@ merger, opener and reviewers are never substituted, exactly as for declarations.
 
 ### 3.5 Reserved
 
-ACP-specific commit trailers (`Agent-Author:`, `Agent-Operator:`) and signed identity assertions
-are reserved for a later version. Consumers MUST NOT interpret them under 0.1.
+ACP-specific commit trailers (`Agent-Author:`, `Agent-Operator:`) are reserved for a later
+version. Consumers MUST NOT interpret them under 0.1.
+
+### 3.6 Evidence strength
+
+Evidence kinds are ordered by trust: `derived < declared < observed < signed`. A computed
+inference is weaker than a party's explicit claim, which is weaker than what the forge itself
+recorded, which is weaker than a claim under a verified signature. A policy (§6.3) MAY set the
+weakest kind it accepts for authorship claims and for approvals.
+
+A consumer is not required to verify signatures, and the reference implementation does not:
+verification needs a trust root (which identities may sign which claims) that belongs with the
+signer's tooling, not in an offline evaluator. A consumer that accepts pre-verified attestations
+MUST record, for each attestation it drew evidence from, where it came from, its predicate type,
+a digest of the signed payload, whether the container carried a signature, and the operator's
+statement of who verified it. Evidence is `signed` only when the container carried a signature
+and a verifier is recorded; an attestation handed over without that statement yields `declared`
+evidence. The record travels with the export, so a manifest states the trust assumption behind
+every `signed` fact and a validator rejects `signed` evidence that does not resolve to such a
+record.
+
+Only authorship claims (§3.2) are read from attestations in this version. Review claims are not:
+the predicates in circulation for them carry the reviewer's identity in the signature rather than
+in the predicate, which pre-verified input does not expose. Reading them is deferred until either
+a review predicate names the reviewer or the consumer verifies signatures itself.
 
 ## 4. Collection
 
@@ -173,7 +204,8 @@ scope it MUST record:
   submitted against;
 - the effective author and, when the effective author is an agent, the operator with its
   confidence (`explicit`, `derived`, `unknown`);
-- evidence references for each of the above.
+- evidence references for each of the above, and the record of every attestation consulted
+  (§3.6).
 
 Collectors MUST:
 
@@ -210,8 +242,9 @@ decisions, for an open change). A `commented` review never withdraws an earlier 
 `changes_requested` or `dismissed` decision does.
 
 A change has a **qualifying independent approval** when some reviewer's latest decision is
-`approved`, was submitted against the current head commit, the reviewer is a `human`, and the
-reviewer is not *H*.
+`approved`, was submitted against the current head commit, the reviewer is a `human`, the
+reviewer is not *H*, and the decision's evidence reaches the policy's minimum review evidence
+(§6.3).
 
 If *H* is unknown, independence is `unknown`, never `pass`. If review collection for the change is
 incomplete, independence is `unknown`: an approval that was later withdrawn could be missing.
@@ -242,6 +275,13 @@ Note the design choices these encode:
 A policy ([`schemas/policy.schema.json`](../schemas/policy.schema.json)) enables or disables rules,
 assigns severities from `info < warning < medium < high`, and sets a failure threshold. Disabling a
 rule removes its finding and assessment; it never alters recorded facts.
+
+Two keys set the weakest evidence kind (§3.6) a fact may rest on. `minimum_authorship_evidence`
+(default `derived`) applies to the operator claim: an operator whose strongest evidence is below
+it does not name the effective human, so ACC006 fails with that reason and independence is
+`unknown`, never `pass`. `minimum_review_evidence` (default `observed`) applies to approvals: a
+decision whose strongest evidence is below it does not qualify (§6.1). Neither key changes the
+facts; both can only move a verdict away from `pass`.
 
 ### 6.4 Dispositions
 
@@ -327,7 +367,9 @@ project canonicalization, not an RFC 8785 claim. Input order MUST NOT affect out
 
 - A declaration is a claim by the declaring party. It can be forged or omitted, and change
   descriptions are mutable. ACP makes the claim explicit and auditable; it does not authenticate
-  it. Signed provenance is future work (§3.4).
+  it. A signed provenance attestation (§3.2) authenticates the claim only to the extent that
+  whoever verified the signature was right to trust the signer; the consumer records that
+  statement rather than making it (§3.6).
 - Collection is a snapshot of a mutable system. Deleted accounts, renamed users and edited
   descriptions are recorded as what they are at collection time, with the gaps marked incomplete.
 - Manifests contain names, approval histories and work activity. They are personal data. Keep them
@@ -368,6 +410,11 @@ are never reused.
 
 ## Changelog
 
+- **0.1, revision 4 (2026-09-21)** — the provenance document as a signed in-toto predicate
+  (§3.2); evidence strength and pre-verified attestations with a recorded verifier (§3.6,
+  `signed` evidence kind, `attestations` record in the export, optional on input); the
+  `minimum_authorship_evidence` and `minimum_review_evidence` policy keys (§6.3, §6.1).
+  Additive.
 - **0.1, revision 3 (2026-09-21)** — the merge commit is recorded for merged changes
   (`merge_commit_sha`, optional on input so earlier exports stay valid) and becomes a second
   attestation subject; JSON Lines attestations with one Statement per change; verifier

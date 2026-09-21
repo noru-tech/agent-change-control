@@ -10,6 +10,9 @@ use std::collections::BTreeMap;
 
 const NOT_AGENT: &str = "Effective author is not an agent.";
 const OPERATOR_UNKNOWN: &str = "Agent authorship is recorded but its human operator is unknown.";
+const OPERATOR_BELOW_MINIMUM: &str =
+    "A human agent operator is recorded, but its evidence is below the policy minimum.";
+const HUMAN_BELOW_MINIMUM: &str = "Effective human author's evidence is below the policy minimum; independence cannot be established.";
 const OPERATOR_KNOWN: &str = "A human agent operator is recorded.";
 const NOT_MERGED: &str = "Change has not been merged.";
 const HUMAN_UNKNOWN: &str =
@@ -33,17 +36,26 @@ struct Facts<'a> {
     independent: bool,
     /// The effective human approved the change at some point.
     self_approved: bool,
+    /// An operator is recorded but its evidence is below `minimum_authorship_evidence`, so it
+    /// does not name the effective human.
+    weak_operator: bool,
+}
+
+/// Whether `evidence` reaches `minimum` on the trust ordering.
+fn reaches(evidence: &[Evidence], minimum: EvidenceKind) -> bool {
+    strongest(evidence).is_some_and(|k| k.strength() >= minimum.strength())
 }
 
 impl<'a> Facts<'a> {
-    fn new(e: &'a Events, c: &'a Change) -> Self {
+    fn new(e: &'a Events, c: &'a Change, p: &Policy) -> Self {
         let kind = e.actors[&c.author.actor_id].kind;
+        let operator = c.agent_operator.as_ref().filter(|o| o.actor_id.is_some());
+        let weak_operator = kind == ActorKind::Agent
+            && operator.is_some_and(|o| !reaches(&o.provenance, p.minimum_authorship_evidence));
         let effective = match kind {
             ActorKind::Human => Some(c.author.actor_id.as_str()),
-            ActorKind::Agent => c
-                .agent_operator
-                .as_ref()
-                .and_then(|o| o.actor_id.as_deref()),
+            ActorKind::Agent if weak_operator => None,
+            ActorKind::Agent => operator.and_then(|o| o.actor_id.as_deref()),
             _ => None,
         };
         // Latest non-comment decision per reviewer, ignoring anything after the merge.
@@ -59,6 +71,7 @@ impl<'a> Facts<'a> {
                     && r.commit_sha == c.head_sha
                     && r.actor_id != author
                     && e.actors[&r.actor_id].kind == ActorKind::Human
+                    && reaches(&r.provenance, p.minimum_review_evidence)
             })
         });
         let self_approved = c
@@ -70,6 +83,7 @@ impl<'a> Facts<'a> {
             effective,
             independent,
             self_approved,
+            weak_operator,
         }
     }
 
@@ -78,10 +92,12 @@ impl<'a> Facts<'a> {
         let agent = self.kind == ActorKind::Agent;
         match rule {
             RuleId::Acc006 if !agent => (NotApplicable, NOT_AGENT),
+            RuleId::Acc006 if self.weak_operator => (Fail, OPERATOR_BELOW_MINIMUM),
             RuleId::Acc006 if self.effective.is_none() => (Fail, OPERATOR_UNKNOWN),
             RuleId::Acc006 => (Pass, OPERATOR_KNOWN),
             RuleId::Acc001 if !agent => (NotApplicable, NOT_AGENT),
             RuleId::Acc003 if c.merged_at.is_none() => (NotApplicable, NOT_MERGED),
+            _ if self.weak_operator => (Unknown, HUMAN_BELOW_MINIMUM),
             _ if self.effective.is_none() => (Unknown, HUMAN_UNKNOWN),
             RuleId::Acc002 if self.self_approved => (Fail, SELF_APPROVED),
             RuleId::Acc002 if !c.reviews_complete => (Unknown, REVIEWS_INCOMPLETE),
@@ -98,7 +114,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
     let mut findings = Vec::new();
     let mut assessments = Vec::new();
     for c in &e.changes {
-        let facts = Facts::new(e, c);
+        let facts = Facts::new(e, c, p);
         for rule in RULES {
             let Some(policy) = p.rules.get(&rule.name()) else {
                 continue;

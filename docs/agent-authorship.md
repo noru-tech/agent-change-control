@@ -15,9 +15,30 @@ operator: github:alice
 
 Only matching GitHub human identities resolve an operator. The exporter can GET `/users/alice` to resolve a declared operator not otherwise present in the PR. An email alone does not resolve to a GitHub account. Unknown operators stay unknown. The merger, PR creator or first reviewer is never implicitly substituted as agent operator.
 
-Evidence records `source`, `ref`, and `kind` (observed, derived, declared). API observations and user declarations are distinguishable even though both have source links. Empty evidence arrays are invalid for important observations. Known-account recognition retains both the mapping and observed PR evidence.
+Evidence records `source`, `ref`, and `kind` (observed, derived, declared, signed). API observations and user declarations are distinguishable even though both have source links. Empty evidence arrays are invalid for important observations. Known-account recognition retains both the mapping and observed PR evidence.
 
 The separately published provenance schema defines tool-neutral agent/version, operator ID, session and change base/head fields. The library can validate its binding to an explicit head SHA. File discovery, signed assertions, app installation verification and email identity maps are deferred. No LLM, wording/style classifier or blanket bot-to-agent conversion is used.
+
+## Signed tier
+
+The provenance document can be carried as the predicate of an in-toto Statement
+(`https://noru.tech/spec/ai-change-provenance/provenance/v0.1`, subject: the head commit) inside
+a DSSE envelope or a Sigstore bundle, signed by the agent's integration or the operator. `acc`
+reads such files with `--attestations PATH` (files or directories, `.json` or `.jsonl`), binds
+each to the change whose head it names, and requires the subject and the predicate's
+`change.head_commit` to agree. It sits at the explicit tier with the inline declaration: both
+may be present, they must name the same agent and operator, and their evidence is merged.
+
+`acc` does not verify signatures. Verify with the signer's tooling first, then say so with
+`--verified-by TEXT`; the text is recorded verbatim in the manifest's `attestations` record next
+to the file, the predicate type and the payload digest. Only an attestation that carried a
+signature *and* has a recorded verifier yields `signed` evidence; without `--verified-by` its
+claims are `declared`, the same as a provenance document found on disk. A policy can require
+`signed` authorship evidence with `minimum_authorship_evidence` ([policy](policy.md)).
+
+Review claims are not read from attestations yet. The predicates that exist for reviews
+(`human-review`, gittuf's reference authorization) put the reviewer in the signature, which is
+exactly what pre-verified input does not expose. See [signing](signing.md).
 
 ## Derived tier
 
@@ -26,4 +47,4 @@ When no declaration or account mapping applies, two kinds of record written at a
 - **Vendor `Co-Authored-By` trailers** in git's trailer block (the final paragraph, every line a `Token: value`). The built-in registry maps `noreply@anthropic.com` to `claude-code` and `copilot@users.noreply.github.com` to `copilot`; `--agent-trailer EMAIL=AGENT` extends it and `--ignore-trailers` disables the tier. Display names are never matched. Evidence source: `commit_trailer`, referencing the commit.
 - **Agent Trace records** (`--agent-trace PATH`, files or directories) whose `vcs.revision` is one of the change's commits and whose contributors include `ai` or `mixed` ranges; the agent is the record's `tool.name`. Records without a revision or a tool name are ignored. Evidence source: `agent_trace`, referencing `file#id`.
 
-Precedence is strict: a declaration or mapping wins and derived records are then not consulted; derived records naming two different agents for one change are not interpreted. The operator is derived only when a single human account authored every commit of the change; otherwise it stays unknown (ACC006), as does anything authored by a bot account. The table output marks such operators `(derived)`.
+Precedence is strict: an attestation, a declaration or a mapping wins and derived records are then not consulted; derived records naming two different agents for one change are not interpreted. The operator is derived only when a single human account authored every commit of the change; otherwise it stays unknown (ACC006), as does anything authored by a bot account. The table output marks such operators `(derived)`.

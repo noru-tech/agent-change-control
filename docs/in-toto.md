@@ -161,8 +161,18 @@ acc evaluate tests/fixtures/claude-clean/events.json -o clean.intoto.json
 acc validate clean.intoto.json
 ```
 
+## Related predicate: the provenance document
+
+The specification's provenance document (§3.2) travels as its own predicate,
+`https://noru.tech/spec/ai-change-provenance/provenance/v0.1`, with the head commit as subject.
+It is the input side: an agent's integration signs it, and `acc` reads it back as authorship
+evidence (`--attestations`). See [signing](signing.md#signing-an-authorship-claim) and
+[`examples/provenance.intoto.json`](../examples/provenance.intoto.json).
+
 ## Changelog and Migrations
 
+- **0.1 revision 4** — the predicate's `events` gains an `attestations` record and evidence
+  may be `signed`; the policy gains `minimum_authorship_evidence` and `minimum_review_evidence`.
 - **0.1 revision 3** — second subject for the merge commit; JSON Lines form; verifier subject
   check; Statement schema. Statements produced by earlier revisions (head subject only) remain
   valid under this revision when the predicate has no merge commit.

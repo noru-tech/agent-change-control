@@ -38,6 +38,7 @@ predicate:
       "github:ci":
         display_name: CI
         kind: bot
+    attestations: {}
     changes:
       - agent_operator:
           actor_id: "github:alice"
@@ -183,11 +184,13 @@ predicate:
       rule_id: ACC003
       severity: high
   generated:
-    source_digest: "sha256:9740cab2ed9fc6e07ac8d0508c0f7652dd5f11fe6414999d406b9be678485d45"
+    source_digest: "sha256:0cacdfe0ae462c5cf31fb5b9775edebcecd72fbc19de3d54f9bf61a47dc8a930"
     tool: agent-change-control
     version: 0.3.1
   policy:
     fail_on: medium
+    minimum_authorship_evidence: derived
+    minimum_review_evidence: observed
     rules:
       agent_change_without_independent_human:
         enabled: true

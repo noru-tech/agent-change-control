@@ -40,6 +40,24 @@
             "info"
           ]
         },
+        "minimum_authorship_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
+          ]
+        },
+        "minimum_review_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
+          ]
+        },
         "rules": {
           "type": "object",
           "properties": {

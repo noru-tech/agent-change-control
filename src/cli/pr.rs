@@ -47,6 +47,7 @@ pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
     let known = io::known(&args.agent_account)?;
     let registry = args.evidence.registry()?;
     let traces = args.evidence.traces()?;
+    let attestations = args.evidence.attestations()?;
     let events = Github::new(io::token(), args.max_pages)?.collect(
         &repo,
         from,
@@ -56,6 +57,7 @@ pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
             known: &known,
             trailers: registry.as_ref(),
             traces: traces.as_ref(),
+            attestations: attestations.as_ref(),
         },
     )?;
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;

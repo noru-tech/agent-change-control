@@ -38,9 +38,29 @@ pub fn timestamp(s: &str) -> Result<Timestamp> {
         .context("ACV004 invalid timestamp")
 }
 
-fn evidence(v: &mut Vec<Evidence>) {
+/// Sort and de-duplicate an evidence list, and check that attestation evidence resolves: a
+/// `attestation:*` reference must name a recorded attestation, and `signed` evidence must come
+/// from one that carried a signature and names its verifier.
+fn evidence(v: &mut Vec<Evidence>, attestations: &BTreeMap<String, Attestation>) -> Result<()> {
     v.sort();
     v.dedup();
+    for ev in v.iter() {
+        let from_attestation = ev.source == crate::provenance::attestations::SOURCE;
+        ensure!(
+            ev.kind != EvidenceKind::Signed || from_attestation,
+            "ACV003 signed evidence must come from an attestation"
+        );
+        if from_attestation {
+            let record = attestations
+                .get(&ev.r#ref)
+                .ok_or_else(|| anyhow::anyhow!("ACV003 unresolved attestation"))?;
+            ensure!(
+                ev.kind != EvidenceKind::Signed || (record.signed && record.verified_by.is_some()),
+                "ACV003 signed evidence without a verified attestation"
+            );
+        }
+    }
+    Ok(())
 }
 
 /// Validate an export and put it into canonical order.
@@ -59,6 +79,24 @@ pub fn events(mut e: Events) -> Result<Events> {
             "ACV003 malformed actor ID"
         );
     }
+    for (id, a) in &e.attestations {
+        ensure!(
+            id.strip_prefix("attestation:")
+                .is_some_and(|hex| hex.len() == 16 && hex.chars().all(|c| c.is_ascii_hexdigit())),
+            "ACV003 malformed attestation ID"
+        );
+        ensure!(
+            a.payload_digest.starts_with("sha256:") && a.payload_digest[7..].starts_with(&id[12..]),
+            "ACV003 attestation ID does not match its payload digest"
+        );
+        ensure!(
+            a.verified_by
+                .as_deref()
+                .is_none_or(|v| !v.trim().is_empty()),
+            "ACV003 empty attestation verifier"
+        );
+    }
+    let attestations = e.attestations.clone();
     let mut ids = BTreeSet::new();
     for c in &mut e.changes {
         ensure!(ids.insert(c.id.clone()), "ACV004 duplicate change ID");
@@ -89,7 +127,7 @@ pub fn events(mut e: Events) -> Result<Events> {
                 e.actors.contains_key(&a.actor_id),
                 "ACV003 unresolved actor"
             );
-            evidence(&mut a.provenance);
+            evidence(&mut a.provenance, &attestations)?;
         }
         if let Some(op) = &mut c.agent_operator {
             ensure!(
@@ -106,7 +144,7 @@ pub fn events(mut e: Events) -> Result<Events> {
                     "ACV003 operator must resolve to a human"
                 );
             }
-            evidence(&mut op.provenance);
+            evidence(&mut op.provenance, &attestations)?;
         }
         let mut review_ids = BTreeSet::new();
         for r in &mut c.reviews {
@@ -123,7 +161,7 @@ pub fn events(mut e: Events) -> Result<Events> {
                 r.state != ReviewState::Approved || c.merged_at.is_none_or(|m| r.at <= m),
                 "ACV001 approval_after_merge"
             );
-            evidence(&mut r.provenance);
+            evidence(&mut r.provenance, &attestations)?;
         }
         c.reviews.sort_by(|a, b| (a.at, &a.id).cmp(&(b.at, &b.id)));
         // Conflicting decisions with identical timestamps cannot be chronologically resolved.
@@ -144,7 +182,7 @@ pub fn events(mut e: Events) -> Result<Events> {
             c.commits.windows(2).all(|w| w[0].sha != w[1].sha),
             "ACV004 duplicate commit"
         );
-        evidence(&mut c.provenance);
+        evidence(&mut c.provenance, &attestations)?;
     }
     e.changes.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(e)

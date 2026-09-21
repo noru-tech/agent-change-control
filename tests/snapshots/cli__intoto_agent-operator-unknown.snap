@@ -38,6 +38,7 @@ predicate:
       "github:ci":
         display_name: CI
         kind: bot
+    attestations: {}
     changes:
       - agent_operator: ~
         author:
@@ -121,11 +122,13 @@ predicate:
       rule_id: ACC006
       severity: warning
   generated:
-    source_digest: "sha256:663e64753aee309d77ce38228c9b3f9ac4280f00496d872d647b1e0ec791166a"
+    source_digest: "sha256:6ecc42d8629c008c824a511b1bea0d55874dc71779470f719d956ee3a0179198"
     tool: agent-change-control
     version: 0.3.1
   policy:
     fail_on: medium
+    minimum_authorship_evidence: derived
+    minimum_review_evidence: observed
     rules:
       agent_change_without_independent_human:
         enabled: true
