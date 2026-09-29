@@ -1,3 +1,7 @@
+[default]
+# Finding identifiers, attestation identifiers and digests are hexadecimal, not words.
+extend-ignore-re = ["(acc|attestation):?-?[0-9a-f]{16}", "[0-9a-f]{40,64}"]
+
 [default.extend-words]
 # Rule and validation code prefixes.
 acc = "acc"
