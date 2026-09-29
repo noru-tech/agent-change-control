@@ -207,8 +207,10 @@ acc validate august.intoto.jsonl                            # subjects match, fi
 Sign them with the DSSE signer you already use for build provenance. A verifier checks that the
 subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
 that the subjects are exactly the predicate's changes and that the findings follow from the
-embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.2`; the
-predicate is documented in [docs/in-toto.md](docs/in-toto.md).
+embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.3`; the
+predicate is documented in [docs/in-toto.md](docs/in-toto.md). Every digest is SHA-256 over
+[RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) bytes, and `acc` writes JSON as exactly those
+bytes, so any JCS implementation reproduces them.
 
 [docs/signing.md](docs/signing.md) shows the two signing paths: GitHub artifact attestations
 through `actions/attest`, where the subject is the sha256 of the manifest file and

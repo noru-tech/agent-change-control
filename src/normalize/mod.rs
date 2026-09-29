@@ -1,4 +1,5 @@
-//! Schema validation, timeline integrity checks, canonical ordering and canonical JSON.
+//! Schema validation, timeline integrity checks and canonical ordering (ACP §8.1). Turning the
+//! normalized value into bytes is [`crate::canonical`]'s job (§8.2).
 //!
 //! Integrity errors carry `ACV` codes: ACV001 approval after merge, ACV003 invalid actor
 //! relationships, ACV004 inconsistent timeline or duplicated/ambiguous events.
@@ -214,42 +215,9 @@ pub fn events(mut e: Events) -> Result<Events> {
     Ok(e)
 }
 
-/// Canonical JSON: sorted object keys, compact separators, UTF-8, one final LF.
-///
-/// This canonicalization is project-specific, not an RFC 8785 claim.
-pub fn canonical<T: serde::Serialize>(value: &T) -> Result<String> {
-    Ok(serde_json::to_string(&serde_json::to_value(value)?)? + "\n")
-}
-
-/// `sha256:<hex>` over [`canonical`] bytes.
-pub fn digest<T: serde::Serialize>(value: &T) -> Result<String> {
-    use sha2::{Digest, Sha256};
-    Ok(format!(
-        "sha256:{:x}",
-        Sha256::digest(canonical(value)?.as_bytes())
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn canonical_sorts_keys_and_ends_with_newline() {
-        let v = serde_json::json!({"b": 1, "a": {"z": true, "y": null}});
-        assert_eq!(
-            canonical(&v).unwrap(),
-            "{\"a\":{\"y\":null,\"z\":true},\"b\":1}\n"
-        );
-    }
-
-    #[test]
-    fn digest_is_prefixed_and_stable() {
-        let d = digest(&serde_json::json!(["acme/api", "x"])).unwrap();
-        assert!(d.starts_with("sha256:"));
-        assert_eq!(d.len(), "sha256:".len() + 64);
-        assert_eq!(d, digest(&serde_json::json!(["acme/api", "x"])).unwrap());
-    }
 
     #[test]
     fn timestamps_accept_offsets_and_reject_garbage() {

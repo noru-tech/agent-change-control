@@ -15,7 +15,7 @@ There are two subject forms, and which one you use depends on the signer.
 | Form | Subject | Produced by | Signer |
 | --- | --- | --- | --- |
 | Commit subjects | `gitCommit` digests of the change's head and merge commits | `acc … --format in-toto` or `in-toto-jsonl` | Any DSSE signer that accepts a pre-built Statement, such as `cosign attest-blob --statement` |
-| Digest of the evidence | `sha256` of the manifest file, in canonical JSON | `acc … --format json` | Signers that hash a file for you: `actions/attest`, `cosign attest-blob --predicate` |
+| Digest of the evidence | `sha256` of the manifest file, which is its RFC 8785 bytes | `acc … --format json` | Signers that hash a file for you: `actions/attest`, `cosign attest-blob --predicate` |
 
 Both forms carry the same predicate, the manifest, and `acc validate` accepts both: for the
 second form it recomputes the sha256 of the canonical predicate and requires it to match the
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/attest@v4
         with:
           subject-path: acc-manifest.json
-          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.2
+          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.3
           predicate-path: acc-manifest.json
 ```
 
@@ -65,8 +65,10 @@ Notes:
   would otherwise run without the `id-token` permission. No code from the pull request is executed:
   the checkout is the base branch, and the action only reads the pull request through the API.
 - The subject and the predicate are the same file. `actions/attest` hashes the file for the subject
-  and parses it for the predicate. `acc` writes JSON in canonical form, so the digest is
-  reproducible from the predicate alone, which is what `acc validate` checks.
+  and parses it for the predicate. `acc` writes the manifest as its RFC 8785 bytes with no
+  trailing newline ([spec §8.2](../spec/ai-change-provenance.md#82-serialization)), so the
+  file's digest is reproducible from the predicate alone with any JCS implementation, which is
+  what `acc validate` checks. Do not reformat the file, or append a newline, before attesting it.
 - Pin both actions to commit SHAs in production, as the repository's own workflow does.
 
 ## cosign
@@ -87,7 +89,7 @@ blob:
 ```bash
 acc pr 421 --repo acme/api --format json -o acc-manifest.json
 cosign attest-blob --predicate acc-manifest.json \
-  --type https://noru.tech/spec/ai-change-provenance/v0.2 \
+  --type https://noru.tech/spec/ai-change-provenance/v0.3 \
   --bundle acc-manifest.sigstore.json --yes acc-manifest.json
 ```
 
@@ -155,13 +157,17 @@ the second.
 ```bash
 # 1. Signature and identity, against GitHub's attestation store
 gh attestation verify acc-manifest.json --repo acme/api \
-  --predicate-type https://noru.tech/spec/ai-change-provenance/v0.2
+  --predicate-type https://noru.tech/spec/ai-change-provenance/v0.3
 
 # 2. Content: unwrap the Statement and re-evaluate it
 gh attestation download acc-manifest.json --repo acme/api    # writes <digest>.jsonl
 jq -r '.dsseEnvelope.payload' <digest>.jsonl | base64 -d > statement.json
 acc validate statement.json
 ```
+
+Attestations made with acc 0.4 carry the `v0.2` predicate type; pass that to
+`gh attestation verify` for them. `acc validate` accepts both and recomputes a `v0.2` Statement's
+digests with the legacy canonicalization it was made with.
 
 For a cosign bundle, replace step 1 with `cosign verify-blob-attestation --bundle … --type …`
 and read the payload from the bundle's `dsseEnvelope.payload` the same way. `acc validate` on the

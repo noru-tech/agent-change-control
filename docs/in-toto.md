@@ -1,8 +1,8 @@
 # Predicate type: AI Change Provenance
 
-Type URI: `https://noru.tech/spec/ai-change-provenance/v0.2`
+Type URI: `https://noru.tech/spec/ai-change-provenance/v0.3`
 
-Version: 0.2
+Version: 0.3
 
 This page describes the predicate `acc` emits inside an
 [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md),
@@ -52,7 +52,7 @@ Statement
 ├── subject: for each change
 │   ├── <change id>        gitCommit = head commit (what the approvals are bound to)
 │   └── <change id>:merge  gitCommit = merge commit (when merged, known and distinct)
-├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.2
+├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.3
 └── predicate (manifest)
     ├── events      repository, window, actors, changes (facts with evidence references)
     ├── policy      the resolved rules, severities and threshold
@@ -84,9 +84,9 @@ and are embedded in the `acc` binary.
     {"name": "github:acme/api:pr:421", "digest": {"gitCommit": "<head sha>"}},
     {"name": "github:acme/api:pr:421:merge", "digest": {"gitCommit": "<merge sha>"}}
   ],
-  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.2",
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.3",
   "predicate": {
-    "version": "0.2",
+    "version": "0.3",
     "events": { "...": "repository, window, actors, changes" },
     "policy": { "...": "resolved policy" },
     "summary": { "...": "counts" },
@@ -103,11 +103,14 @@ and are embedded in the `acc` binary.
 
 ### Parsing rules
 
-- The Statement is canonical JSON: sorted keys, compact separators, UTF-8, one trailing newline.
-  The bytes are what gets signed; do not re-serialize before signing.
+- The Statement is the [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) (JCS) serialization
+  of its value, with no trailing newline
+  ([spec §8.2](../spec/ai-change-provenance.md#82-serialization)). The bytes are what gets signed;
+  do not re-serialize before signing. Any RFC 8785 implementation reproduces them from the parsed
+  Statement.
 - A consumer MUST check that the subjects are exactly those the predicate's changes produce (head
   commit, then merge commit when present and distinct), or that the Statement has a single subject
-  whose `sha256` digest is over the canonical bytes of the predicate (the form SHA-2-only signers
+  whose `sha256` digest is over the JCS bytes of the predicate (the form SHA-2-only signers
   such as GitHub artifact attestations produce; see [signing](signing.md)). It SHOULD re-evaluate
   the predicate: the embedded events under the embedded policy must reproduce the findings,
   assessments and summary byte for byte. `acc validate` performs both checks.
@@ -126,7 +129,7 @@ in the specification section cited.
 
 | Field | Meaning |
 | --- | --- |
-| `version` | Predicate and schema version, `0.2`. |
+| `version` | Predicate and schema version, `0.3`. |
 | `events.repository` | The forge repository, `OWNER/REPO`. |
 | `events.window` | Inclusive UTC window of merge times the changes were selected from, whether collection was complete, and why not. Spec §4. |
 | `events.actors` | Actor registry keyed by `namespace:name`: `kind` (`human`, `agent`, `bot`, `service`, `unknown`) and display name. Spec §2, §5. |
@@ -143,10 +146,10 @@ in the specification section cited.
 | `events.changes[].merger` | Who merged, when merged. |
 | `*.provenance[]` | Evidence references: `source`, `ref`, and `kind` (`observed`, `derived`, `declared`). Spec §2. |
 | `policy` | The resolved policy: `fail_on` threshold, evidence minimums, the `agent_review` block and, per rule, `enabled` and `severity`. Spec §6.3. |
-| `findings[]` | One per failing rule per change: stable `id`, `rule_id`, `rule`, `severity`, `change_id`, `actor_ids`, `explanation`, `provenance`, `disposition`. Spec §6.2, §6.4, §7.1. |
+| `findings[]` | One per failing rule per change: stable `id`, `rule_id`, `rule`, `severity`, `change_id`, `actor_ids`, `explanation`, `provenance`, `disposition`, and `legacy_ids` (the 0.2 identifier, for one minor version). Spec §6.2, §6.4, §7.1. |
 | `assessments[]` | Per rule per change: `pass`, `fail`, `unknown` or `not_applicable`, with a reason. Spec §6. |
 | `summary` | Counts of changes, human- and agent-authored changes, unknown operators, clean, with findings, indeterminate, and findings. |
-| `generated` | `tool`, `version`, and `source_digest`, SHA-256 over the canonical events. |
+| `generated` | `tool`, `version`, and `source_digest`, SHA-256 over the JCS bytes of the events (spec §8.2). |
 
 ## Example
 
@@ -171,6 +174,12 @@ evidence (`--attestations`). See [signing](signing.md#signing-an-authorship-clai
 
 ## Changelog and Migrations
 
+- **0.3** — type URI `v0.3`. Every digest is SHA-256 over RFC 8785 bytes, and the trailing
+  newline that 0.2 included in each preimage is gone, so finding identifiers, `source_digest`
+  and the `sha256` subject digest all change while findings, assessments and verdicts do not.
+  Findings carry their 0.2 identifier in `legacy_ids`. A `v0.2`
+  Statement still validates: `acc validate` recomputes its digests with the legacy
+  canonicalization and says so.
 - **0.2** — type URI `v0.2`; the policy gains `agent_review`, and assessments and findings gain
   ACC007 to ACC010. A `v0.1` Statement is validated by the release that produced it.
 - **0.1 revision 4** — the predicate's `events` gains an `attestations` record and evidence

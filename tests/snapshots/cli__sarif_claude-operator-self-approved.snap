@@ -49,7 +49,7 @@ runs:
         message:
           text: No qualifying independent human approval of the current head exists before merge.
         partialFingerprints:
-          agentChangeControl/v1: acc-e59f983b2bb043de
+          agentChangeControl/v1: acc-76345141bc169388
         properties:
           change_id: "github:acme/api:pr:421"
           disposition:
@@ -78,7 +78,7 @@ runs:
         message:
           text: The effective human author or agent operator approved this change.
         partialFingerprints:
-          agentChangeControl/v1: acc-25b6499b1ba489be
+          agentChangeControl/v1: acc-1e2fe2ca19119412
         properties:
           change_id: "github:acme/api:pr:421"
           disposition:
@@ -107,7 +107,7 @@ runs:
         message:
           text: No qualifying independent human approval of the current head exists before merge.
         partialFingerprints:
-          agentChangeControl/v1: acc-843391ac0a886679
+          agentChangeControl/v1: acc-6e1239e4e65c437c
         properties:
           change_id: "github:acme/api:pr:421"
           disposition:

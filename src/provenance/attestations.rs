@@ -126,7 +126,7 @@ fn container(value: Value) -> Result<Container> {
                 value.get("_type").is_some(),
                 "not an in-toto Statement, a DSSE envelope or a Sigstore bundle"
             );
-            let payload = crate::normalize::canonical(&value)?.into_bytes();
+            let payload = crate::canonical::jcs_bytes(&value)?.into_bytes();
             Ok(Container {
                 payload,
                 statement: value,
@@ -418,6 +418,22 @@ pub fn same_operator(a: &str, b: &str, namespace: &str) -> bool {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// Spec §8.2: a bare Statement's payload digest is over its RFC 8785 bytes; a DSSE payload is
+    /// hashed exactly as it was signed, never re-serialized.
+    #[test]
+    fn payload_digests_are_over_jcs_bytes_or_the_signed_payload() {
+        let bare = statement("claude-code", "alice", "c3d4");
+        let c = container(bare.clone()).unwrap();
+        assert_eq!(c.payload, serde_json_canonicalizer::to_vec(&bare).unwrap());
+        let signed = b"{ \"not\": \"canonical\" }".to_vec();
+        let env = json!({
+            "payloadType": DSSE_PAYLOAD_TYPE,
+            "payload": base64::engine::general_purpose::STANDARD.encode(&signed),
+            "signatures": [{"sig": "x"}],
+        });
+        assert_eq!(container(env).unwrap().payload, signed);
+    }
 
     fn statement(agent: &str, operator: &str, head: &str) -> Value {
         json!({

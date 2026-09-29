@@ -158,7 +158,7 @@ fn attestations_validate_and_are_inferred_from_their_suffix() {
         .success();
     let bytes = std::fs::read(&manifest_path).unwrap();
     let m: Manifest = serde_json::from_slice(&bytes).unwrap();
-    let digest = agent_change_control::normalize::digest(&m).unwrap();
+    let digest = agent_change_control::canonical::digest(&m).unwrap();
     assert_eq!(
         format!(
             "sha256:{:x}",
@@ -173,7 +173,7 @@ fn attestations_validate_and_are_inferred_from_their_suffix() {
             "name": "acc-manifest.json",
             "digest": {"sha256": digest.trim_start_matches("sha256:")}
         }],
-        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.2",
+        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.3",
         "predicate": m,
     });
     let path = dir.path().join("attested.intoto.json");
@@ -347,4 +347,49 @@ fn completions_and_man_pages_render() {
         .assert()
         .success();
     assert!(dir.path().join("acc-check.1").exists());
+}
+
+#[test]
+fn legacy_0_2_documents_validate_with_a_note() {
+    for file in [
+        "manifest.json",
+        "statement.intoto.json",
+        "statements.intoto.jsonl",
+    ] {
+        acc()
+            .arg("validate")
+            .arg(fixture("legacy-0.2", file))
+            .assert()
+            .success()
+            .stderr(predicate::str::contains("legacy canonicalization"));
+    }
+    // The dogfood shape acc 0.4.0 produced: actions/attest hashed the manifest file, whose
+    // legacy bytes end in a newline, and the digest is recomputed from the predicate that way.
+    let bytes = std::fs::read(fixture("legacy-0.2", "manifest.json")).unwrap();
+    let m: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let attested = serde_json::json!({
+        "_type": "https://in-toto.io/Statement/v1",
+        "subject": [{
+            "name": "acc-manifest.json",
+            "digest": {"sha256": format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(&bytes))}
+        }],
+        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.2",
+        "predicate": m,
+    });
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("attested.intoto.json");
+    std::fs::write(&path, serde_json::to_string(&attested).unwrap()).unwrap();
+    acc()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("legacy canonicalization"));
+    // Current output does not carry the note.
+    acc()
+        .arg("validate")
+        .arg(fixture("human-clean", "expected-manifest.json"))
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("legacy").not());
 }

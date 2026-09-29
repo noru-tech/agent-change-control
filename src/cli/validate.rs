@@ -3,9 +3,13 @@
 //! The input is a manifest (JSON or YAML), one in-toto Statement (`--format in-toto`), or JSON
 //! Lines of Statements (`--format in-toto-jsonl`). A Statement is recognized by its `_type`
 //! key; JSON Lines by several lines that are each a JSON object.
+//!
+//! ACP 0.2 documents (written by acc 0.4) are still accepted: their digests are recomputed with
+//! the legacy canonicalization they were written with, and the status line says so.
 
 use super::Ctx;
 use super::io;
+use crate::canonical::Canonicalization;
 use crate::model::Manifest;
 use crate::output::intoto;
 use crate::{Exit, manifest};
@@ -30,26 +34,39 @@ fn looks_like_jsonl(text: &str) -> bool {
     objects == 2
 }
 
+/// The status line suffix for a document's canonicalization.
+fn legacy_note(canon: Canonicalization) -> &'static str {
+    match canon {
+        Canonicalization::Jcs => "",
+        Canonicalization::Legacy => {
+            " (ACP 0.2, legacy canonicalization; acc now writes 0.3 with RFC 8785 digests)"
+        }
+    }
+}
+
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let text = io::read_text(&args.input)?;
     if looks_like_jsonl(&text) {
         let statements = intoto::validate_jsonl(&text)?;
+        let canon = manifest::canonicalization(&statements[0].version)?;
         ctx.note(format!(
-            "Valid attestations: {} statements",
-            statements.len()
+            "Valid attestations: {} statements{}",
+            statements.len(),
+            legacy_note(canon)
         ));
         return Ok(Exit::Ok);
     }
     let value = io::parse(&text)?;
     if value.get("_type").is_some() {
-        intoto::validate_statement(&value).context("invalid attestation")?;
-        ctx.note("Valid attestation");
+        let m = intoto::validate_statement(&value).context("invalid attestation")?;
+        let canon = manifest::canonicalization(&m.version)?;
+        ctx.note(format!("Valid attestation{}", legacy_note(canon)));
         return Ok(Exit::Ok);
     }
     crate::normalize::schema(&value, "manifest")?;
     let m: Manifest = serde_json::from_value(value)?;
-    manifest::validate(&m)?;
-    ctx.note("Valid manifest");
+    let canon = manifest::validate(&m)?;
+    ctx.note(format!("Valid manifest{}", legacy_note(canon)));
     Ok(Exit::Ok)
 }
 

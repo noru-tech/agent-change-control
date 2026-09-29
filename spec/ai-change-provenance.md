@@ -1,6 +1,6 @@
 # AI Change Provenance
 
-**Version 0.2** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
+**Version 0.3** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
 Reference implementation: [`acc`](../README.md)
 
 AI Change Provenance (ACP) is a small, machine-readable convention for answering one question
@@ -178,7 +178,8 @@ A consumer is not required to verify signatures, and the reference implementatio
 verification needs a trust root (which identities may sign which claims) that belongs with the
 signer's tooling, not in an offline evaluator. A consumer that accepts pre-verified attestations
 MUST record, for each attestation it drew evidence from, where it came from, its predicate type,
-a digest of the signed payload, whether the container carried a signature, and the operator's
+a digest of the signed payload (the DSSE payload bytes exactly as signed, or, for a Statement
+handed over without an envelope, its §8.2 serialization), whether the container carried a signature, and the operator's
 statement of who verified it. Evidence is `signed` only when the container carried a signature
 and a verifier is recorded; an attestation handed over without that statement yields `declared`
 evidence. The record travels with the export, so a manifest states the trust assumption behind
@@ -394,15 +395,22 @@ than read from a clock.
 
 The manifest ([`schemas/manifest.schema.json`](../schemas/manifest.schema.json)) embeds the
 normalized events, the resolved policy, a summary, the findings, the assessments and generation
-metadata including a `source_digest` over the canonical events. A consumer MUST be able to
+metadata including a `source_digest` over the normalized events. A consumer MUST be able to
 re-evaluate the embedded events under the embedded policy and obtain byte-identical findings,
 assessments and summary; a manifest that does not survive this is invalid. This detects
 inconsistency and tampering with the derived parts; it is not a signature and does not authenticate
 the events.
 
 Finding identifiers are `acc-` followed by the first 16 hexadecimal characters of SHA-256 over the
-canonical JSON array `[repository, change_id, rule_id, sorted_unique_actor_ids]`. They are stable
-across severities, policies and dispositions.
+§8.2 serialization of the array `[repository, change_id, rule_id, sorted_unique_actor_ids]`. They
+are stable across severities, policies and dispositions. The `source_digest` is SHA-256 over the
+§8.2 serialization of the normalized events.
+
+Because 0.2 hashed these preimages with a trailing newline (§8.2), every finding identifier
+changed in 0.3. For one minor version a 0.3 finding carries `legacy_ids`, the identifier the same
+finding had under 0.2, and a consumer that carries dispositions from an earlier manifest to a
+re-evaluation (the reference implementation's `check`) MUST match a recorded disposition by
+either identifier. `legacy_ids` is removed in 0.4.
 
 ### 7.2 SARIF
 
@@ -421,13 +429,14 @@ with:
   plus `:merge` and `digest` `{"gitCommit": <merge commit>}`. The head commit is the commit the
   approvals are bound to; the merge commit is the one reachable from the target branch after a
   squash or rebase merge. A merge commit the forge did not report is not invented;
-- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.2`;
+- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.3`;
 - `predicate`: the manifest of §7.1.
 
-Two forms are emitted, both unsigned and in canonical form: one Statement whose subjects cover
+Two forms are emitted, both unsigned and serialized as §8.2 requires: one Statement whose subjects cover
 every change in the manifest, and JSON Lines with one Statement per change in change identifier
 order, where each predicate is a manifest covering that change alone and carrying only the actors
-it refers to. Finding identifiers are identical in both forms. Signing is done by wrapping a
+it refers to. Each line is one Statement's §8.2 bytes followed by an LF that separates lines and
+is part of no Statement. Finding identifiers are identical in both forms. Signing is done by wrapping a
 Statement's bytes in a [DSSE](https://github.com/secure-systems-lab/dsse) envelope with a key or
 identity the organization trusts. A verifier MUST check that the subject digests cover the commits
 it is asking about, MUST check that the subjects are exactly those the predicate's changes produce,
@@ -437,20 +446,49 @@ change set is not produced.
 
 A signer that accepts only SHA-2 subject digests (GitHub artifact attestations, `cosign
 attest-blob`) MAY instead produce a Statement whose single subject carries a `sha256` digest over
-the canonical bytes of the predicate, which is the manifest as the reference implementation's
-JSON output writes it. The commits are then found inside the predicate (`head_sha`,
+the §8.2 serialization of the predicate. The reference implementation's JSON output is exactly
+those bytes, so the digest of the manifest file is the subject digest. The commits are then found inside the predicate (`head_sha`,
 `merge_commit_sha`), and a verifier MUST recompute that digest from the predicate before trusting
-the subject. `acc validate` accepts both subject forms. The Statement shape is published as
+the subject. `acc validate` accepts both subject forms. A `v0.2` Statement is verified with the
+canonicalization it was produced with (§12). The Statement shape is published as
 [`schemas/statement.schema.json`](../schemas/statement.schema.json), and the predicate is
 documented in the in-toto predicate template in [`docs/in-toto.md`](../docs/in-toto.md).
 
 ## 8. Determinism
 
 Identical normalized input, resolved policy and tool version MUST produce identical output bytes.
-Canonical JSON in this specification means: sorted object keys, compact separators, UTF-8, a single
-trailing newline; changes ordered by identifier, commits by hash, reviews by UTC instant then
-identifier; evidence lists sorted and de-duplicated; timestamps normalized to UTC. This is a
-project canonicalization, not an RFC 8785 claim. Input order MUST NOT affect output.
+Two steps get there: normalization fixes the value (§8.1), and serialization fixes its bytes
+(§8.2).
+
+### 8.1 Normalization
+
+Changes are ordered by identifier, commits by hash, reviews by UTC instant then identifier;
+evidence lists and labels are sorted and de-duplicated; timestamps are normalized to UTC
+(RFC 3339 with `Z`). Input order MUST NOT affect output. These rules carry ACP semantics that a
+serialization cannot: RFC 8785 orders the members of an object, never the elements of an array.
+
+### 8.2 Serialization
+
+Every byte sequence ACP hashes or signs is the
+[RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) (JSON Canonicalization Scheme, JCS)
+serialization of the normalized value. That covers the finding identifiers and `source_digest`
+(§7.1), the manifest and Statement bytes and the `sha256` subject form (§7.3), and the payload
+digest recorded for an attestation handed over without an envelope (§3.6). The preimage of any
+ACP digest is the exact JCS byte sequence and nothing else.
+
+A file holding an ACP document MAY end with one LF; that LF is never part of a preimage. The
+reference implementation writes its JSON outputs without it, so that the digest of a file it
+wrote is the digest of the document. JSON Lines is a sequence of JCS documents, each terminated
+by an LF that belongs to no document.
+
+YAML output is a presentation of the same data model. Digests are always computed over the JCS
+serialization of the JSON data model, never over YAML bytes.
+
+**Legacy serialization.** ACP 0.2 used a project canonicalization: sorted keys, compact
+separators, UTF-8 and one trailing LF that *was* part of every preimage. For the values 0.2
+documents contain it differs from JCS only by that LF, but every 0.2 digest and finding
+identifier depends on it. A consumer MAY validate a 0.2 document by recomputing its digests that
+way (§12); it MUST NOT produce new 0.2 documents.
 
 ## 9. Conformance
 
@@ -503,14 +541,24 @@ revision, naming the tool, written when the code was produced.
 
 The specification, the schemas and the predicate type share a version. Additive changes (new
 optional fields, new rules with new identifiers) increment the minor version. Changes to the
-meaning of an existing rule, identifier or format increment the major version. Rule identifiers
-are never reused. Exports and policies written under the previous minor version remain valid
-input (`version` accepts `0.1` and `0.2`); manifests and attestations are validated by the
-release that produced them. The provenance (§3.2) and review (§3.7) documents are versioned on
+meaning of an existing rule, identifier or format increment the major version; before 1.0 they
+increment the minor version instead, name the documents they invalidate, and define how the
+previous version's documents are still validated. Rule identifiers are never reused. Exports
+and policies written under earlier versions remain valid input (`version` accepts `0.1`, `0.2`
+and `0.3`). Manifests and attestations are validated by the release that produced them, except
+that 0.3 consumers validate 0.2 manifests and `v0.2` Statements with the legacy serialization
+of §8.2, since the rules did not change between the two. The provenance (§3.2) and review (§3.7) documents are versioned on
 their own and stay at 0.1.
 
 ## Changelog
 
+- **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project
+  canonicalization; normalization and serialization split into §8.1 and §8.2. Breaking for digests, not for rules: the trailing
+  newline leaves every preimage, so every finding identifier, `source_digest` and `sha256`
+  subject digest changes, while every finding, assessment and verdict stays the same. Findings
+  carry `legacy_ids` for one minor version (§7.1); the predicate type is `v0.3` (§7.3); 0.2
+  documents stay valid through the legacy path (§8.2, §12). Exports and resolved policies are
+  written as `0.3`.
 - **0.2 (2026-09-21)** — agent reviewers: the second form of qualifying approval under the
   opt-in `agent_review` policy (§6.1, §6.3), the independence dimensions (§6.5), rules ACC007
   to ACC010 (§6.2), predicate type `v0.2` (§7.3). Version compatibility rules (§12). Defaults

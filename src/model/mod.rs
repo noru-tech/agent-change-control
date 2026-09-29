@@ -454,6 +454,10 @@ pub struct Finding {
     pub explanation: String,
     pub provenance: Vec<Evidence>,
     pub disposition: Disposition,
+    /// The identifier the same finding had under ACP 0.2, whose preimage ended in a newline.
+    /// Carried for one minor version so dispositions keyed by the old identifier still apply.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub legacy_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -515,7 +515,8 @@
           "type": "string",
           "enum": [
             "0.1",
-            "0.2"
+            "0.2",
+            "0.3"
           ]
         },
         "repository": {
@@ -622,7 +623,8 @@
           "type": "string",
           "enum": [
             "0.1",
-            "0.2"
+            "0.2",
+            "0.3"
           ]
         },
         "fail_on": {
@@ -837,6 +839,15 @@
         },
         "disposition": {
           "$ref": "#/$defs/disposition"
+        },
+        "legacy_ids": {
+          "description": "The identifiers this finding had under ACP 0.2 (preimage with a trailing newline). Written by ACP 0.3 only, for one minor version.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^acc-[a-f0-9]{16}$"
+          },
+          "maxItems": 1
         }
       },
       "required": [
@@ -946,7 +957,10 @@
       "type": "object",
       "properties": {
         "version": {
-          "const": "0.2"
+          "enum": [
+            "0.2",
+            "0.3"
+          ]
         },
         "events": {
           "$ref": "#/$defs/events"
@@ -976,7 +990,7 @@
               "const": "agent-change-control"
             },
             "version": {
-              "const": "0.4.0"
+              "type": "string"
             },
             "source_digest": {
               "type": "string",
@@ -1000,7 +1014,58 @@
         "assessments",
         "generated"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "version": {
+                "const": "0.3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "generated": {
+                "properties": {
+                  "version": {
+                    "const": "0.4.0"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "version": {
+                "const": "0.2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "generated": {
+                "properties": {
+                  "version": {
+                    "const": "0.4.0"
+                  }
+                }
+              },
+              "findings": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "legacy_ids"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

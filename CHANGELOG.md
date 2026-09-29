@@ -6,6 +6,27 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+AI Change Provenance 0.3: RFC 8785 serialization. Rules and verdicts are
+unchanged; digests and finding identifiers are not.
+
+### Changed
+- Every byte sequence acc hashes or signs is the RFC 8785 (JCS) serialization of the normalized
+  value (spec §8.2), through one module (`src/canonical`). The trailing newline that was part of
+  every preimage is gone, so finding identifiers, `generated.source_digest` and the `sha256`
+  subject digest change. Every finding, assessment and verdict across the fixture set is the same.
+- JSON outputs (`--format json`, `in-toto`, `sarif`, and `export`) are written as exactly the JCS
+  bytes, with no trailing newline, so the SHA-256 of a manifest file is its digest. JSON Lines
+  keep one newline after each Statement as a separator.
+- Manifests are version `0.3`, the predicate type is
+  `https://noru.tech/spec/ai-change-provenance/v0.3`, and exports and resolved policies are
+  written as `0.3`. Exports and policies of `0.1` and `0.2` remain valid input.
+
+### Added
+- `legacy_ids` on findings: the identifier the same finding had under 0.2, kept for one minor
+  version. `acc check` carries a disposition over by either identifier.
+- `acc validate` still accepts ACP 0.2 manifests and `v0.2` Statements, including attestations
+  made by acc 0.4.0: it recomputes their digests with the legacy canonicalization and says so.
+
 ## [0.4.0] - 2026-09-21
 
 ### Added

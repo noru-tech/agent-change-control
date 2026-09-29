@@ -1,6 +1,6 @@
 mod common;
 
-use agent_change_control::{Exit, manifest, model::*, normalize, output::intoto};
+use agent_change_control::{Exit, canonical, manifest, model::*, normalize, output::intoto};
 use serde_json::Value;
 
 /// The policy a fixture is evaluated under: its `policy.yml` when present, else the default.
@@ -57,15 +57,15 @@ fn fixtures_and_golden_outputs() {
             c.commits.reverse();
         }
         assert_eq!(
-            normalize::canonical(&m).unwrap(),
-            normalize::canonical(&manifest::evaluate(shuffled, policy).unwrap()).unwrap()
+            canonical::jcs_bytes(&m).unwrap(),
+            canonical::jcs_bytes(&manifest::evaluate(shuffled, policy).unwrap()).unwrap()
         );
-        let canonical = normalize::canonical(&m).unwrap();
+        let canonical = canonical::jcs_bytes(&m).unwrap();
         if std::env::var_os("UPDATE_GOLDENS").is_some() {
             std::fs::write(dir.join("expected-manifest.json"), &canonical).unwrap();
             std::fs::write(
                 dir.join("expected-findings.json"),
-                normalize::canonical(&m.findings).unwrap(),
+                canonical::jcs_bytes(&m.findings).unwrap(),
             )
             .unwrap();
         }
@@ -76,7 +76,7 @@ fn fixtures_and_golden_outputs() {
             dir.display()
         );
         assert_eq!(
-            normalize::canonical(&m.findings).unwrap(),
+            canonical::jcs_bytes(&m.findings).unwrap(),
             std::fs::read_to_string(dir.join("expected-findings.json")).unwrap(),
             "{}",
             dir.display()
@@ -347,12 +347,12 @@ fn exports_written_under_0_1_still_evaluate() {
         serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
     assert_eq!(e.version, "0.1");
     let m = manifest::evaluate(e, Policy::default()).unwrap();
-    assert_eq!(m.version, "0.2");
+    assert_eq!(m.version, "0.3");
     assert_eq!(m.events.version, "0.1");
     manifest::validate(&m).unwrap();
     let mut v: Value =
         serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
-    v["version"] = "0.3".into();
+    v["version"] = "0.4".into();
     assert!(normalize::schema(&v, "events").is_err());
 }
 
@@ -362,4 +362,83 @@ fn schema_rejects_extra_fields() {
         serde_json::from_str(include_str!("fixtures/human-clean/events.json")).unwrap();
     v["surprise"] = true.into();
     assert!(normalize::schema(&v, "events").is_err());
+}
+
+/// ACP 0.2 documents, written by acc 0.4.0 with the legacy canonicalization (a trailing newline
+/// in every preimage), still validate, and `check` carries their dispositions over to the 0.3
+/// finding identifiers.
+#[test]
+fn legacy_0_2_manifests_validate_and_keep_their_dispositions() {
+    let dir = common::fixtures().join("legacy-0.2");
+    let text = std::fs::read_to_string(dir.join("manifest.json")).unwrap();
+    let legacy: Manifest = serde_json::from_str(&text).unwrap();
+    assert_eq!(legacy.version, "0.2");
+    assert_eq!(
+        manifest::validate(&legacy).unwrap(),
+        canonical::Canonicalization::Legacy
+    );
+    // Its digests are over the legacy bytes, which are the file as acc 0.4.0 wrote it.
+    assert_eq!(canonical::legacy::bytes(&legacy).unwrap(), text);
+    assert_eq!(
+        legacy.generated.source_digest,
+        canonical::legacy::digest(&legacy.events).unwrap()
+    );
+    // Tampering is still detected, and a 0.2 manifest cannot claim 0.3 or carry legacy_ids.
+    let mut tampered = legacy.clone();
+    tampered.findings[0].severity = Severity::Info;
+    assert!(manifest::validate(&tampered).is_err());
+    let mut relabelled = legacy.clone();
+    relabelled.version = "0.3".into();
+    assert!(manifest::validate(&relabelled).is_err());
+    let mut mixed = legacy.clone();
+    mixed.findings[0].legacy_ids = vec![mixed.findings[0].id.clone()];
+    assert!(manifest::validate(&mixed).is_err());
+    // The same facts evaluated today: same findings under new identifiers that name the old.
+    let current = manifest::evaluate(legacy.events.clone(), legacy.policy.clone()).unwrap();
+    assert_eq!(current.version, "0.3");
+    for (old, new) in legacy.findings.iter().zip(&current.findings) {
+        assert_ne!(old.id, new.id);
+        assert_eq!(new.legacy_ids, vec![old.id.clone()]);
+        assert_eq!(
+            (old.rule_id, &old.explanation),
+            (new.rule_id, &new.explanation)
+        );
+    }
+    // A disposition recorded against the 0.2 identifier survives `check`.
+    let mut decided = legacy.clone();
+    decided.findings[0].disposition = Disposition {
+        status: DispositionStatus::Accepted,
+        owner: Some("security".into()),
+        decided_at: "2026-09-01".parse().ok(),
+        expires_at: None,
+        rationale: Some("Recorded under 0.2".into()),
+        remediated_at: None,
+    };
+    manifest::validate(&decided).unwrap();
+    let (checked, _) = manifest::check(&decided, None, "2026-09-18".parse().ok()).unwrap();
+    assert_eq!(checked.version, "0.3");
+    let carried = checked
+        .findings
+        .iter()
+        .find(|f| f.legacy_ids.contains(&legacy.findings[0].id))
+        .unwrap();
+    assert_eq!(carried.disposition.status, DispositionStatus::Accepted);
+    // Legacy Statements validate too, in both forms.
+    let statement: Value =
+        serde_json::from_str(&std::fs::read_to_string(dir.join("statement.intoto.json")).unwrap())
+            .unwrap();
+    assert_eq!(statement["predicateType"], intoto::LEGACY_PREDICATE_TYPE);
+    intoto::validate_statement(&statement).unwrap();
+    let mut wrong_type = statement.clone();
+    wrong_type["predicateType"] = intoto::PREDICATE_TYPE.into();
+    assert!(intoto::validate_statement(&wrong_type).is_err());
+    let lines = std::fs::read_to_string(dir.join("statements.intoto.jsonl")).unwrap();
+    intoto::validate_jsonl(&lines).unwrap();
+    let current_line = intoto::render_jsonl(&current).unwrap();
+    assert!(
+        intoto::validate_jsonl(&format!("{lines}{current_line}"))
+            .unwrap_err()
+            .to_string()
+            .contains("mix")
+    );
 }

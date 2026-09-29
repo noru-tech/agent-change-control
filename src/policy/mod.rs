@@ -73,7 +73,7 @@ impl RuleId {
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            version: "0.2".into(),
+            version: "0.3".into(),
             fail_on: default_threshold(),
             minimum_authorship_evidence: default_authorship_minimum(),
             minimum_review_evidence: default_review_minimum(),
