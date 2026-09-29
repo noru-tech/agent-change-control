@@ -25,7 +25,8 @@ apply here too.
 ```
 src/cli/          clap definitions, one file per subcommand, plus shared I/O helpers
 src/model/        the public data model mirrored by schemas/ (enums for every closed vocabulary)
-src/normalize/    schema validation, timeline checks, canonical ordering and canonical JSON
+src/normalize/    schema validation, timeline checks and canonical ordering (spec §8.1)
+src/canonical/    RFC 8785 serialization, digests and I-JSON input checks (spec §8.2)
 src/rules/        pure evaluation of normalized facts into findings and assessments
 src/manifest/     manifest generation, validation (re-evaluation) and policy checks
 src/policy/       rule catalogue, default policy, severity ranking
@@ -70,7 +71,11 @@ on purpose, review and accept the new snapshots with `cargo insta review` (insta
 Every directory under `tests/fixtures/` with an `events.json` is evaluated with the default policy.
 `expected-rules.json` lists the rule IDs that must fire (or a `validation_error` code for invalid
 input). `expected-manifest.json` and `expected-findings.json` are byte-exact goldens of the canonical
-output.
+output: RFC 8785 bytes with no trailing newline (`.editorconfig` keeps editors from adding one).
+The `jcs` CI job recomputes their digests with an independent Python JCS implementation
+(`.github/scripts/jcs_crosscheck.py`). `tests/fixtures/ijson/` holds one input per I-JSON
+violation (ACV005 to ACV009), and `tests/fixtures/legacy-0.2/` documents written by acc 0.4.0
+that must keep validating through the legacy canonicalization.
 
 Golden updates are explicit: `UPDATE_GOLDENS=1 cargo test --test fixtures`. First review
 `expected-rules.json` and the intended semantic change, then review the generated manifest and
@@ -88,7 +93,9 @@ exact condition and evidence in `docs/policy.md`, add the row to the README tabl
 
 `spec/ai-change-provenance.md`, the schemas and the in-toto predicate type share a version. Additive
 changes bump the minor version; changes to the meaning of an existing rule, identifier or format bump
-the major version, and the old predicate type URI stays valid for old attestations. Use the
+the major version (the minor version before 1.0, with a stated way to validate the previous
+version's documents), and the old predicate type URI stays valid for old attestations. Every spec
+change adds an entry to the specification's changelog in the same commit as the code. Use the
 "Specification change" issue template to propose one before writing the text.
 
 ## Releases
@@ -103,7 +110,9 @@ regenerate `.github/workflows/release.yml` with `dist generate` rather than edit
 only hand edit is pinning the `uses:` actions to commit SHAs, as in `ci.yml`; `allow-dirty = ["ci"]`
 in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current.
 
-The manifest schema pins `generated.version` to the crate version. Bump both together, and bump the
+The manifest schema pins `generated.version` to the crate version for current (`0.3`) manifests.
+Bump both together (the `0.2` branch of that schema stays at `0.4.0`, the release that wrote
+them), and bump the
 `version` input default in `action.yml` to the same release so the action installs the binary it was
 published with. `.github/workflows/change-control.yml` and `.github/workflows/attest.yml` pin `version` to the
 last *published* release instead, because the release pull request runs before its tag exists;

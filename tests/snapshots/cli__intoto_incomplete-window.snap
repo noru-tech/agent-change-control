@@ -113,7 +113,7 @@ predicate:
       to: "2026-08-31T23:59:59Z"
   findings: []
   generated:
-    source_digest: "sha256:022ac0a10d4e683d9833ff98e019558f2175f0ac92ebf1b31302798051556309"
+    source_digest: "sha256:384d93e4dc2f89c30b480abf9f97bece41c36fb98d03750408d1616e1472200a"
     tool: agent-change-control
     version: 0.4.0
   policy:
@@ -153,7 +153,7 @@ predicate:
       unknown_agent_operator:
         enabled: true
         severity: warning
-    version: "0.2"
+    version: "0.3"
   summary:
     agent_authored: 0
     agent_operator_unknown: 0
@@ -163,8 +163,8 @@ predicate:
     human_authored: 1
     indeterminate: 1
     with_findings: 0
-  version: "0.2"
-predicateType: "https://noru.tech/spec/ai-change-provenance/v0.2"
+  version: "0.3"
+predicateType: "https://noru.tech/spec/ai-change-provenance/v0.3"
 subject:
   - digest:
       gitCommit: head

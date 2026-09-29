@@ -4,7 +4,7 @@ use super::Ctx;
 use super::forge::{self, Forge};
 use super::io;
 use crate::output::Format;
-use crate::{Exit, failure, normalize};
+use crate::{Exit, canonical, failure};
 use anyhow::Result;
 
 #[derive(Debug, clap::Args)]
@@ -30,7 +30,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     } else {
         Exit::Ok
     };
-    io::write(&normalize::canonical(&events)?, c.output.output.as_deref())?;
+    io::write(&canonical::jcs_bytes(&events)?, c.output.output.as_deref())?;
     if let Some(path) = &c.output.output {
         ctx.note(format!("wrote {}", path.display()));
     }

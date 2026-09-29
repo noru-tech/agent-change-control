@@ -11,6 +11,7 @@
 //! digest, and can re-evaluate a manifest to detect tampering. [`output`] renders JSON, YAML, a
 //! table or SARIF.
 
+pub mod canonical;
 pub mod cli;
 pub mod collectors;
 pub mod manifest;

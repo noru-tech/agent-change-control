@@ -75,3 +75,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: crate-ci/typos@512fc24f32f44ab01972217aaaf3dc86ec234d53 # v1.50.2
+
+  jcs:
+    # Spec §8.2: every digest is SHA-256 over RFC 8785 bytes. Recompute the goldens' digests
+    # with an independent JCS implementation, without any of acc's code.
+    name: RFC 8785 cross-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 -m venv .venv
+      - run: .venv/bin/pip install --require-hashes -r .github/scripts/jcs-requirements.txt
+      - run: .venv/bin/python .github/scripts/jcs_crosscheck.py tests/fixtures

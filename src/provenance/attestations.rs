@@ -112,8 +112,10 @@ fn container(value: Value) -> Result<Container> {
                 .decode(encoded)
                 .or_else(|_| base64::engine::general_purpose::STANDARD_NO_PAD.decode(encoded))
                 .context("DSSE payload is not base64")?;
-            let statement: Value =
-                serde_json::from_slice(&payload).context("DSSE payload is not JSON")?;
+            let statement = std::str::from_utf8(&payload)
+                .context("DSSE payload is not UTF-8")
+                .and_then(crate::canonical::ijson::parse_json)
+                .context("DSSE payload")?;
             let signed = env["signatures"].as_array().is_some_and(|s| !s.is_empty());
             Ok(Container {
                 payload,
@@ -126,7 +128,7 @@ fn container(value: Value) -> Result<Container> {
                 value.get("_type").is_some(),
                 "not an in-toto Statement, a DSSE envelope or a Sigstore bundle"
             );
-            let payload = crate::normalize::canonical(&value)?.into_bytes();
+            let payload = crate::canonical::jcs_bytes(&value)?.into_bytes();
             Ok(Container {
                 payload,
                 statement: value,
@@ -139,8 +141,9 @@ fn container(value: Value) -> Result<Container> {
 impl Attestations {
     /// Load every `.json` and `.jsonl` file under `paths` (files or directories, recursively, in
     /// sorted order). A `.json` file holds one container or an array of them; a `.jsonl` file
-    /// holds one per line. `verified_by` is the caller's statement of who verified the
-    /// signatures, recorded verbatim; without it nothing loaded here yields `signed` evidence.
+    /// holds one per line; both are held to the I-JSON constraints of spec §8.2. `verified_by`
+    /// is the caller's statement of who verified the signatures, recorded verbatim; without it
+    /// nothing loaded here yields `signed` evidence.
     pub fn load(paths: &[PathBuf], verified_by: Option<String>) -> Result<Self> {
         let mut out = Self {
             loaded: Vec::new(),
@@ -267,13 +270,13 @@ impl Attestations {
                 .enumerate()
                 .filter(|(_, l)| !l.trim().is_empty())
                 .map(|(i, l)| {
-                    serde_json::from_str(l)
-                        .with_context(|| format!("{}:{} is not valid JSON", path.display(), i + 1))
+                    crate::canonical::ijson::parse_json(l)
+                        .with_context(|| format!("{}:{}", path.display(), i + 1))
                 })
                 .collect::<Result<_>>()?
         } else {
-            match serde_json::from_str(&data)
-                .with_context(|| format!("{} is not valid JSON", path.display()))?
+            match crate::canonical::ijson::parse_json(&data)
+                .with_context(|| format!("{}", path.display()))?
             {
                 Value::Array(items) => items,
                 v => vec![v],
@@ -418,6 +421,22 @@ pub fn same_operator(a: &str, b: &str, namespace: &str) -> bool {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// Spec §8.2: a bare Statement's payload digest is over its RFC 8785 bytes; a DSSE payload is
+    /// hashed exactly as it was signed, never re-serialized.
+    #[test]
+    fn payload_digests_are_over_jcs_bytes_or_the_signed_payload() {
+        let bare = statement("claude-code", "alice", "c3d4");
+        let c = container(bare.clone()).unwrap();
+        assert_eq!(c.payload, serde_json_canonicalizer::to_vec(&bare).unwrap());
+        let signed = b"{ \"not\": \"canonical\" }".to_vec();
+        let env = json!({
+            "payloadType": DSSE_PAYLOAD_TYPE,
+            "payload": base64::engine::general_purpose::STANDARD.encode(&signed),
+            "signatures": [{"sig": "x"}],
+        });
+        assert_eq!(container(env).unwrap().payload, signed);
+    }
 
     fn statement(agent: &str, operator: &str, head: &str) -> Value {
         json!({

@@ -1,15 +1,35 @@
 //! Manifest generation, tamper-detecting validation and disposition-aware policy checks.
 
+use crate::canonical::Canonicalization;
 use crate::model::*;
 use crate::{Exit, failure};
-use anyhow::{Result, anyhow, ensure};
+use anyhow::{Result, anyhow, bail, ensure};
 use chrono::NaiveDate;
+
+/// The manifest version `acc` writes: ACP 0.3, digests over RFC 8785 bytes.
+pub const VERSION: &str = "0.3";
+/// The last manifest version with the legacy canonicalization, read for validation only.
+pub const LEGACY_VERSION: &str = "0.2";
+/// The only release that wrote [`LEGACY_VERSION`] manifests.
+pub const LEGACY_GENERATOR: &str = "0.4.0";
 
 /// Normalize `e`, resolve `p` and evaluate every rule into a manifest.
 pub fn evaluate(e: Events, p: Policy) -> Result<Manifest> {
+    evaluate_as(e, p, Canonicalization::Jcs)
+}
+
+/// [`evaluate`], with the digests, identifiers and version marks of the given canonicalization.
+/// Rule semantics are the same for both; only the bytes that are hashed differ.
+fn evaluate_as(e: Events, p: Policy, canon: Canonicalization) -> Result<Manifest> {
     let e = crate::normalize::events(e)?;
-    let p = crate::policy::resolve(p)?;
-    let (findings, assessments) = crate::rules::evaluate(&e, &p)?;
+    let mut p = crate::policy::resolve(p)?;
+    let (mut findings, assessments) = crate::rules::evaluate(&e, &p)?;
+    if canon == Canonicalization::Legacy {
+        p.version = LEGACY_VERSION.into();
+        for f in &mut findings {
+            f.id = std::mem::take(&mut f.legacy_ids).remove(0);
+        }
+    }
     let mut summary = Summary {
         changes: e.changes.len(),
         findings: findings.len(),
@@ -39,13 +59,17 @@ pub fn evaluate(e: Events, p: Policy) -> Result<Manifest> {
             summary.clean += 1;
         }
     }
+    let (version, generator) = match canon {
+        Canonicalization::Jcs => (VERSION, crate::version()),
+        Canonicalization::Legacy => (LEGACY_VERSION, LEGACY_GENERATOR),
+    };
     let generated = Generated {
         tool: "agent-change-control".into(),
-        version: crate::version().into(),
-        source_digest: crate::normalize::digest(&e)?,
+        version: generator.into(),
+        source_digest: canon.digest(&e)?,
     };
     Ok(Manifest {
-        version: "0.2".into(),
+        version: version.into(),
         events: e,
         policy: p,
         summary,
@@ -56,10 +80,13 @@ pub fn evaluate(e: Events, p: Policy) -> Result<Manifest> {
 }
 
 /// Check the schema, then re-evaluate the embedded facts and policy and require byte-identical
-/// canonical output. Only structurally valid disposition edits are allowed to differ.
-pub fn validate(m: &Manifest) -> Result<()> {
+/// canonical output. Only structurally valid disposition edits are allowed to differ. A 0.2
+/// manifest is re-evaluated with the legacy canonicalization it was written with; the result
+/// says which one applied.
+pub fn validate(m: &Manifest) -> Result<Canonicalization> {
+    let canon = canonicalization(&m.version)?;
     crate::normalize::schema(&serde_json::to_value(m)?, "manifest")?;
-    let mut expected = evaluate(m.events.clone(), m.policy.clone())?;
+    let mut expected = evaluate_as(m.events.clone(), m.policy.clone(), canon)?;
     ensure!(
         expected.findings.len() == m.findings.len(),
         "manifest findings do not match recorded facts"
@@ -69,10 +96,19 @@ pub fn validate(m: &Manifest) -> Result<()> {
         computed.disposition = actual.disposition.clone();
     }
     ensure!(
-        crate::normalize::canonical(m)? == crate::normalize::canonical(&expected)?,
+        crate::canonical::jcs_bytes(m)? == crate::canonical::jcs_bytes(&expected)?,
         "manifest differs from deterministic evaluation (facts, digest, summary or findings)"
     );
-    Ok(())
+    Ok(canon)
+}
+
+/// The canonicalization a manifest version was written with.
+pub fn canonicalization(version: &str) -> Result<Canonicalization> {
+    match version {
+        VERSION => Ok(Canonicalization::Jcs),
+        LEGACY_VERSION => Ok(Canonicalization::Legacy),
+        _ => bail!("unsupported manifest version"),
+    }
 }
 
 fn validate_disposition(d: &Disposition) -> Result<()> {
@@ -110,7 +146,8 @@ fn suppressed(d: &Disposition, date: NaiveDate) -> Result<bool> {
 }
 
 /// Validate `m`, re-evaluate it under `p` (or its embedded policy), carry dispositions over by
-/// finding ID, and decide the process exit. Non-open dispositions require an explicit `as_of`
+/// finding ID (the current identifier or a legacy one, so a 0.2 manifest's dispositions survive
+/// the move to 0.3), and decide the process exit. Non-open dispositions require an explicit `as_of`
 /// date; the machine clock is never consulted.
 pub fn check(
     m: &Manifest,
@@ -120,7 +157,11 @@ pub fn check(
     validate(m)?;
     let mut checked = evaluate(m.events.clone(), p.unwrap_or_else(|| m.policy.clone()))?;
     for f in &mut checked.findings {
-        if let Some(old) = m.findings.iter().find(|old| old.id == f.id) {
+        if let Some(old) = m
+            .findings
+            .iter()
+            .find(|old| old.id == f.id || f.legacy_ids.contains(&old.id))
+        {
             f.disposition = old.disposition.clone();
         }
     }

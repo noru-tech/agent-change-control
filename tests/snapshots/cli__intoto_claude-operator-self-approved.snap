@@ -140,7 +140,9 @@ predicate:
         remediated_at: ~
         status: open
       explanation: No qualifying independent human approval of the current head exists before merge.
-      id: acc-e59f983b2bb043de
+      id: acc-76345141bc169388
+      legacy_ids:
+        - acc-e59f983b2bb043de
       provenance:
         - kind: observed
           ref: "https://api.github.com/repos/acme/api/pulls/421"
@@ -166,7 +168,9 @@ predicate:
         remediated_at: ~
         status: open
       explanation: The effective human author or agent operator approved this change.
-      id: acc-25b6499b1ba489be
+      id: acc-1e2fe2ca19119412
+      legacy_ids:
+        - acc-25b6499b1ba489be
       provenance:
         - kind: observed
           ref: "https://api.github.com/repos/acme/api/pulls/421"
@@ -192,7 +196,9 @@ predicate:
         remediated_at: ~
         status: open
       explanation: No qualifying independent human approval of the current head exists before merge.
-      id: acc-843391ac0a886679
+      id: acc-6e1239e4e65c437c
+      legacy_ids:
+        - acc-843391ac0a886679
       provenance:
         - kind: observed
           ref: "https://api.github.com/repos/acme/api/pulls/421"
@@ -207,7 +213,7 @@ predicate:
       rule_id: ACC003
       severity: high
   generated:
-    source_digest: "sha256:5aca56ea13b0dd87ec34afab343b9565613232e086021ee0f1e4d4b05f3a24b4"
+    source_digest: "sha256:86b4f7cd57d9aa95a7bfc194847124e86e7b9b1e7a023c1753b130896982ee5e"
     tool: agent-change-control
     version: 0.4.0
   policy:
@@ -247,7 +253,7 @@ predicate:
       unknown_agent_operator:
         enabled: true
         severity: warning
-    version: "0.2"
+    version: "0.3"
   summary:
     agent_authored: 1
     agent_operator_unknown: 0
@@ -257,8 +263,8 @@ predicate:
     human_authored: 0
     indeterminate: 0
     with_findings: 1
-  version: "0.2"
-predicateType: "https://noru.tech/spec/ai-change-provenance/v0.2"
+  version: "0.3"
+predicateType: "https://noru.tech/spec/ai-change-provenance/v0.3"
 subject:
   - digest:
       gitCommit: head

@@ -64,5 +64,5 @@ pub fn render(m: &Manifest) -> Result<String> {
             "properties": {"assessments": m.assessments},
         }],
     });
-    crate::normalize::canonical(&log)
+    crate::canonical::jcs_bytes(&log)
 }

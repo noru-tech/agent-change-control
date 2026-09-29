@@ -19,3 +19,7 @@ trim_trailing_whitespace = false
 
 [Makefile]
 indent_style = tab
+
+# Goldens are RFC 8785 bytes, which end without a newline (spec §8.2).
+[tests/fixtures/**/expected*.json]
+insert_final_newline = false

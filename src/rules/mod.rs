@@ -337,6 +337,11 @@ impl<'a> Facts<'a> {
     }
 }
 
+/// `acc-` and the first 16 hexadecimal characters of a `sha256:` digest.
+fn finding_id(digest: &str) -> String {
+    format!("acc-{}", &digest[7..23])
+}
+
 /// Evaluate every enabled rule against every change.
 pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Assessment>)> {
     let mut findings = Vec::new();
@@ -386,9 +391,12 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             provenance.sort();
             provenance.dedup();
             // Structured tuple, not concatenation: IDs never change with severity or dispositions.
-            let hash = crate::normalize::digest(&(&e.repository, &c.id, rule.code(), &actors))?;
+            let preimage = (&e.repository, &c.id, rule.code(), &actors);
+            let id = finding_id(&crate::canonical::digest(&preimage)?);
+            let legacy = finding_id(&crate::canonical::legacy::digest(&preimage)?);
             findings.push(Finding {
-                id: format!("acc-{}", &hash[7..23]),
+                id,
+                legacy_ids: vec![legacy],
                 rule_id: rule,
                 rule: rule.name(),
                 severity: policy.severity,

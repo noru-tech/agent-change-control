@@ -49,7 +49,7 @@ runs:
         message:
           text: Agent authorship is recorded but its human operator is unknown.
         partialFingerprints:
-          agentChangeControl/v1: acc-3031f6b4807c5738
+          agentChangeControl/v1: acc-a77f6c869b9816b1
         properties:
           change_id: "github:acme/api:pr:421"
           disposition:

@@ -11,6 +11,9 @@
 //! from the target branch. Nothing is invented: a merged change whose merge commit the forge did
 //! not report has a head subject only.
 //!
+//! Every Statement is written as its RFC 8785 bytes (spec §8.2), and each JSON Lines line is those
+//! bytes followed by a newline that separates lines and belongs to no Statement.
+//!
 //! Statements are deliberately unsigned. Signing is a deployment decision: wrap the canonical
 //! bytes in a DSSE envelope with the signer your organization already trusts (Sigstore, an HSM,
 //! a KMS key). A verifier unwraps the envelope, checks the subject digests against the commits it
@@ -18,15 +21,19 @@
 //! predicate and the findings follow from the embedded facts. See `docs/in-toto.md` and
 //! `spec/ai-change-provenance.md` §7.3.
 
+use crate::canonical::Canonicalization;
 use crate::model::{Change, Events, Evidence, Manifest};
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
 /// The in-toto Statement layer this renderer emits.
 pub const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";
 /// The predicate type: an AI Change Provenance manifest, versioned with the specification.
-pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.2";
+pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.3";
+/// The ACP 0.2 predicate type, whose digests used the legacy canonicalization. Validated, never
+/// written.
+pub const LEGACY_PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.2";
 
 /// The subject entries one change contributes: its head commit, then its merge commit when
 /// merged, known and distinct from the head.
@@ -60,7 +67,7 @@ fn statement(m: &Manifest) -> Result<Value> {
 
 /// One Statement covering every change in the manifest.
 pub fn render(m: &Manifest) -> Result<String> {
-    crate::normalize::canonical(&statement(m)?)
+    crate::canonical::jcs_bytes(&statement(m)?)
 }
 
 /// JSON Lines: one Statement per change, in change ID order.
@@ -71,7 +78,8 @@ pub fn render_jsonl(m: &Manifest) -> Result<String> {
     );
     let mut out = String::new();
     for part in per_change(m)? {
-        out.push_str(&crate::normalize::canonical(&statement(&part)?)?);
+        out.push_str(&crate::canonical::jcs_bytes(&statement(&part)?)?);
+        out.push('\n');
     }
     Ok(out)
 }
@@ -163,8 +171,9 @@ pub fn per_change(m: &Manifest) -> Result<Vec<Manifest>> {
 /// subjects the predicate's changes produce, or, for signers that accept only SHA-2 digests
 /// (GitHub artifact attestations, `cosign attest-blob`), a single subject whose `sha256` digest
 /// is over the canonical bytes of the predicate, which is the manifest as `--format json` writes
-/// it. The commits are then found inside the predicate.
-fn subjects_match(v: &Value, m: &Manifest) -> Result<bool> {
+/// it. The commits are then found inside the predicate. `canon` is the predicate's
+/// canonicalization: RFC 8785 bytes for 0.3, the legacy bytes with their newline for 0.2.
+fn subjects_match(v: &Value, m: &Manifest, canon: Canonicalization) -> Result<bool> {
     let commits: Vec<Value> = m.events.changes.iter().flat_map(subjects).collect();
     if v["subject"] == Value::Array(commits) {
         return Ok(true);
@@ -175,23 +184,29 @@ fn subjects_match(v: &Value, m: &Manifest) -> Result<bool> {
     let Some(hex) = one["digest"]["sha256"].as_str() else {
         return Ok(false);
     };
-    Ok(crate::normalize::digest(m)? == format!("sha256:{}", hex.to_ascii_lowercase()))
+    Ok(canon.digest(m)? == format!("sha256:{}", hex.to_ascii_lowercase()))
 }
 
 /// Validate one Statement: the statement schema, the predicate type, the predicate as a manifest
 /// (schema, timeline and byte-identical re-evaluation), and subjects that fit the predicate (see
-/// [`subjects_match`]). Returns the predicate.
+/// [`subjects_match`]). A `v0.2` Statement is validated with the legacy canonicalization its
+/// digests were computed with. Returns the predicate.
 pub fn validate_statement(v: &Value) -> Result<Manifest> {
     crate::normalize::schema(v, "statement")?;
+    let version = match v["predicateType"].as_str() {
+        Some(PREDICATE_TYPE) => crate::manifest::VERSION,
+        Some(LEGACY_PREDICATE_TYPE) => crate::manifest::LEGACY_VERSION,
+        _ => bail!("unsupported predicate type; expected {PREDICATE_TYPE}"),
+    };
     ensure!(
-        v["predicateType"] == PREDICATE_TYPE,
-        "unsupported predicate type; expected {PREDICATE_TYPE}"
+        v["predicate"]["version"] == version,
+        "predicate version does not match the predicate type"
     );
     crate::normalize::schema(&v["predicate"], "manifest")?;
     let m: Manifest = serde_json::from_value(v["predicate"].clone())?;
-    crate::manifest::validate(&m)?;
+    let canon = crate::manifest::validate(&m)?;
     ensure!(
-        subjects_match(v, &m)?,
+        subjects_match(v, &m, canon)?,
         "statement subjects do not match the predicate's changes"
     );
     Ok(m)
@@ -204,12 +219,15 @@ pub fn validate_jsonl(text: &str) -> Result<Vec<Manifest>> {
     for (i, line) in text.lines().enumerate() {
         let n = i + 1;
         ensure!(!line.trim().is_empty(), "line {n} is empty");
-        let v: Value =
-            serde_json::from_str(line).with_context(|| format!("line {n} is not JSON"))?;
+        let v = crate::canonical::ijson::parse_json(line).with_context(|| format!("line {n}"))?;
         let m = validate_statement(&v).with_context(|| format!("line {n}"))?;
         ensure!(
             m.events.changes.len() == 1,
             "line {n}: a JSON Lines statement covers exactly one change"
+        );
+        ensure!(
+            out.last().is_none_or(|prev| prev.version == m.version),
+            "line {n}: statements mix ACP versions"
         );
         let id = &m.events.changes[0].id;
         ensure!(
@@ -360,7 +378,7 @@ mod tests {
     #[test]
     fn a_single_sha256_subject_over_the_canonical_predicate_is_accepted() {
         let m = manifest(vec![change(1, Some("m1"))]);
-        let digest = crate::normalize::digest(&m).unwrap();
+        let digest = crate::canonical::digest(&m).unwrap();
         let hex = digest.trim_start_matches("sha256:");
         let mut v: Value = serde_json::from_str(&render(&m).unwrap()).unwrap();
         v["subject"] = json!([{"name": "acc-manifest.json", "digest": {"sha256": hex}}]);
