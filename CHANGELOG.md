@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-29
+
 AI Change Provenance 0.3: RFC 8785 serialization and I-JSON input. Rules and verdicts are
 unchanged; digests and finding identifiers are not.
 
@@ -171,7 +173,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/agent-change-control/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/agent-change-control/compare/v0.2.0...v0.3.0

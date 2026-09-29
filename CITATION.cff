@@ -8,8 +8,8 @@ authors:
 repository-code: https://github.com/noru-tech/agent-change-control
 url: https://github.com/noru-tech/agent-change-control/blob/main/spec/ai-change-provenance.md
 license: MIT
-version: "0.4.0"
-date-released: "2026-09-19"
+version: "0.5.0"
+date-released: "2026-09-29"
 keywords:
   - change control
   - separation of duties
