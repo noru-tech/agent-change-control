@@ -209,11 +209,11 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
     let traces = matches!(mode, "trace-only" | "trace-and-trailer")
         .then(|| AgentTraces::load(&[fixture("agent-trace")]).unwrap());
     let attestations = match mode {
-        "review-human" | "review-agent" | "review-kind-mismatch" => {
-            let dir = if mode == "review-human" {
-                "review-human"
-            } else {
-                "review-agent"
+        "review-human" | "review-agent" | "review-kind-mismatch" | "review-human-with-operator" => {
+            let dir = match mode {
+                "review-human" => "review-human",
+                "review-human-with-operator" => "review-human-with-operator",
+                _ => "review-agent",
             };
             let mut a =
                 Attestations::load(&[], Some("gh attestation verify (test)".into())).unwrap();
@@ -440,6 +440,27 @@ fn review_attestations_upgrade_forge_reviews_and_never_create_them() {
     // An attestation calling a human account an agent is an error, not a reclassification.
     let err = collect("review-kind-mismatch").unwrap_err();
     assert!(err.to_string().contains("reviewer kind"));
+}
+
+#[test]
+fn review_attestations_must_agree_with_account_mappings() {
+    // bob is verified as the agent `review-agent`; a review document naming another agent for
+    // the same account is an error, never a choice between the two.
+    let known = BTreeMap::from([("bob".to_string(), "another-agent".to_string())]);
+    let err = collect_with("review-agent", &known).unwrap_err();
+    assert!(err.to_string().contains("names another agent"), "{err}");
+}
+
+#[test]
+fn human_review_attestations_name_no_operator_or_instructions() {
+    // Only an agent reviewer has an operator or instructions (spec §3.7); a human reviewer's
+    // document that names one is an error for the change.
+    let err = collect("review-human-with-operator").unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("review attestation for a human names an operator or instructions"),
+        "{err}"
+    );
 }
 
 #[test]

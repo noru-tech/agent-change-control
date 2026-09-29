@@ -531,7 +531,8 @@ way (§12); it MUST NOT produce new 0.2 documents.
 - An **evaluator** conforms when it passes a named `suiteRevision` of the ACP evaluator
   conformance corpus (`acp-evaluator-conformance`) at a named release, and it satisfies §8. The
   corpus is published under [`conformance/`](../conformance/README.md) with a digest list signed
-  at the release tag; for this version it is suite revision 1. A claim names all three, for
+  at the release tag. Revision 1 was published at `v0.5.0`; later revisions add vectors or
+  correct expected results, never change a released one. A claim names all three, for
   example "`acp-evaluator-conformance` revision 1 at `v0.5.0`", and is backed by the report the
   corpus harness writes.
 
@@ -600,6 +601,9 @@ their own and stay at 0.1.
 
 ## Changelog
 
+- **0.3, revision 3 (2026-09-29)** — §9 no longer names a single suite revision for this
+  version: revision 1 was published at `v0.5.0`, and later revisions (revision 2 adds vectors
+  for the `instructions` dimension of §6.5) only add vectors or correct expected results.
 - **0.3, revision 2 (2026-09-29)** — editorial: sections written under 0.1 now say "this
   version" (§3.2, §3.5), and §3.7 names the rules that read agent reviewer facts. No normative
   change.

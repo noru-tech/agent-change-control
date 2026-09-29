@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 const SUITE: &str = "acp-evaluator-conformance";
-const SUITE_REVISION: u64 = 1;
+const SUITE_REVISION: u64 = 2;
 const SPEC_VERSION: &str = "0.3";
 const SPEC_PATH: &str = "spec/ai-change-provenance.md";
 
@@ -230,6 +230,37 @@ fn evaluated() -> Vec<Evaluated> {
             fails: &["ACC003"],
             conditions: &[POLICY],
         },
+        // The opt-in instructions dimension (spec §6.5): independent, dependent and unknown.
+        Evaluated {
+            id: "agent-review-independent--instructions-required",
+            kind: Kind::Accept,
+            fixture: "agent-review-independent",
+            edit: Some(require_instructions),
+            fails: &["ACC007"],
+            conditions: &[POLICY, DIMENSIONS],
+        },
+        Evaluated {
+            id: "agent-review-instructions-dependent",
+            kind: Kind::Accept,
+            fixture: "agent-review-independent",
+            edit: Some(|v| {
+                require_instructions(v);
+                change(v)["reviews"][0]["agent"]["instructions_owner"] = "github:alice".into();
+            }),
+            fails: &["ACC001", "ACC003", "ACC007", "ACC009"],
+            conditions: &[POLICY, DIMENSIONS],
+        },
+        Evaluated {
+            id: "agent-review-instructions-unknown",
+            kind: Kind::Accept,
+            fixture: "agent-review-independent",
+            edit: Some(|v| {
+                require_instructions(v);
+                change(v)["reviews"][0]["agent"]["instructions_owner"] = Value::Null;
+            }),
+            fails: &["ACC007"],
+            conditions: &[POLICY, DIMENSIONS, INDEPENDENCE],
+        },
         // Incomplete collection: exit 4, never a clean result, even with an approval on record.
         Evaluated {
             id: "incomplete-window",
@@ -264,6 +295,12 @@ fn evaluated() -> Vec<Evaluated> {
             conditions: &[COLLECTION, RULES],
         },
     ]
+}
+
+/// Require every independence dimension, including the opt-in `instructions` (spec §6.5).
+fn require_instructions(v: &mut Value) {
+    policy(v)["agent_review"]["require"] =
+        json!(["identity", "instructions", "operator", "provider"]);
 }
 
 /// Record a verified provenance attestation as the operator's signed evidence.
@@ -701,6 +738,11 @@ fn corpus_is_generated_from_the_table() {
         std::fs::read_to_string(root.join("MANIFEST.json")).unwrap_or_default(),
         manifest_text,
         "MANIFEST.json is stale; regenerate with UPDATE_CORPUS=1"
+    );
+    let readme = std::fs::read_to_string(root.join("README.md")).unwrap();
+    assert!(
+        readme.contains(&format!("suite revision {SUITE_REVISION},")),
+        "conformance/README.md names another suite revision"
     );
     // No vector file exists that the table does not produce.
     for kind in ["accept", "reject", "incomplete"] {
