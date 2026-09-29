@@ -26,7 +26,7 @@ apply here too.
 src/cli/          clap definitions, one file per subcommand, plus shared I/O helpers
 src/model/        the public data model mirrored by schemas/ (enums for every closed vocabulary)
 src/normalize/    schema validation, timeline checks and canonical ordering (spec §8.1)
-src/canonical/    RFC 8785 serialization and digests (spec §8.2)
+src/canonical/    RFC 8785 serialization, digests and I-JSON input checks (spec §8.2)
 src/rules/        pure evaluation of normalized facts into findings and assessments
 src/manifest/     manifest generation, validation (re-evaluation) and policy checks
 src/policy/       rule catalogue, default policy, severity ranking
@@ -72,8 +72,9 @@ Every directory under `tests/fixtures/` with an `events.json` is evaluated with 
 `expected-rules.json` lists the rule IDs that must fire (or a `validation_error` code for invalid
 input). `expected-manifest.json` and `expected-findings.json` are byte-exact goldens of the canonical
 output: RFC 8785 bytes with no trailing newline (`.editorconfig` keeps editors from adding one).
-`tests/fixtures/legacy-0.2/` holds documents written by acc 0.4.0 that must keep validating
-through the legacy canonicalization.
+`tests/fixtures/ijson/` holds one input per I-JSON
+violation (ACV005 to ACV009), and `tests/fixtures/legacy-0.2/` documents written by acc 0.4.0
+that must keep validating through the legacy canonicalization.
 
 Golden updates are explicit: `UPDATE_GOLDENS=1 cargo test --test fixtures`. First review
 `expected-rules.json` and the intended semantic change, then review the generated manifest and

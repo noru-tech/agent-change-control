@@ -108,6 +108,8 @@ and are embedded in the `acc` binary.
   ([spec §8.2](../spec/ai-change-provenance.md#82-serialization)). The bytes are what gets signed;
   do not re-serialize before signing. Any RFC 8785 implementation reproduces them from the parsed
   Statement.
+- The predicate is I-JSON with integer-only numbers in ±(2^53 − 1), no unpaired surrogates, unique
+  member names and nesting of at most 128 (spec §8.2); a consumer rejects anything else.
 - A consumer MUST check that the subjects are exactly those the predicate's changes produce (head
   commit, then merge commit when present and distinct), or that the Statement has a single subject
   whose `sha256` digest is over the JCS bytes of the predicate (the form SHA-2-only signers
@@ -177,7 +179,7 @@ evidence (`--attestations`). See [signing](signing.md#signing-an-authorship-clai
 - **0.3** — type URI `v0.3`. Every digest is SHA-256 over RFC 8785 bytes, and the trailing
   newline that 0.2 included in each preimage is gone, so finding identifiers, `source_digest`
   and the `sha256` subject digest all change while findings, assessments and verdicts do not.
-  Findings carry their 0.2 identifier in `legacy_ids`. A `v0.2`
+  Findings carry their 0.2 identifier in `legacy_ids`. Input must be I-JSON (spec §8.2). A `v0.2`
   Statement still validates: `acc validate` recomputes its digests with the legacy
   canonicalization and says so.
 - **0.2** — type URI `v0.2`; the policy gains `agent_review`, and assessments and findings gain

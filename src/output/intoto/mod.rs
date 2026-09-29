@@ -219,8 +219,7 @@ pub fn validate_jsonl(text: &str) -> Result<Vec<Manifest>> {
     for (i, line) in text.lines().enumerate() {
         let n = i + 1;
         ensure!(!line.trim().is_empty(), "line {n} is empty");
-        let v: Value =
-            serde_json::from_str(line).with_context(|| format!("line {n} is not JSON"))?;
+        let v = crate::canonical::ijson::parse_json(line).with_context(|| format!("line {n}"))?;
         let m = validate_statement(&v).with_context(|| format!("line {n}"))?;
         ensure!(
             m.events.changes.len() == 1,

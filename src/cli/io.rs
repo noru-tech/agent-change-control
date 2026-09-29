@@ -59,15 +59,17 @@ pub fn read_text(path: &Path) -> Result<String> {
     Ok(data)
 }
 
-/// Parse one JSON or YAML document.
+/// Parse one JSON or YAML document under the I-JSON constraints of spec §8.2 (ACV005 to
+/// ACV009). JSON is read by the constrained parser, which stops at the depth bound; YAML, a
+/// presentation of the same data model, is checked after parsing.
 pub fn parse(data: &str) -> Result<Value> {
     // YAML 1.2 is a superset of JSON; try the strict JSON parser first.
-    match serde_json::from_str(data) {
-        Ok(v) => Ok(v),
-        Err(_) => {
-            serde_saphyr::from_str(data).map_err(|_| anyhow!("input is not valid JSON or YAML"))
-        }
+    if let Some(v) = crate::canonical::ijson::parse(data)? {
+        return Ok(v);
     }
+    let v = serde_saphyr::from_str(data).map_err(|_| anyhow!("input is not valid JSON or YAML"))?;
+    crate::canonical::ijson::check_value(&v)?;
+    Ok(v)
 }
 
 /// Read a JSON or YAML document, validate it against the embedded `schema`, and deserialize it.

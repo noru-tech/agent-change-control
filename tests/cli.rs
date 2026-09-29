@@ -393,3 +393,62 @@ fn legacy_0_2_documents_validate_with_a_note() {
         .success()
         .stderr(predicate::str::contains("legacy").not());
 }
+
+/// Spec §8.2: ACP documents are I-JSON with integer-only numbers in ±(2^53 − 1), no unpaired
+/// surrogates, unique member names and nesting of at most 128. Each fixture differs from
+/// human-clean/events.json by one violation, and both commands reject it with its code.
+#[test]
+fn i_json_violations_are_rejected_with_their_codes() {
+    for (file, code) in [
+        ("non-integer.json", "ACV005"),
+        ("integer-range.json", "ACV006"),
+        ("unpaired-surrogate.json", "ACV007"),
+        ("duplicate-member.json", "ACV008"),
+        ("depth-129.json", "ACV009"),
+    ] {
+        for command in ["evaluate", "validate"] {
+            acc()
+                .arg(command)
+                .arg(fixture("ijson", file))
+                .assert()
+                .code(3)
+                .stderr(predicate::str::contains(code));
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    // One level less is within the bound: the document is then refused by the schema instead.
+    let text = std::fs::read_to_string(fixture("ijson", "depth-129.json"))
+        .unwrap()
+        .replacen("[]", "", 1);
+    let path = dir.path().join("depth-128.json");
+    std::fs::write(&path, text).unwrap();
+    acc()
+        .arg("evaluate")
+        .arg(&path)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("schema validation failed"));
+    // YAML is a presentation of the same data model and is held to the same numbers.
+    let path = dir.path().join("float.yml");
+    std::fs::write(&path, "version: '0.3'\nfail_on: 1.5\nrules: {}\n").unwrap();
+    acc()
+        .args(["evaluate", "--policy"])
+        .arg(&path)
+        .arg(fixture("human-clean", "events.json"))
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("ACV005"));
+    // A manifest's integers are held to it as well.
+    let manifest = std::fs::read_to_string(fixture("human-clean", "expected-manifest.json"))
+        .unwrap()
+        .replacen("\"changes\":1,", "\"changes\":1.0,", 1);
+    assert!(manifest.contains("1.0"));
+    let path = dir.path().join("float-manifest.json");
+    std::fs::write(&path, manifest).unwrap();
+    acc()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("ACV005"));
+}

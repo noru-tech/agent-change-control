@@ -3,8 +3,11 @@
 //! digest's preimage is exactly those bytes, with no trailing newline.
 //!
 //! Normalization (§8.1, ordering changes, reviews, commits and evidence) happens before this, in
-//! [`crate::normalize`]; this module only turns a normalized value into bytes. [`legacy`] keeps
+//! [`crate::normalize`]; this module only turns a normalized value into bytes. [`ijson`] enforces
+//! the I-JSON input constraints that make the serialization well defined, and [`legacy`] keeps
 //! the ACP 0.2 serialization so that 0.2 documents still validate.
+
+pub mod ijson;
 
 use anyhow::Result;
 use sha2::{Digest, Sha256};

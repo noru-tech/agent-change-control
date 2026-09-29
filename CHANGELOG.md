@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-AI Change Provenance 0.3: RFC 8785 serialization. Rules and verdicts are
+AI Change Provenance 0.3: RFC 8785 serialization and I-JSON input. Rules and verdicts are
 unchanged; digests and finding identifiers are not.
 
 ### Changed
@@ -24,6 +24,10 @@ unchanged; digests and finding identifiers are not.
 ### Added
 - `legacy_ids` on findings: the identifier the same finding had under 0.2, kept for one minor
   version. `acc check` carries a disposition over by either identifier.
+- I-JSON input constraints (spec §8.2), enforced by `evaluate`, `validate`, `check`, policy
+  loading and attestation loading: ACV005 non-integer number, ACV006 integer outside
+  ±(2^53 − 1), ACV007 unpaired surrogate, ACV008 duplicate member name, ACV009 nesting deeper
+  than 128 (rejected without parsing further).
 - `acc validate` still accepts ACP 0.2 manifests and `v0.2` Statements, including attestations
   made by acc 0.4.0: it recomputes their digests with the legacy canonicalization and says so.
 

@@ -476,13 +476,30 @@ serialization of the normalized value. That covers the finding identifiers and `
 digest recorded for an attestation handed over without an envelope (§3.6). The preimage of any
 ACP digest is the exact JCS byte sequence and nothing else.
 
+ACP documents (event exports, policies, manifests, Statements, provenance and review documents)
+are [I-JSON](https://www.rfc-editor.org/rfc/rfc7493) with these additional constraints. A
+consumer MUST reject a document that violates one, with the code given:
+
+| Constraint | Code |
+| --- | --- |
+| Every number is an integer literal, with no fraction and no exponent. Non-integer numbers are forbidden anywhere in an ACP document. | ACV005 |
+| Every integer is in the range ±(2^53 − 1). | ACV006 |
+| Strings contain no unpaired surrogate, escaped or otherwise. | ACV007 |
+| Member names are unique within each object, compared after unescaping. | ACV008 |
+| Nesting depth is at most 128, counting the outermost container as depth 1 and each nested container as one more. A consumer rejects the input at the first container past the bound, without parsing further. | ACV009 |
+
+The depth bound is the one the AI Agent Action predicate proposal and its conformance suite use.
+Together the constraints make every ACP value have exactly one JCS serialization, which any
+RFC 8785 implementation reproduces.
+
 A file holding an ACP document MAY end with one LF; that LF is never part of a preimage. The
 reference implementation writes its JSON outputs without it, so that the digest of a file it
 wrote is the digest of the document. JSON Lines is a sequence of JCS documents, each terminated
 by an LF that belongs to no document.
 
 YAML output is a presentation of the same data model. Digests are always computed over the JCS
-serialization of the JSON data model, never over YAML bytes.
+serialization of the JSON data model, never over YAML bytes, and a YAML input is held to the
+same number and depth constraints.
 
 **Legacy serialization.** ACP 0.2 used a project canonicalization: sorted keys, compact
 separators, UTF-8 and one trailing LF that *was* part of every preimage. For the values 0.2
@@ -553,7 +570,8 @@ their own and stay at 0.1.
 ## Changelog
 
 - **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project
-  canonicalization; normalization and serialization split into §8.1 and §8.2. Breaking for digests, not for rules: the trailing
+  canonicalization; I-JSON input constraints with codes ACV005 to ACV009; normalization and
+  serialization split into §8.1 and §8.2. Breaking for digests, not for rules: the trailing
   newline leaves every preimage, so every finding identifier, `source_digest` and `sha256`
   subject digest changes, while every finding, assessment and verdict stays the same. Findings
   carry `legacy_ids` for one minor version (§7.1); the predicate type is `v0.3` (§7.3); 0.2
