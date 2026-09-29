@@ -3,7 +3,7 @@
 # through GitHub artifact attestations, with the manifest file as the subject and the same file
 # as the predicate. Verify one with
 #   gh attestation verify acc-manifest.json --repo noru-tech/agent-change-control \
-#     --predicate-type https://noru.tech/spec/ai-change-provenance/v0.2
+#     --predicate-type https://noru.tech/spec/ai-change-provenance/v0.3
 # and re-evaluate its content with `acc validate` on the unwrapped statement.
 #
 # pull_request_target, not pull_request: a merged pull request from a fork would otherwise run
@@ -33,7 +33,7 @@ jobs:
         uses: ./
         with:
           # The last *published* release; bump together with change-control.yml.
-          version: "0.4.0"
+          version: "0.5.0"
           fail-on-findings: false
           format: json
           output: acc-manifest.json
@@ -43,7 +43,7 @@ jobs:
         with:
           subject-path: acc-manifest.json
           # The predicate type of the release pinned above; bump it with the version pin.
-          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.2
+          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.3
           predicate-path: acc-manifest.json
       - name: Report
         env:
