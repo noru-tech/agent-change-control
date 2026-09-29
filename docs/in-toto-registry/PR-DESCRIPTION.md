@@ -137,7 +137,7 @@ the same content, so a field the consumer does not understand would make that ch
 
 ## Before opening (checklist for Bip)
 
-- [ ] The noru.tech redirects in `URI-HOSTING.md` are live, and every type URI resolves.
+- [x] The noru.tech redirects in `URI-HOSTING.md` are live, and every type URI resolves (noru-tech/noru#685). At the 0.3 release, pin `v0.3` to its tag.
 - [ ] Spec 0.3 is released. The document's "Pinned by" line names that tag and commit, and the
       schema links point at the tag instead of `main`.
 - [ ] The conformance corpus has been signed at that tag (`conformance-release.yml` ran), and
