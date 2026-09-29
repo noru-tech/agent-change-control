@@ -86,3 +86,52 @@ jobs:
       - run: python3 -m venv .venv
       - run: .venv/bin/pip install --require-hashes -r .github/scripts/jcs-requirements.txt
       - run: .venv/bin/python .github/scripts/jcs_crosscheck.py tests/fixtures
+
+  conformance:
+    # Spec §9: acc must pass the evaluator conformance corpus it publishes, through the same
+    # external-verifier contract and one-step action any other implementation uses.
+    name: conformance corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo build --locked
+      - name: The digest list matches the files on disk
+        run: python3 conformance/digests.py --check
+      - name: Run the corpus against acc
+        uses: ./conformance
+        with:
+          verifier: target/debug/acc evaluate --conformance-json
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: conformance-report
+          path: conformance-report.json
+
+  conformance-broken:
+    # A corpus that a broken evaluator also passes proves nothing. Break one thing at a time
+    # and require the corpus to fail.
+    name: conformance catches ${{ matrix.break }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        break: [ACC001, ACC002, ACC003, ACC006, ACC008, ACC010, serialization]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master 2026-09
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: python3 .github/scripts/break_evaluator.py ${{ matrix.break }}
+      - run: cargo build --locked
+      - name: The corpus must fail
+        run: |
+          if python3 conformance/run.py --verifier "target/debug/acc evaluate --conformance-json" --report broken.json; then
+            echo "::error::the corpus passed an evaluator with ${{ matrix.break }} broken"
+            exit 1
+          fi
+          python3 -c "import json; t = json.load(open('broken.json'))['totals']; assert t['fail'] + t['error'] > 0; print(t)"

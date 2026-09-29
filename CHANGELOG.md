@@ -33,6 +33,12 @@ unchanged; digests and finding identifiers are not.
 - `acc evaluate --conformance-json VECTOR` prints the single-line result object of the
   evaluator conformance contract (verdict, failing codes, assessments, manifest digest) and exits
   0 evaluated, 3 invalid, 4 incomplete.
+- The evaluator conformance corpus (`conformance/`, spec §9): 32 accept, 18 reject and 4
+  incomplete vectors under an external-verifier contract, a standard-library Python harness
+  (`run.py`) that writes `conformance-report.json`, a GitHub Action (`conformance/action.yml`),
+  and a generated `CORPUS-DIGESTS.txt` that `conformance-release.yml` signs at each tag. Every
+  reject vector is one mutation of an accept vector. CI runs the corpus against `acc` and against
+  builds with one rule, or the serialization, deliberately broken, and requires those to fail.
 - ACV010 for input that does not conform to its schema; spec §6.6 lists every validation code.
 - CI recomputes the goldens' digests with an independent RFC 8785 implementation in Python
   (`rfc8785`), without acc's code.

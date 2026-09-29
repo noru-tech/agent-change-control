@@ -1,0 +1,14 @@
+{
+  "note": "Reject vectors whose single mutation cannot be measured as a change to a parsed value. Each is still one contiguous edit of one line of its parent's text, which the pairing test checks.",
+  "vectors": {
+    "human-clean--depth-129": {
+      "reason": "A value nested past the bound cannot be parsed to be compared; the edit replaces one string value with nested arrays."
+    },
+    "human-clean--duplicate-member": {
+      "reason": "A duplicate member is invisible once parsed (the second occurrence replaces the first); the edit repeats one member."
+    },
+    "human-clean--unpaired-surrogate": {
+      "reason": "A string with an unpaired surrogate is not a valid Unicode string and cannot be parsed to be compared; the edit appends one escape to one string."
+    }
+  }
+}

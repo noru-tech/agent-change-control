@@ -231,6 +231,20 @@ or `--verified-by` the claims count as `signed` and the manifest records who ver
 without, they count as `declared`. See [authorship](docs/agent-authorship.md#signed-tier) and
 the examples under [`examples/`](examples/).
 
+## Conformance
+
+An ACP evaluator conforms when it passes the published corpus in [`conformance/`](conformance/README.md):
+accept, reject and incomplete vectors run through a small external-verifier contract (`<cmd>
+<vector-file>`, verdict in the exit status, one JSON result line on stdout). `acc` passes it with
+`acc evaluate --conformance-json`, and another implementation can run it in one step:
+
+```bash
+python3 conformance/run.py --verifier "acc evaluate --conformance-json"
+```
+
+The corpus is an answer key, not a proof; independent implementations that disagree with it are
+the most useful reports.
+
 ## Exit codes
 
 | Code | Meaning |

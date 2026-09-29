@@ -1,0 +1,74 @@
+# Run an ACP evaluator against this conformance corpus in one workflow step:
+#
+#   - uses: noru-tech/agent-change-control/conformance@<tag or commit>
+#     with:
+#       verifier: ./target/release/my-evaluator --acp-conformance
+#
+# The corpus is the one at the ref you pin, checked against its CORPUS-DIGESTS.txt before
+# anything runs. The step fails unless every vector passes. See README.md in this directory.
+name: ACP evaluator conformance
+description: Run an AI Change Provenance evaluator against the published conformance corpus.
+author: Noru
+
+inputs:
+  verifier:
+    description: >-
+      The evaluator command. Each vector's path is appended to it; the contract is in
+      conformance/README.md.
+    required: true
+  report:
+    description: Where to write the conformance report (JSON).
+    required: false
+    default: conformance-report.json
+  timeout:
+    description: Seconds allowed per vector.
+    required: false
+    default: "60"
+
+outputs:
+  passed:
+    description: '"true" when every vector passed.'
+    value: ${{ steps.run.outputs.passed }}
+  vectors:
+    description: Number of vectors in the corpus.
+    value: ${{ steps.run.outputs.vectors }}
+  pass:
+    description: Number of vectors that passed.
+    value: ${{ steps.run.outputs.pass }}
+  report:
+    description: Path of the report.
+    value: ${{ inputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      env:
+        VERIFIER: ${{ inputs.verifier }}
+        REPORT: ${{ inputs.report }}
+        TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        set +e
+        python3 "$GITHUB_ACTION_PATH/run.py" --verifier "$VERIFIER" --report "$REPORT" --timeout "$TIMEOUT"
+        status=$?
+        set -e
+        if [ -f "$REPORT" ]; then
+          python3 - "$REPORT" <<'PY' >> "$GITHUB_OUTPUT"
+        import json, sys
+        r = json.load(open(sys.argv[1]))
+        print(f"passed={'true' if r['passed'] else 'false'}")
+        print(f"vectors={r['totals']['vectors']}")
+        print(f"pass={r['totals']['pass']}")
+        PY
+          python3 - "$REPORT" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+        import json, sys
+        r = json.load(open(sys.argv[1]))
+        t = r["totals"]
+        print(f"### {r['suite']} revision {r['suiteRevision']} (ACP {r['specVersion']})")
+        print(f"{t['pass']}/{t['vectors']} passed, {t['fail']} failed, {t['error']} errors.")
+        for d in r["disagreements"]:
+            print(f"- `{d['id']}` ({d['status']}): {'; '.join(d['reasons'])}")
+        PY
+        fi
+        exit $status

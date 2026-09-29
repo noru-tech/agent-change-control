@@ -452,3 +452,51 @@ fn i_json_violations_are_rejected_with_their_codes() {
         .code(3)
         .stderr(predicate::str::contains("ACV005"));
 }
+
+/// `evaluate --conformance-json`: the corpus contract. One JSON line on stdout, the verdict in
+/// the exit status, and invalid input reported as a result with its codes.
+#[test]
+fn conformance_json_prints_one_result_line() {
+    let run = |vector: &str| {
+        let out = acc()
+            .args(["evaluate", "--conformance-json"])
+            .arg(common::root().join("conformance").join(vector))
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8(out.stdout).unwrap();
+        assert_eq!(stdout.lines().count(), 1, "{vector}: {stdout}");
+        let v: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+        (out.status.code().unwrap(), v)
+    };
+    let (code, v) = run("accept/human-self-approved.json");
+    assert_eq!(code, 0);
+    assert_eq!(v["verdict"], "evaluated");
+    assert_eq!(v["codes"], serde_json::json!(["ACC002", "ACC003"]));
+    assert_eq!(v["assessments"].as_array().unwrap().len(), 8);
+    assert!(v["manifestDigest"].as_str().unwrap().starts_with("sha256:"));
+    let (code, v) = run("incomplete/incomplete-window.json");
+    assert_eq!((code, v["verdict"].as_str()), (4, Some("incomplete")));
+    let (code, v) = run("reject/human-clean--depth-129.json");
+    assert_eq!((code, v["verdict"].as_str()), (3, Some("invalid")));
+    assert_eq!(v["codes"], serde_json::json!(["ACV009"]));
+    assert!(v.get("assessments").is_none());
+    let (code, v) = run("reject/human-clean--unknown-member.json");
+    assert_eq!(
+        (code, v["codes"].clone()),
+        (3, serde_json::json!(["ACV010"]))
+    );
+    // A plain event export is not a vector.
+    let out = acc()
+        .args(["evaluate", "--conformance-json"])
+        .arg(fixture("human-clean", "events.json"))
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&out.stdout).contains("ACV010"));
+    // The vector carries its policy; --policy and output flags do not combine with it.
+    acc()
+        .args(["evaluate", "--conformance-json", "--policy", "x.yml"])
+        .arg(fixture("human-clean", "events.json"))
+        .assert()
+        .code(2);
+}
