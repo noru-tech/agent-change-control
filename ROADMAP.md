@@ -41,7 +41,7 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   reset-on-push semantics comes from resource state events and notes, and some of it is tier-gated.
   Whatever cannot be retrieved will be marked incomplete, not inferred.
 - **ACP trailers** (`Agent-Author:`, `Agent-Operator:`) as an explicit-tier declaration form for
-  agents that commit but do not open pull requests. Reserved in spec 0.1; defined in 0.2 with
+  agents that commit but do not open pull requests. Reserved since spec 0.1; to be defined in a later version, with
   precedence against the inline block.
 - **Signature verification inside `acc`.** Signed provenance documents are read today as
   pre-verified input with a recorded verifier (§3.6). Verifying them in `acc` needs a trust-root

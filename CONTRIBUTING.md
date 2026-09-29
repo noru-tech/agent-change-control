@@ -31,7 +31,7 @@ src/rules/        pure evaluation of normalized facts into findings and assessme
 src/manifest/     manifest generation, validation (re-evaluation) and policy checks
 src/policy/       rule catalogue, default policy, severity ranking
 src/provenance/   declarations (PR body block, provenance file), vendor trailers, Agent Trace adapter
-src/collectors/   forge collectors; github/ is the only one in Phase 1
+src/collectors/   forge collectors; github/ is the only one so far
 src/output/       json, yaml, table, sarif and in-toto renderers
 schemas/          public JSON Schemas (draft 2020-12), embedded into the binary
 spec/             the AI Change Provenance specification; versioned with the schemas

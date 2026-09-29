@@ -2,7 +2,7 @@
 #
 # Drop this file at .agent-change-control/policy.yml to have it picked up automatically, or pass
 # it with --policy. Partial rule maps inherit the defaults; see docs/policy.md.
-version: "0.1"
+version: "0.3"
 fail_on: medium
 rules:
   agent_change_without_independent_human:

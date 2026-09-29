@@ -79,7 +79,7 @@ Making that question machine-readable takes four things.
 4. **Make it reproducible.** The same inputs must give the same findings, byte for byte, on any
    machine, offline, without a model in the loop. Otherwise the evidence is an opinion.
 
-Those four requirements are the whole of [AI Change Provenance 0.1](../spec/ai-change-provenance.md).
+Those four requirements are the core of [AI Change Provenance 0.3](../spec/ai-change-provenance.md).
 They fit in a small schema, a fenced block in a pull request description, and a few pages of rules
 with exact conditions.
 

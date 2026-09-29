@@ -118,7 +118,7 @@ operator. A consumer MUST require the subject commit and `change.head_commit` to
 claims count as `signed` evidence under the conditions of §3.6, otherwise as `declared`. An
 attestation and an inline declaration (§3.1) for the same change MUST name the same agent, and
 the same operator when both name one; disagreement is an error for that change, never a choice.
-Other transports (a check-run payload, a file in the repository) are out of scope for 0.1.
+Other transports (a check-run payload, a file in the repository) are out of scope for this version.
 
 ### 3.3 Verified agent accounts
 
@@ -165,7 +165,7 @@ merger, opener and reviewers are never substituted, exactly as for declarations.
 ### 3.5 Reserved
 
 ACP-specific commit trailers (`Agent-Author:`, `Agent-Operator:`) are reserved for a later
-version. Consumers MUST NOT interpret them under 0.1.
+version. Consumers MUST NOT interpret them under this version.
 
 ### 3.6 Evidence strength
 
@@ -223,14 +223,14 @@ approve a change the platform never showed as approved. The reviewer's `kind` MU
 the account's kind, and for an agent reviewer the named `agent` MUST agree with any verified
 account mapping (§3.3); either disagreement is an error for the change.
 
-A matched document adds its evidence (`signed` or `declared` per §3.6) to the review. For an
-agent reviewer it also records, on the review, the facts only the reviewer's tooling can state:
-the **operator** who directed the reviewing agent, the **instructions owner** who controls what
-it was told to check, the **model**, and the **identity** the verifier established for the
-document's signature. Operator and instructions owner resolve only to accounts the forge
-confirms are human (§4), else they are null. A human reviewer's document MUST NOT name an
-operator or instructions. These facts are recorded in this version; the rules that read them
-(independence between an agent reviewer and the effective author) are defined in 0.2.
+A matched document adds its evidence (`signed` or `declared` per §3.6) to the review. For an agent
+reviewer it also records, on the review, the facts only the reviewer's tooling can state: the
+**operator** who directed the reviewing agent, the **instructions owner** who controls what it was
+told to check, the **model**, and the **identity** the verifier established for the document's
+signature. Operator and instructions owner resolve only to accounts the forge confirms are human
+(§4), else they are null. A human reviewer's document MUST NOT name an operator or instructions.
+These facts are recorded in this version; the rules that read them (independence between an agent
+reviewer and the effective author) are ACC008 to ACC010 (§6.2) and the dimensions of §6.5.
 
 ## 4. Collection
 
@@ -600,6 +600,9 @@ their own and stay at 0.1.
 
 ## Changelog
 
+- **0.3, revision 2 (2026-09-29)** — editorial: sections written under 0.1 now say "this
+  version" (§3.2, §3.5), and §3.7 names the rules that read agent reviewer facts. No normative
+  change.
 - **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project canonicalization;
   I-JSON input constraints with codes ACV005 to ACV009; normalization and serialization split into
   §8.1 and §8.2. Validation codes listed in the specification (§6.6), with ACV010 for input that
