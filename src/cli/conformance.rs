@@ -58,6 +58,18 @@ fn validation_codes(err: &anyhow::Error) -> Vec<String> {
     codes
 }
 
+/// SHA-256 over the RFC 8785 bytes of the manifest without `generated.tool` and
+/// `generated.version`. Those name the implementation that wrote it, not the result, so they
+/// would make the digest differ between implementations and between releases of one.
+pub fn manifest_digest(m: &Manifest) -> Result<String> {
+    let mut v = serde_json::to_value(m)?;
+    if let Some(generated) = v["generated"].as_object_mut() {
+        generated.remove("tool");
+        generated.remove("version");
+    }
+    crate::canonical::digest(&v)
+}
+
 /// The contract's result object for an evaluated manifest.
 pub fn result(m: &Manifest) -> Result<(Value, Exit)> {
     let codes: BTreeSet<&str> = m
@@ -87,7 +99,7 @@ pub fn result(m: &Manifest) -> Result<(Value, Exit)> {
             "verdict": verdict,
             "codes": codes,
             "assessments": assessments,
-            "manifestDigest": crate::canonical::digest(m)?,
+            "manifestDigest": manifest_digest(m)?,
         }),
         exit,
     ))
@@ -130,6 +142,20 @@ pub fn run(path: &Path) -> Result<Exit> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_manifest_digest_does_not_name_the_implementation() {
+        let e: Events =
+            serde_json::from_str(include_str!("../../tests/fixtures/human-clean/events.json"))
+                .unwrap();
+        let mut m = manifest::evaluate(e, Policy::default()).unwrap();
+        let digest = manifest_digest(&m).unwrap();
+        m.generated.tool = "another-evaluator".into();
+        m.generated.version = "9.9.9".into();
+        assert_eq!(manifest_digest(&m).unwrap(), digest);
+        m.generated.source_digest = format!("sha256:{}", "0".repeat(64));
+        assert_ne!(manifest_digest(&m).unwrap(), digest);
+    }
 
     #[test]
     fn validation_codes_are_found_once_in_order() {
