@@ -1,0 +1,32 @@
+{
+  "title": "AI Change Provenance: separation of duties for software written with coding agents",
+  "upload_type": "software",
+  "description": "<p>AI Change Provenance (ACP) is a specification for one question about a software change: did a human who is independent of the change's effective author approve it? The effective author may be a coding agent and the human who directed it. This archive holds the specification, its JSON Schemas, the evaluator conformance corpus (<code>conformance/</code>), and <code>acc</code>, the reference implementation: a deterministic, offline evaluator that emits a re-evaluable manifest and an in-toto attestation.</p>",
+  "creators": [
+    {
+      "name": "Noru"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "change control",
+    "separation of duties",
+    "coding agents",
+    "provenance",
+    "GRC",
+    "in-toto",
+    "conformance"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/noru-tech/agent-change-control",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://noru.tech/spec/ai-change-provenance/v0.3",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-standard"
+    }
+  ]
+}

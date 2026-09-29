@@ -121,6 +121,11 @@ regenerate `.github/workflows/release.yml` with `dist generate` rather than edit
 only hand edit is pinning the `uses:` actions to commit SHAs, as in `ci.yml`; `allow-dirty = ["ci"]`
 in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current.
 
+Each published GitHub Release is archived by Zenodo, which mints a version DOI under the
+project's concept DOI. Zenodo reads the deposit's metadata from `.zenodo.json` in the tagged tree
+(it takes precedence over `CITATION.cff`); keep the two in agreement, which `tests/metadata.rs`
+checks.
+
 The manifest schema pins `generated.version` to the crate version for current (`0.3`) manifests.
 Bump both together (the `0.2` branch of that schema stays at `0.4.0`, the release that wrote
 them), and bump the
