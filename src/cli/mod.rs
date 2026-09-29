@@ -2,6 +2,7 @@
 
 pub mod check;
 pub mod completions;
+pub mod conformance;
 pub mod evaluate;
 pub mod export;
 pub mod forge;

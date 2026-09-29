@@ -389,6 +389,21 @@ decision date, rationale and optional expiry. Dispositions suppress a finding fr
 decision on a stated date; they never delete it, and the date MUST be supplied explicitly rather
 than read from a clock.
 
+### 6.6 Validation
+
+An evaluator MUST reject input that is not a valid ACP document, and MUST NOT produce findings,
+assessments or a manifest for it. It SHOULD report why with these codes; when several apply,
+reporting any one of them is enough, and a consumer compares codes as a set.
+
+| Code | Input is rejected when |
+| --- | --- |
+| ACV001 | An `approved` review is later than the change's merge. |
+| ACV002 | Reserved (deployment validation). |
+| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
+| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit on an unmerged change; a review before opening; duplicate change, review or commit identifiers; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
+| ACV005 to ACV009 | The input is not I-JSON as §8.2 constrains it. |
+| ACV010 | The input does not conform to its schema: an unknown member, a missing required member, a wrong type, or a value outside a closed vocabulary. |
+
 ## 7. Outputs
 
 ### 7.1 Manifest
@@ -571,7 +586,8 @@ their own and stay at 0.1.
 
 - **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project
   canonicalization; I-JSON input constraints with codes ACV005 to ACV009; normalization and
-  serialization split into §8.1 and §8.2. Breaking for digests, not for rules: the trailing
+  serialization split into §8.1 and §8.2. Validation codes listed in the specification (§6.6),
+  with ACV010 for input that does not conform to its schema. Breaking for digests, not for rules: the trailing
   newline leaves every preimage, so every finding identifier, `source_digest` and `sha256`
   subject digest changes, while every finding, assessment and verdict stays the same. Findings
   carry `legacy_ids` for one minor version (§7.1); the predicate type is `v0.3` (§7.3); 0.2

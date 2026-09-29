@@ -2,7 +2,9 @@
 //! normalized value into bytes is [`crate::canonical`]'s job (§8.2).
 //!
 //! Integrity errors carry `ACV` codes: ACV001 approval after merge, ACV003 invalid actor
-//! relationships, ACV004 inconsistent timeline or duplicated/ambiguous events.
+//! relationships, ACV004 inconsistent timeline or duplicated/ambiguous events, ACV010 a document
+//! that does not conform to its schema. ACV005 to ACV009 (I-JSON) are raised while parsing, in
+//! [`crate::canonical::ijson`].
 
 use crate::model::*;
 use anyhow::{Context, Result, bail, ensure};
@@ -28,7 +30,7 @@ pub fn schema(value: &Value, name: &str) -> Result<()> {
         .build(&definition)?;
     if let Some(error) = validator.iter_errors(value).next() {
         // Do not echo untrusted input values (which may contain secrets).
-        bail!("schema validation failed at {}", error.instance_path);
+        bail!("ACV010 schema validation failed at {}", error.instance_path);
     }
     Ok(())
 }
@@ -71,7 +73,7 @@ pub fn events(mut e: Events) -> Result<Events> {
     ensure!(e.window.from <= e.window.to, "ACV004 window is reversed");
     ensure!(
         e.window.complete == e.window.reason.is_none(),
-        "window completeness and reason disagree"
+        "ACV004 window completeness and reason disagree"
     );
     for id in e.actors.keys() {
         ensure!(

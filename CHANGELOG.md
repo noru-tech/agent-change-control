@@ -30,6 +30,10 @@ unchanged; digests and finding identifiers are not.
   than 128 (rejected without parsing further).
 - `acc validate` still accepts ACP 0.2 manifests and `v0.2` Statements, including attestations
   made by acc 0.4.0: it recomputes their digests with the legacy canonicalization and says so.
+- `acc evaluate --conformance-json VECTOR` prints the single-line result object of the
+  evaluator conformance contract (verdict, failing codes, assessments, manifest digest) and exits
+  0 evaluated, 3 invalid, 4 incomplete.
+- ACV010 for input that does not conform to its schema; spec §6.6 lists every validation code.
 - CI recomputes the goldens' digests with an independent RFC 8785 implementation in Python
   (`rfc8785`), without acc's code.
 
