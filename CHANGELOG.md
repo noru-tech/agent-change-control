@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Conformance suite revision 2: three vectors for the opt-in `instructions` independence
+  dimension (independent, dependent, unknown); 35 accept, 18 reject and 4 incomplete vectors.
+- Tests that a review attestation naming another agent than a verified account mapping, and a
+  human reviewer's review attestation naming an operator or instructions, are errors.
+
 ## [0.5.1] - 2026-09-29
 
 The first release archived on Zenodo. No change to the specification, the rules or the output

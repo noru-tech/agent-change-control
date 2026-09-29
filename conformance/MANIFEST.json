@@ -1,15 +1,15 @@
 {
   "contract": "README.md#contract",
   "counts": {
-    "accept": 32,
+    "accept": 35,
     "incomplete": 4,
     "reject": 18
   },
-  "specDigest": "sha256:9089031419de9c39918b4b666555283c1b96f0ba82ce7ebd8645753196221748",
+  "specDigest": "sha256:3a91f505bd44577f7b112e0e56c24f16c46e8250ad6fb0e1f3e9a3a226fed72f",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.3",
   "suite": "acp-evaluator-conformance",
-  "suiteRevision": 1,
+  "suiteRevision": 2,
   "vectors": [
     {
       "conditions": [
@@ -1864,6 +1864,184 @@
       "id": "human-self-approved--rule-disabled",
       "kind": "accept",
       "path": "accept/human-self-approved--rule-disabled.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:e98f633c4c66c74ab2a25e21841be588a0292e816ae62076858d951d8ddd9d2c",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-independent--instructions-required",
+      "kind": "accept",
+      "path": "accept/agent-review-independent--instructions-required.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007",
+          "ACC009"
+        ],
+        "manifestDigest": "sha256:4b50c8eb8aad4a55127d68e08fa5da841cace92739bdbc1d0bc0efedfb1791f9",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-instructions-dependent",
+      "kind": "accept",
+      "path": "accept/agent-review-instructions-dependent.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:d4cee296442aa0bb8a56ace805aa0d2772f572e5406c689fda00fb7314b00bc1",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-instructions-unknown",
+      "kind": "accept",
+      "path": "accept/agent-review-instructions-unknown.json"
     },
     {
       "conditions": [

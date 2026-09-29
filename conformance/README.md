@@ -1,6 +1,6 @@
 # ACP evaluator conformance corpus
 
-`acp-evaluator-conformance`, suite revision 1, for
+`acp-evaluator-conformance`, suite revision 2, for
 [AI Change Provenance](../spec/ai-change-provenance.md) 0.3.
 
 An evaluator conforms to ACP when it passes a named suite revision of this corpus at a named
@@ -86,7 +86,7 @@ row per disagreement with the expected and observed results. It exits `0` when e
 passed, `1` when any did not, and `2` when it could not run.
 
 A pass claim is the report with `passed: true`, `vectorsExecuted` equal to `totals.vectors`, and
-`corpusModified: false`. State it as "`acp-evaluator-conformance` revision 1 at `vX.Y.Z`" with the
+`corpusModified: false`. State it as "`acp-evaluator-conformance` revision N at `vX.Y.Z`" with the
 report's `corpusDigest`.
 
 In GitHub Actions:
