@@ -2,7 +2,7 @@
 
 Technical identity and independent human judgment are different relationships. The forge opener, commit authors, effective author and human operator are stored separately.
 
-Phase 1 accepts an exact `agent-change-control` fenced YAML/JSON declaration in the PR description, or explicit `--agent-account LOGIN=AGENT` mappings supplied by a caller who verified the account. Account mappings are a caller trust boundary, not an automatically verified account directory. Their provenance is labeled declared. An API reference to the observed opener is also retained. Conflicting declarations/mappings and malformed structured declarations are errors, never silently ignored.
+The explicit tier accepts an exact `agent-change-control` fenced YAML/JSON declaration in the PR description, or explicit `--agent-account LOGIN=AGENT` mappings supplied by a caller who verified the account. Account mappings are a caller trust boundary, not an automatically verified account directory. Their provenance is labeled declared. An API reference to the observed opener is also retained. Conflicting declarations/mappings and malformed structured declarations are errors, never silently ignored.
 
 Example PR body block:
 

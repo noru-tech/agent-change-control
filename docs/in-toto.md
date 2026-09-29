@@ -146,7 +146,7 @@ in the specification section cited.
 | `events.changes[].reviews[]` | The complete review history: actor, state, time, the commit reviewed, evidence. Spec §4. |
 | `events.changes[].reviews_complete` | Whether the review history was fully retrieved. |
 | `events.changes[].merger` | Who merged, when merged. |
-| `*.provenance[]` | Evidence references: `source`, `ref`, and `kind` (`observed`, `derived`, `declared`). Spec §2. |
+| `*.provenance[]` | Evidence references: `source`, `ref`, and `kind` (`derived`, `declared`, `observed`, `signed`). Spec §2, §3.6. |
 | `policy` | The resolved policy: `fail_on` threshold, evidence minimums, the `agent_review` block and, per rule, `enabled` and `severity`. Spec §6.3. |
 | `findings[]` | One per failing rule per change: stable `id`, `rule_id`, `rule`, `severity`, `change_id`, `actor_ids`, `explanation`, `provenance`, `disposition`, and `legacy_ids` (the 0.2 identifier, for one minor version). Spec §6.2, §6.4, §7.1. |
 | `assessments[]` | Per rule per change: `pass`, `fail`, `unknown` or `not_applicable`, with a reason. Spec §6. |

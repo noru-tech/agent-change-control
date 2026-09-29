@@ -5,7 +5,7 @@
     "incomplete": 4,
     "reject": 18
   },
-  "specDigest": "sha256:32b3f030727c90becfbbb92955f5f263e7762e6d126549f648acd21ae860ecb0",
+  "specDigest": "sha256:9089031419de9c39918b4b666555283c1b96f0ba82ce7ebd8645753196221748",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.3",
   "suite": "acp-evaluator-conformance",

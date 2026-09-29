@@ -3,7 +3,7 @@
 //! Everything lives here so it is testable; `src/main.rs` only parses arguments and maps the
 //! result to an exit code.
 //!
-//! Design in one paragraph: a collector (only GitHub in Phase 1) turns forge data into the public
+//! Design in one paragraph: a collector (only GitHub so far) turns forge data into the public
 //! [`model::Events`] shape, which mirrors the JSON Schemas under `schemas/`. [`normalize`] validates
 //! the schema and the timeline and sorts everything into canonical order. [`rules`] evaluates the
 //! normalized facts into findings and assessments without touching the network, the clock or the

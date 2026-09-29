@@ -3,7 +3,7 @@
 The evaluator uses defaults unless a policy is passed or `.agent-change-control/policy.yml` exists. Partial rule maps inherit defaults. `check` uses the policy embedded in the manifest unless `--policy` explicitly overrides it, preserving reproducibility across machines. Disabling a rule removes its finding and assessment but does not alter facts. Unknown rules and severities fail validation.
 
 ```yaml
-version: "0.1"
+version: "0.3"
 fail_on: medium
 minimum_authorship_evidence: derived   # derived | declared | observed | signed
 minimum_review_evidence: observed      # derived | declared | observed | signed
