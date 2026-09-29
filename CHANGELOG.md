@@ -30,6 +30,8 @@ unchanged; digests and finding identifiers are not.
   than 128 (rejected without parsing further).
 - `acc validate` still accepts ACP 0.2 manifests and `v0.2` Statements, including attestations
   made by acc 0.4.0: it recomputes their digests with the legacy canonicalization and says so.
+- CI recomputes the goldens' digests with an independent RFC 8785 implementation in Python
+  (`rfc8785`), without acc's code.
 
 ## [0.4.0] - 2026-09-21
 

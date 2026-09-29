@@ -72,7 +72,8 @@ Every directory under `tests/fixtures/` with an `events.json` is evaluated with 
 `expected-rules.json` lists the rule IDs that must fire (or a `validation_error` code for invalid
 input). `expected-manifest.json` and `expected-findings.json` are byte-exact goldens of the canonical
 output: RFC 8785 bytes with no trailing newline (`.editorconfig` keeps editors from adding one).
-`tests/fixtures/ijson/` holds one input per I-JSON
+The `jcs` CI job recomputes their digests with an independent Python JCS implementation
+(`.github/scripts/jcs_crosscheck.py`). `tests/fixtures/ijson/` holds one input per I-JSON
 violation (ACV005 to ACV009), and `tests/fixtures/legacy-0.2/` documents written by acc 0.4.0
 that must keep validating through the legacy canonicalization.
 
