@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-29
+
+The first release archived on Zenodo. No change to the specification, the rules or the output
+beyond the recorded tool version.
+
+### Added
+- `.zenodo.json`: Zenodo archives each published release and mints a DOI, reading the deposit's
+  metadata from this file; `tests/metadata.rs` keeps it in agreement with `CITATION.cff` and
+  `Cargo.toml`.
+
+### Changed
+- The self-check and attest workflows run the published 0.5.0, and the attestations they make
+  carry the `v0.3` predicate type.
+- Version references across the documentation are current: supported versions in `SECURITY.md`,
+  policy examples at `0.3`, the schema and model descriptions, and editorial wording in the
+  specification that still said 0.1 (0.3 revision 2, no normative change).
+
 ## [0.5.0] - 2026-09-29
 
 AI Change Provenance 0.3: RFC 8785 serialization and I-JSON input. Rules and verdicts are
@@ -173,7 +190,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/agent-change-control/compare/v0.3.0...v0.3.1
