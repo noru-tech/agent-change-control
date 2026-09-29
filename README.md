@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
-[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.2-informational)](./spec/ai-change-provenance.md)
+[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.3-informational)](./spec/ai-change-provenance.md)
 
 ```yaml
 # .github/workflows/change-control.yml — gate every pull request on an independent human review
@@ -41,13 +41,13 @@ what is the evidence?** Agent authorship alone is never a finding. An unknown op
 as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
 
 Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
-The convention it implements is published as [AI Change Provenance 0.2](spec/ai-change-provenance.md).
+The convention it implements is published as [AI Change Provenance 0.3](spec/ai-change-provenance.md).
 
 ## What is in this repository
 
 | Piece | Where |
 | --- | --- |
-| **Specification** — AI Change Provenance 0.2: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
+| **Specification** — AI Change Provenance 0.3: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
 | **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
