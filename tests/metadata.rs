@@ -49,3 +49,52 @@ fn zenodo_metadata_agrees_with_citation_and_cargo() {
         assert!(r["relation"].is_string());
     }
 }
+
+/// Every "AI Change Provenance X.Y" in the README and the docs names the specification's current
+/// version, including the URL-encoded form in the README's badge. Version history lives in the
+/// changelogs, which are not checked.
+#[test]
+fn documentation_names_the_current_specification_version() {
+    let spec = read("spec/ai-change-provenance.md");
+    let current = spec
+        .lines()
+        .find_map(|l| l.strip_prefix("**Version "))
+        .and_then(|l| l.split("**").next())
+        .expect("the specification states its version")
+        .to_string();
+    let mut files = vec![
+        "README.md".to_string(),
+        "conformance/README.md".to_string(),
+        "CITATION.cff".to_string(),
+    ];
+    for entry in std::fs::read_dir(common::root().join("docs")).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|e| e == "md") {
+            files.push(format!(
+                "docs/{}",
+                path.file_name().unwrap().to_string_lossy()
+            ));
+        }
+    }
+    let mut seen = 0;
+    for file in &files {
+        let text = read(file).replace("%20", " ");
+        for (i, _) in text.match_indices("AI Change Provenance ") {
+            let rest = &text[i + "AI Change Provenance ".len()..];
+            let version: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_digit() || *c == '.')
+                .collect();
+            let version = version.trim_end_matches('.');
+            if version.is_empty() {
+                continue;
+            }
+            seen += 1;
+            assert_eq!(
+                version, current,
+                "{file} names AI Change Provenance {version}; the specification is {current}"
+            );
+        }
+    }
+    assert!(seen >= 3, "expected the README badge and prose, saw {seen}");
+}
