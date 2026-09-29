@@ -53,7 +53,7 @@ The **last non-blank line of stdout** is one JSON object on a single line:
 | `verdict` | always | `evaluated`, `invalid` or `incomplete`, agreeing with the exit status. |
 | `codes` | always | Every rule with outcome `fail`; for invalid input, the spec §6.6 codes that apply. Compared as a set: order and message text carry no meaning. |
 | `assessments` | unless `invalid` | Every (change, rule, outcome) tuple, outcome one of `pass`, `fail`, `unknown`, `not_applicable`. Compared exactly, as a set of tuples, for accept and incomplete vectors: a missing, extra or different tuple is a failure. |
-| `manifestDigest` | no | `sha256:<hex>` over the RFC 8785 bytes of the manifest (spec §7.1, §8.2). When present it must match, which tests serialization as well as rule semantics. |
+| `manifestDigest` | no | `sha256:<hex>` over the RFC 8785 bytes of the manifest (spec §7.1, §8.2) with `generated.tool` and `generated.version` removed, since those name the implementation rather than the result. `generated.source_digest` stays in. When present it must match, which tests serialization as well as rule semantics. |
 
 A vector **passes** when:
 

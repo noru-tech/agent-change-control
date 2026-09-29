@@ -540,8 +540,9 @@ a JSON object holding normalized events and a policy. The exit status is `0` eva
 invalid input, `4` collection incomplete, and the last line of stdout is one JSON object with
 `verdict` (`evaluated`, `invalid` or `incomplete`), `codes` (every rule with outcome `fail`, or
 the §6.6 codes of invalid input, compared as a set), `assessments` (every change, rule and
-outcome, compared exactly for accept vectors) and optionally `manifestDigest`, which must then
-match and so tests §8.2 as well. Every reject vector is one mutation of an accept vector, so a
+outcome, compared exactly for accept vectors) and optionally `manifestDigest`, the digest of the
+manifest without `generated.tool` and `generated.version`, which must then match and so tests
+§8.2 as well. Every reject vector is one mutation of an accept vector, so a
 verifier that rejects everything fails. Passing shows that an implementation produced the
 expected outputs for these inputs; the corpus is a public answer key, not a proof that the rules
 are implemented, and runs that disagree with it are the most useful reports.
