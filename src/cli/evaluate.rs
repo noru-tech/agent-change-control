@@ -9,16 +9,25 @@ use std::path::PathBuf;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    /// Normalized events (JSON or YAML), as written by `export`.
+    /// Normalized events (JSON or YAML), as written by `export`; with --conformance-json, a
+    /// conformance vector.
     pub input: PathBuf,
     /// Policy file (defaults to .agent-change-control/policy.yml when present).
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", conflicts_with = "conformance_json")]
     pub policy: Option<PathBuf>,
+    /// Read INPUT as an ACP conformance vector (an object with `events` and `policy`) and print
+    /// the corpus contract's single-line JSON result: verdict, codes, assessments and manifest
+    /// digest. Exit 0 evaluated, 3 invalid, 4 incomplete. See conformance/README.md.
+    #[arg(long, conflicts_with_all = ["format", "output"])]
+    pub conformance_json: bool,
     #[command(flatten)]
     pub output: OutputArgs,
 }
 
 pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
+    if args.conformance_json {
+        return super::conformance::run(&args.input);
+    }
     let events = io::read(&args.input, "events")?;
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
     args.output.render(&m, Format::Json)?;

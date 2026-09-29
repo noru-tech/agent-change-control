@@ -1,0 +1,2370 @@
+{
+  "contract": "README.md#contract",
+  "counts": {
+    "accept": 32,
+    "incomplete": 4,
+    "reject": 18
+  },
+  "specDigest": "sha256:45bc4e4b5c8c0a5b792960db69c4ea26782bacc4643db9558ad5f1f781f1ba53",
+  "specPath": "spec/ai-change-provenance.md",
+  "specVersion": "0.3",
+  "suite": "acp-evaluator-conformance",
+  "suiteRevision": 1,
+  "vectors": [
+    {
+      "conditions": [
+        "#61-independence",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:f2299e6340bc474c1740fd7ebff2f1ef824914842b6568b2d7426a84a23e67ee",
+        "verdict": "evaluated"
+      },
+      "id": "human-clean",
+      "kind": "accept",
+      "path": "accept/human-clean.json"
+    },
+    {
+      "conditions": [
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC002",
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:20a30a6dc7fed07f6fcd8a1c06e395f44dcede846d18f4c521e92bbe032b43b3",
+        "verdict": "evaluated"
+      },
+      "id": "human-self-approved",
+      "kind": "accept",
+      "path": "accept/human-self-approved.json"
+    },
+    {
+      "conditions": [
+        "#61-independence",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC002"
+        ],
+        "manifestDigest": "sha256:d8ec325bf45e78c56c184409201de800505cf2daa0a9e865bae397dbf7c1693f",
+        "verdict": "evaluated"
+      },
+      "id": "self-and-independent",
+      "kind": "accept",
+      "path": "accept/self-and-independent.json"
+    },
+    {
+      "conditions": [
+        "#31-inline-declaration",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:076070d322118890397e2fba5cc8c5a28a36abf3d8f59dc5ee269e64b63275d2",
+        "verdict": "evaluated"
+      },
+      "id": "claude-clean",
+      "kind": "accept",
+      "path": "accept/claude-clean.json"
+    },
+    {
+      "conditions": [
+        "#31-inline-declaration",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC002",
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:2ae8ee2e7aaf9d1b4515a1a436fd98cfef5b4c79126b4f010b245bc6a018f02b",
+        "verdict": "evaluated"
+      },
+      "id": "claude-operator-self-approved",
+      "kind": "accept",
+      "path": "accept/claude-operator-self-approved.json"
+    },
+    {
+      "conditions": [
+        "#34-derived-evidence-records-written-at-authoring-time",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:d438ce8db78018ce27b196abde0830d6c0897da2a19c05bbe4a084ecae7e08fb",
+        "verdict": "evaluated"
+      },
+      "id": "claude-trailer-derived",
+      "kind": "accept",
+      "path": "accept/claude-trailer-derived.json"
+    },
+    {
+      "conditions": [
+        "#34-derived-evidence-records-written-at-authoring-time",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC002",
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:4b6587cd201c5c7801fea98a49fdeea030735172f82fdd3577d2231dfe4c994a",
+        "verdict": "evaluated"
+      },
+      "id": "claude-trailer-self-approved",
+      "kind": "accept",
+      "path": "accept/claude-trailer-self-approved.json"
+    },
+    {
+      "conditions": [
+        "#31-inline-declaration",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:8cc9ceec2b18ff771808f73b53216cb0d6082b691aa85bb33a1185ee31b72ca7",
+        "verdict": "evaluated"
+      },
+      "id": "codex-clean",
+      "kind": "accept",
+      "path": "accept/codex-clean.json"
+    },
+    {
+      "conditions": [
+        "#62-rules",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC006"
+        ],
+        "manifestDigest": "sha256:9e88c54cfdc0b9153f1529a3eb2fcbfb3124683759f162228a756f7bb8104b9b",
+        "verdict": "evaluated"
+      },
+      "id": "agent-operator-unknown",
+      "kind": "accept",
+      "path": "accept/agent-operator-unknown.json"
+    },
+    {
+      "conditions": [
+        "#62-rules",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC006"
+        ],
+        "manifestDigest": "sha256:97b0e78a07a8f340e1a2eae9866c62643ec7cae18a6219cabf7692743ae7bcef",
+        "verdict": "evaluated"
+      },
+      "id": "unknown-without-review",
+      "kind": "accept",
+      "path": "accept/unknown-without-review.json"
+    },
+    {
+      "conditions": [
+        "#5-actor-classification",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:944ce68748a78ecdf4235c5546eaf1918d36c333aae07378b85960af56f05291",
+        "verdict": "evaluated"
+      },
+      "id": "bot-approval",
+      "kind": "accept",
+      "path": "accept/bot-approval.json"
+    },
+    {
+      "conditions": [
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:5d0676cf752f6ae85e26dfd8c38b46998280bd5162c2826f51ab6790683d8f9f",
+        "verdict": "evaluated"
+      },
+      "id": "changes-requested",
+      "kind": "accept",
+      "path": "accept/changes-requested.json"
+    },
+    {
+      "conditions": [
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:dd8275a84456727ebba4b5d080117dade0769889d9604c5e5ff15fcd0ec62da9",
+        "verdict": "evaluated"
+      },
+      "id": "dismissed-approval",
+      "kind": "accept",
+      "path": "accept/dismissed-approval.json"
+    },
+    {
+      "conditions": [
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:f66b9a0a34d1b06a7a5e85742d84c3a74b8f9c858cfb0992fb66c5f532ee593d",
+        "verdict": "evaluated"
+      },
+      "id": "comment-after-approval",
+      "kind": "accept",
+      "path": "accept/comment-after-approval.json"
+    },
+    {
+      "conditions": [
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:e73fcf1f06df8558a8372dfb4442141136a15ff3a75a56ca1ad48474e18bad19",
+        "verdict": "evaluated"
+      },
+      "id": "stale-approval",
+      "kind": "accept",
+      "path": "accept/stale-approval.json"
+    },
+    {
+      "conditions": [
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:f543a7770957d00947b1b3f33a849d256f518f8d59e03d54613324040ddd5789",
+        "verdict": "evaluated"
+      },
+      "id": "approval-at-merge",
+      "kind": "accept",
+      "path": "accept/approval-at-merge.json"
+    },
+    {
+      "conditions": [
+        "#61-independence",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:28f3781992184e855702a9694e4212566ab4e460d3cb76155d1ad7d55b552336",
+        "verdict": "evaluated"
+      },
+      "id": "open-pr",
+      "kind": "accept",
+      "path": "accept/open-pr.json"
+    },
+    {
+      "conditions": [
+        "#81-normalization",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:f2299e6340bc474c1740fd7ebff2f1ef824914842b6568b2d7426a84a23e67ee",
+        "verdict": "evaluated"
+      },
+      "id": "timezone-equivalent",
+      "kind": "accept",
+      "path": "accept/timezone-equivalent.json"
+    },
+    {
+      "conditions": [
+        "#62-rules",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:cc7c0c0f5f062b4f3de709a0532c4cdcb3caf2127dad24905bee78b144686b66",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-declared",
+      "kind": "accept",
+      "path": "accept/agent-review-declared.json"
+    },
+    {
+      "conditions": [
+        "#62-rules",
+        "#5-actor-classification"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007",
+          "ACC008"
+        ],
+        "manifestDigest": "sha256:b0a8bf46d2a6a7c68c0343a61422a2698335c734b45e97ad07108dfa78f44bdb",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-same-vendor",
+      "kind": "accept",
+      "path": "accept/agent-review-same-vendor.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions",
+        "#36-evidence-strength"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:a9793b9d52a8682a0bb678a571323768eeab71efecaa22dc77b2dc41a4498db4",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-independent",
+      "kind": "accept",
+      "path": "accept/agent-review-independent.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007",
+          "ACC009"
+        ],
+        "manifestDigest": "sha256:979006b0e6cefbbdf375f061adcadb50474b393ff2a03e31853663e37149db84",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-dependent-operator",
+      "kind": "accept",
+      "path": "accept/agent-review-dependent-operator.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007",
+          "ACC009"
+        ],
+        "manifestDigest": "sha256:660a3e02d7da936a42948252a5c10eb0b89d4e998a30de35fb56c9694e02d614",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-same-identity",
+      "kind": "accept",
+      "path": "accept/agent-review-same-identity.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:5ac2fde7c8b8e2e3fdda4876cdcbd98a78ca6b0bd47f23b71d95c099b5c020ee",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-unknown-operator",
+      "kind": "accept",
+      "path": "accept/agent-review-unknown-operator.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#65-independence-dimensions",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:eb44369d368bc6dd68f7fd4fbd5ccbc81838f01c108eb3063102caefe786ecbb",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-unknown-vendor",
+      "kind": "accept",
+      "path": "accept/agent-review-unknown-vendor.json"
+    },
+    {
+      "conditions": [
+        "#63-policy",
+        "#62-rules",
+        "#36-evidence-strength"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007",
+          "ACC010"
+        ],
+        "manifestDigest": "sha256:608b7b4ba1399eb8c5fe9ae1f9bfc65c61cee92c235c0f706d50dff79428790a",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-unsigned",
+      "kind": "accept",
+      "path": "accept/agent-review-unsigned.json"
+    },
+    {
+      "conditions": [
+        "#63-policy"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003",
+          "ACC007"
+        ],
+        "manifestDigest": "sha256:2a8555dcfefe479dc667544af576f438fe53626bd2e1d7427bde3e1659f3fa6f",
+        "verdict": "evaluated"
+      },
+      "id": "agent-review-out-of-scope",
+      "kind": "accept",
+      "path": "accept/agent-review-out-of-scope.json"
+    },
+    {
+      "conditions": [
+        "#36-evidence-strength",
+        "#63-policy",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC006"
+        ],
+        "manifestDigest": "sha256:c9b84f1142ee86bc3e3d2dfd6fb589c66a34dc996a8c0f7db30c1dba5e7118c9",
+        "verdict": "evaluated"
+      },
+      "id": "claude-trailer-derived--minimum-authorship-declared",
+      "kind": "accept",
+      "path": "accept/claude-trailer-derived--minimum-authorship-declared.json"
+    },
+    {
+      "conditions": [
+        "#36-evidence-strength",
+        "#63-policy",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC006"
+        ],
+        "manifestDigest": "sha256:19ae0bf21647fc401745b1db7756cfae2180903943bafb46949f4526c66dd877",
+        "verdict": "evaluated"
+      },
+      "id": "claude-clean--minimum-authorship-observed",
+      "kind": "accept",
+      "path": "accept/claude-clean--minimum-authorship-observed.json"
+    },
+    {
+      "conditions": [
+        "#36-evidence-strength",
+        "#63-policy",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC001",
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:bb93f26ce11ecc21350a3a24898bbd4266c6e033c770ba9ee9e1017b5eede59d",
+        "verdict": "evaluated"
+      },
+      "id": "claude-clean--minimum-review-signed",
+      "kind": "accept",
+      "path": "accept/claude-clean--minimum-review-signed.json"
+    },
+    {
+      "conditions": [
+        "#36-evidence-strength",
+        "#63-policy"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:cdeda559c3ec2245e948a7026a73d9abe5b89375c3fdc5d91600c894fe217c9a",
+        "verdict": "evaluated"
+      },
+      "id": "claude-clean--signed-authorship",
+      "kind": "accept",
+      "path": "accept/claude-clean--signed-authorship.json"
+    },
+    {
+      "conditions": [
+        "#63-policy"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:d5bc7efc30b3dff83c777cf083081298bb44a45eab67de5f979fc6dd96b6d6cf",
+        "verdict": "evaluated"
+      },
+      "id": "human-self-approved--rule-disabled",
+      "kind": "accept",
+      "path": "accept/human-self-approved--rule-disabled.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:70c87a6ed2c7f53aaacb625503ad03f1c44fa7474dc566e3cfd7d2383fe914bc",
+        "verdict": "incomplete"
+      },
+      "id": "incomplete-window",
+      "kind": "incomplete",
+      "path": "incomplete/incomplete-window.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:f03b84aae8c3a587d656be9f49dfc339901f46000d59d24ddf0f93228356ff61",
+        "verdict": "incomplete"
+      },
+      "id": "partial-with-approval",
+      "kind": "incomplete",
+      "path": "incomplete/partial-with-approval.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#61-independence"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:ab12276a4d26a6613114808166691de05ad37216daf92bbf5afe3e7255bd7e3c",
+        "verdict": "incomplete"
+      },
+      "id": "claude-clean--reviews-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/claude-clean--reviews-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC002"
+        ],
+        "manifestDigest": "sha256:ed32078e8cfe194de336c19e8f56e08cd5908d9ab7d4fd7878a3e0f9e9007599",
+        "verdict": "incomplete"
+      },
+      "id": "human-self-approved--reviews-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/human-self-approved--reviews-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#61-independence"
+      ],
+      "expected": {
+        "codes": [
+          "ACV001"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "approval-after-merge",
+      "kind": "reject",
+      "parent": "approval-at-merge",
+      "path": "reject/approval-after-merge.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV003"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unresolved-author",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--unresolved-author.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV003"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--operator-on-human-author",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--operator-on-human-author.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#36-evidence-strength"
+      ],
+      "expected": {
+        "codes": [
+          "ACV003"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "claude-clean--signed-without-verifier",
+      "kind": "reject",
+      "parent": "claude-clean--signed-authorship",
+      "path": "reject/claude-clean--signed-without-verifier.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--review-before-opening",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--review-before-opening.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "comment-after-approval--duplicate-review-id",
+      "kind": "reject",
+      "parent": "comment-after-approval",
+      "path": "reject/comment-after-approval--duplicate-review-id.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "open-pr--merge-commit-unmerged",
+      "kind": "reject",
+      "parent": "open-pr",
+      "path": "reject/open-pr--merge-commit-unmerged.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--window-reversed",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--window-reversed.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unknown-member",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--unknown-member.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#5-actor-classification"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unknown-actor-kind",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--unknown-actor-kind.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#63-policy"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unknown-policy-rule",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--unknown-policy-rule.json"
+    },
+    {
+      "conditions": [
+        "#66-validation"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--extra-vector-member",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--extra-vector-member.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#63-policy"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "agent-review-independent--lowered-agent-minimum",
+      "kind": "reject",
+      "parent": "agent-review-independent",
+      "path": "reject/agent-review-independent--lowered-agent-minimum.json"
+    },
+    {
+      "conditions": [
+        "#82-serialization"
+      ],
+      "expected": {
+        "codes": [
+          "ACV005"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--non-integer",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--non-integer.json"
+    },
+    {
+      "conditions": [
+        "#82-serialization"
+      ],
+      "expected": {
+        "codes": [
+          "ACV006"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--integer-range",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--integer-range.json"
+    },
+    {
+      "conditions": [
+        "#82-serialization"
+      ],
+      "expected": {
+        "codes": [
+          "ACV007"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unpaired-surrogate",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--unpaired-surrogate.json"
+    },
+    {
+      "conditions": [
+        "#82-serialization"
+      ],
+      "expected": {
+        "codes": [
+          "ACV008"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--duplicate-member",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--duplicate-member.json"
+    },
+    {
+      "conditions": [
+        "#82-serialization"
+      ],
+      "expected": {
+        "codes": [
+          "ACV009"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--depth-129",
+      "kind": "reject",
+      "parent": "human-clean",
+      "path": "reject/human-clean--depth-129.json"
+    }
+  ]
+}

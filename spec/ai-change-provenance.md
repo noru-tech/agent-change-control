@@ -389,6 +389,21 @@ decision date, rationale and optional expiry. Dispositions suppress a finding fr
 decision on a stated date; they never delete it, and the date MUST be supplied explicitly rather
 than read from a clock.
 
+### 6.6 Validation
+
+An evaluator MUST reject input that is not a valid ACP document, and MUST NOT produce findings,
+assessments or a manifest for it. It SHOULD report why with these codes; when several apply,
+reporting any one of them is enough, and a consumer compares codes as a set.
+
+| Code | Input is rejected when |
+| --- | --- |
+| ACV001 | An `approved` review is later than the change's merge. |
+| ACV002 | Reserved (deployment validation). |
+| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
+| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit on an unmerged change; a review before opening; duplicate change, review or commit identifiers; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
+| ACV005 to ACV009 | The input is not I-JSON as §8.2 constrains it. |
+| ACV010 | The input does not conform to its schema: an unknown member, a missing required member, a wrong type, or a value outside a closed vocabulary. |
+
 ## 7. Outputs
 
 ### 7.1 Manifest
@@ -513,8 +528,23 @@ way (§12); it MUST NOT produce new 0.2 documents.
   emits a declaration for a change it did not author.
 - A **collector** conforms when its output validates against the event schema and it satisfies
   §4 and §5.
-- An **evaluator** conforms when, for the fixtures published with the reference implementation, it
-  produces the same assessments and findings as §6, and it satisfies §8.
+- An **evaluator** conforms when it passes a named `suiteRevision` of the ACP evaluator
+  conformance corpus (`acp-evaluator-conformance`) at a named release, and it satisfies §8. The
+  corpus is published under [`conformance/`](../conformance/README.md) with a digest list signed
+  at the release tag; for this version it is suite revision 1. A claim names all three, for
+  example "`acp-evaluator-conformance` revision 1 at `v0.5.0`", and is backed by the report the
+  corpus harness writes.
+
+The corpus runs any evaluator as an external verifier: `<cmd> <vector-file>`, where the vector is
+a JSON object holding normalized events and a policy. The exit status is `0` evaluated, `3`
+invalid input, `4` collection incomplete, and the last line of stdout is one JSON object with
+`verdict` (`evaluated`, `invalid` or `incomplete`), `codes` (every rule with outcome `fail`, or
+the §6.6 codes of invalid input, compared as a set), `assessments` (every change, rule and
+outcome, compared exactly for accept vectors) and optionally `manifestDigest`, which must then
+match and so tests §8.2 as well. Every reject vector is one mutation of an accept vector, so a
+verifier that rejects everything fails. Passing shows that an implementation produced the
+expected outputs for these inputs; the corpus is a public answer key, not a proof that the rules
+are implemented, and runs that disagree with it are the most useful reports.
 
 ## 10. Security and privacy considerations
 
@@ -569,14 +599,15 @@ their own and stay at 0.1.
 
 ## Changelog
 
-- **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project
-  canonicalization; I-JSON input constraints with codes ACV005 to ACV009; normalization and
-  serialization split into §8.1 and §8.2. Breaking for digests, not for rules: the trailing
-  newline leaves every preimage, so every finding identifier, `source_digest` and `sha256`
-  subject digest changes, while every finding, assessment and verdict stays the same. Findings
-  carry `legacy_ids` for one minor version (§7.1); the predicate type is `v0.3` (§7.3); 0.2
-  documents stay valid through the legacy path (§8.2, §12). Exports and resolved policies are
-  written as `0.3`.
+- **0.3 (2026-09-29)** — serialization is RFC 8785 (§8.2), replacing the project canonicalization;
+  I-JSON input constraints with codes ACV005 to ACV009; normalization and serialization split into
+  §8.1 and §8.2. Validation codes listed in the specification (§6.6), with ACV010 for input that
+  does not conform to its schema. Evaluator conformance is defined by a published, versioned corpus
+  under an external-verifier contract (§9). Breaking for digests, not for rules: the trailing
+  newline leaves every preimage, so every finding identifier, `source_digest` and `sha256` subject
+  digest changes, while every finding, assessment and verdict stays the same. Findings carry
+  `legacy_ids` for one minor version (§7.1); the predicate type is `v0.3` (§7.3); 0.2 documents stay
+  valid through the legacy path (§8.2, §12). Exports and resolved policies are written as `0.3`.
 - **0.2 (2026-09-21)** — agent reviewers: the second form of qualifying approval under the
   opt-in `agent_review` policy (§6.1, §6.3), the independence dimensions (§6.5), rules ACC007
   to ACC010 (§6.2), predicate type `v0.2` (§7.3). Version compatibility rules (§12). Defaults

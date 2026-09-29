@@ -6,4 +6,4 @@ acv = "acv"
 intoto = "intoto"
 
 [files]
-extend-exclude = ["target/**", "tests/fixtures/**", "tests/snapshots/**", "CHANGELOG.md", "Cargo.lock"]
+extend-exclude = ["target/**", "tests/fixtures/**", "tests/snapshots/**", "conformance/accept/**", "conformance/reject/**", "conformance/incomplete/**", "conformance/MANIFEST.json", "conformance/CORPUS-DIGESTS.txt", "CHANGELOG.md", "Cargo.lock"]

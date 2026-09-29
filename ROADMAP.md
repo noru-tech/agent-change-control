@@ -20,7 +20,8 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 - **Derived evidence tier** (0.3.0): vendor `Co-Authored-By` trailers and Agent Trace records
   as lower-tier agent evidence, with the operator derived from commit authorship.
 - **AI Change Provenance 0.3**: every digest is SHA-256 over RFC 8785 (JCS) bytes, so any JCS
-  implementation reproduces them; ACP 0.2 documents still validate through a legacy path.
+  implementation reproduces them; ACP 0.2 documents still validate through a legacy path. A
+  published evaluator conformance corpus (`conformance/`) defines evaluator conformance.
 
 ## Next
 
