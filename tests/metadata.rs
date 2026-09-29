@@ -98,3 +98,27 @@ fn documentation_names_the_current_specification_version() {
     }
     assert!(seen >= 3, "expected the README badge and prose, saw {seen}");
 }
+
+/// The concept DOI in `CITATION.cff` is the one the README badge and citation text point at.
+#[test]
+fn the_doi_is_the_same_everywhere() {
+    let citation = read("CITATION.cff");
+    let doi = field(&citation, "doi", ": ");
+    assert!(doi.starts_with("10.5281/zenodo."), "{doi}");
+    assert!(citation.contains(&format!("value: {doi}")));
+    for file in ["README.md", "conformance/README.md"] {
+        let text = read(file);
+        assert!(
+            text.contains(&format!("https://doi.org/{doi}")),
+            "{file} does not link {doi}"
+        );
+        for (i, _) in text.match_indices("10.5281/zenodo.") {
+            let id: String = text[i..]
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '/')
+                .collect();
+            let id = id.trim_end_matches(".svg").trim_end_matches('.');
+            assert_eq!(id, doi, "{file} names another DOI");
+        }
+    }
+}

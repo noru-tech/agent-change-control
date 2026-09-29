@@ -113,6 +113,11 @@ gh attestation verify conformance/CORPUS-DIGESTS.txt --repo noru-tech/agent-chan
 cd conformance && sha256sum -c CORPUS-DIGESTS.txt
 ```
 
+Every release is also archived on Zenodo under the concept DOI
+[10.5281/zenodo.23042500](https://doi.org/10.5281/zenodo.23042500). The archive of a release
+contains this directory as tagged, so a conformance claim can cite exact bytes: the suite, the
+`suiteRevision`, the release tag, and that release's version DOI.
+
 ## What a pass does and does not establish
 
 This corpus is a public answer key. A pass shows that an implementation produced the expected

@@ -8,6 +8,13 @@ authors:
 repository-code: https://github.com/noru-tech/agent-change-control
 url: https://github.com/noru-tech/agent-change-control/blob/main/spec/ai-change-provenance.md
 license: MIT
+# The concept DOI resolves to the latest release archived on Zenodo; each release also has its own
+# version DOI, listed on the Zenodo record.
+doi: 10.5281/zenodo.23042500
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23042500
+    description: Concept DOI for every archived release (resolves to the latest).
 version: "0.5.1"
 date-released: "2026-09-29"
 keywords:

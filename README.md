@@ -13,6 +13,7 @@
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
 [![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.3-informational)](./spec/ai-change-provenance.md)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23042500.svg)](https://doi.org/10.5281/zenodo.23042500)
 
 ```yaml
 # .github/workflows/change-control.yml — gate every pull request on an independent human review
@@ -304,6 +305,13 @@ updated. Proposals for rules, collectors and specification changes have
 Built and maintained by [Noru](https://noru.tech), a compliance platform. The tool, the schemas and
 the specification are MIT-licensed and independent of the platform; Noru consumes the same
 manifests everyone else does.
+
+## Citing
+
+Every release is archived on Zenodo. Cite the concept DOI
+[10.5281/zenodo.23042500](https://doi.org/10.5281/zenodo.23042500), which resolves to the latest
+release, or the version DOI of the release you used, listed on that record, when the exact bytes
+matter (an audit report, or a conformance claim). `CITATION.cff` has the citation metadata.
 
 ## License
 
