@@ -26,7 +26,7 @@ jobs:
   acc:
     runs-on: ubuntu-latest
     steps:
-      - uses: noru-tech/agent-change-control@v0.5.1
+      - uses: noru-tech/agent-change-control@v0.5.2
 ```
 
 Change control assumes that the account which opened a change is the party that produced it.
@@ -90,7 +90,7 @@ acc check manifest.json
 Or gate every pull request with the [GitHub Action](docs/github-action.md):
 
 ```yaml
-- uses: noru-tech/agent-change-control@v0.5.1
+- uses: noru-tech/agent-change-control@v0.5.2
 ```
 
 ## How it works

@@ -6,11 +6,27 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-09-29
+
+Conformance suite revision 2 in a signed release. No change to the rules or the output beyond
+the recorded tool version.
+
 ### Added
 - Conformance suite revision 2: three vectors for the opt-in `instructions` independence
   dimension (independent, dependent, unknown); 35 accept, 18 reject and 4 incomplete vectors.
 - Tests that a review attestation naming another agent than a verified account mapping, and a
   human reviewer's review attestation naming an operator or instructions, are errors.
+- The Zenodo concept DOI (10.5281/zenodo.23042500) in `CITATION.cff`, a DOI badge and a Citing
+  section in the README.
+
+### Changed
+- The self-check and attest workflows run the published 0.5.1.
+- The README's spec badge and prose name AI Change Provenance 0.3; `tests/metadata.rs` now
+  requires every "AI Change Provenance X.Y" in the README and docs to name the current version,
+  and the DOI to be the same everywhere.
+- Specification §9 no longer names a single conformance suite revision (0.3 revision 3):
+  revision 1 was published at v0.5.0, and later revisions only add vectors or correct expected
+  results.
 
 ## [0.5.1] - 2026-09-29
 
@@ -196,7 +212,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/noru-tech/agent-change-control/compare/v0.3.1...v0.4.0
