@@ -215,7 +215,7 @@ predicate:
   generated:
     source_digest: "sha256:86b4f7cd57d9aa95a7bfc194847124e86e7b9b1e7a023c1753b130896982ee5e"
     tool: agent-change-control
-    version: 0.5.0
+    version: 0.5.1
   policy:
     agent_review:
       labels: []
