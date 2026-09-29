@@ -137,11 +137,11 @@ the same content, so a field the consumer does not understand would make that ch
 
 ## Before opening (checklist for Bip)
 
-- [x] The noru.tech redirects in `URI-HOSTING.md` are live, and every type URI resolves (noru-tech/noru#685). At the 0.3 release, pin `v0.3` to its tag.
-- [ ] Spec 0.3 is released. The document's "Pinned by" line names that tag and commit, and the
-      schema links point at the tag instead of `main`.
-- [ ] The conformance corpus has been signed at that tag (`conformance-release.yml` ran), and
-      `gh attestation verify` passes on `CORPUS-DIGESTS.txt`.
+- [x] The noru.tech redirects in `URI-HOSTING.md` are live, and every type URI resolves (noru-tech/noru#685); `v0.3` is pinned to v0.5.0 in noru-tech/noru#686.
+- [x] Spec 0.3 is released as v0.5.0. The document's "Pinned by" line names that tag and
+      commit, and the spec and schema links point at the tag.
+- [x] The conformance corpus is signed at v0.5.0 (`conformance-release.yml` ran), and
+      `gh attestation verify` passes on `CORPUS-DIGESTS.txt` (sha256 `97bf1cb2…`).
 - [ ] Decide whether the provenance predicate (`…/provenance/v0.1`) goes first instead, or
       together (see below).
 - [ ] Run `markdownlint` from the upstream repository on the document. It reports nothing

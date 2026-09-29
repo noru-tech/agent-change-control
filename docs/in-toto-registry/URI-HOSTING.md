@@ -2,7 +2,7 @@
 
 **Done.** The redirects below went live on 2026-09-29 with noru-tech/noru#685, in
 `apps/web/next.config.ts` rather than `vercel.json`, because the site keeps its redirects there.
-The one step left comes at the release of spec 0.3: pin `v0.3` to its tag and make it permanent.
+Spec 0.3 was released as v0.5.0, and noru-tech/noru#686 pins `v0.3` to that tag, permanently.
 
 Reviewers will follow the type URI. Before that change, every ACP URI returned 404 from
 noru.tech, which is served by Vercel:
