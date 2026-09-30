@@ -4,68 +4,70 @@
 
 # agent-change-control
 
+Deterministic change control for code written by AI coding agents. Checks each change for independent human approval and emits SARIF and in-toto statements.
+
 > **Enforcing the four-eyes principle for coding agents.**
 >
 > Different accounts do not necessarily represent independent humans. `acc` records the human
 > behind an agent's change and checks for independent human approval. Offline, reproducible, no LLM.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![release](https://img.shields.io/github/v/release/noru-tech/agent-change-control)](https://github.com/noru-tech/agent-change-control/releases/latest)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/noru-tech/agent-change-control/badge)](https://scorecard.dev/viewer/?uri=github.com/noru-tech/agent-change-control)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
-[![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.3-informational)](./spec/ai-change-provenance.md)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23042500.svg)](https://doi.org/10.5281/zenodo.23042500)
-
-```yaml
-# .github/workflows/change-control.yml — gate every pull request on an independent human review
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  pull_request_review:
-    types: [submitted, dismissed]
-jobs:
-  acc:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: noru-tech/agent-change-control@v0.5.2
-```
-
-Change control assumes that the account which opened a change is the party that produced it.
-Coding agents break that assumption. When an agent opens the pull request under its own account
-and the engineer who directed it approves, the platform reports two different actors and the
-control is silently gone: one human judgment, two logins. When nobody recorded who directed the
-agent, no tool can tell whether the reviewer was independent at all.
-
-`acc` enforces the four-eyes principle by checking more than whether the author and approver
-accounts differ: **did a human
-who is independent of the change's effective author approve its current head before merge, and
-what is the evidence?** Agent authorship alone is never a finding. An unknown operator is reported
-as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
-
-Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
-The convention it implements is published as [AI Change Provenance 0.3](spec/ai-change-provenance.md).
-
-## What is in this repository
-
-| Piece | Where |
-| --- | --- |
-| **Specification** — AI Change Provenance 0.3: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
-| **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
-| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
-| **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
-| **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
-| **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
 
 ## Install
 
+The binary is called `acc`; the package is `agent-change-control` everywhere.
+
+### Homebrew
+
 ```bash
 brew install noru-tech/tap/acc            # macOS and Linux
+```
+
+### crates.io
+
+The crate is `agent-change-control` (the short name `acc` on crates.io belongs to an unrelated
+tool). The binary it installs is `acc`.
+
+```bash
 cargo binstall agent-change-control       # prebuilt binary from GitHub Releases
 cargo install agent-change-control --locked
 ```
 
-Or download an archive from [GitHub Releases](https://github.com/noru-tech/agent-change-control/releases).
-Release binaries carry GitHub artifact attestations:
-`gh attestation verify <archive> --repo noru-tech/agent-change-control`.
+### Prebuilt binaries
+
+Download an archive for your platform from
+[GitHub Releases](https://github.com/noru-tech/agent-change-control/releases): fully static Linux
+builds (`x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`) and macOS builds
+(`aarch64-apple-darwin`, `x86_64-apple-darwin`), each named
+`agent-change-control-<target>.tar.xz` and holding `acc`, the README, the changelog and the license.
+
+### Verify before you run
+
+Every archive carries a GitHub artifact attestation from the release workflow and a SHA-256
+checksum file next to it (`<archive>.sha256`; `sha256.sum` lists all of them). Check both before
+you unpack:
+
+```bash
+VERSION=v0.5.2
+ARCHIVE=agent-change-control-aarch64-apple-darwin.tar.xz
+gh release download "$VERSION" --repo noru-tech/agent-change-control \
+  --pattern "$ARCHIVE" --pattern "$ARCHIVE.sha256"
+
+# Built by this repository's release workflow, from a tagged commit
+gh attestation verify "$ARCHIVE" --repo noru-tech/agent-change-control \
+  --signer-workflow noru-tech/agent-change-control/.github/workflows/release.yml
+
+# The bytes match the published checksum (on Linux: sha256sum -c "$ARCHIVE.sha256")
+shasum -a 256 -c "$ARCHIVE.sha256"
+
+tar -xJf "$ARCHIVE"
+```
+
+There is no `curl | sh` installer in these instructions, and there will not be one.
 
 ## Quick start
 
@@ -90,8 +92,71 @@ acc check manifest.json
 Or gate every pull request with the [GitHub Action](docs/github-action.md):
 
 ```yaml
-- uses: noru-tech/agent-change-control@v0.5.2
+# .github/workflows/change-control.yml — gate every pull request on an independent human review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+jobs:
+  acc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: noru-tech/agent-change-control@v0.5.2
 ```
+
+## What it does
+
+### Why do two accounts not mean two humans?
+
+Change control assumes that the account which opened a change is the party that produced it.
+Coding agents break that assumption. When an agent opens the pull request under its own account
+and the engineer who directed it approves, the platform reports two different actors and the
+control is silently gone: one human judgment, two logins. When nobody recorded who directed the
+agent, no tool can tell whether the reviewer was independent at all.
+
+`acc` enforces the four-eyes principle by checking more than whether the author and approver
+accounts differ: **did a human
+who is independent of the change's effective author approve its current head before merge, and
+what is the evidence?** Agent authorship alone is never a finding. An unknown operator is reported
+as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
+
+Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
+The convention it implements is published as [AI Change Provenance 0.3](spec/ai-change-provenance.md).
+
+### What is in this repository
+
+| Piece | Where |
+| --- | --- |
+| **Specification** — AI Change Provenance 0.3: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
+| **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
+| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
+| **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
+| **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
+| **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
+
+## What it is not, and known limitations
+
+The collector uses bounded pages (`--max-pages`, default 100 per endpoint; maximum 1000) and 8 MiB
+per response. Collection is a best-effort snapshot, not an atomic historical archive. GitHub
+identity changes, deleted users and mutable declarations cannot be reconstructed reliably from
+current REST data. The PR opener is the default effective author unless explicit agent evidence
+overrides it; mixed human authorship is not resolved in this release.
+
+`acc` does not detect AI-written code, does not treat bots as agents, does not guess that the
+merger operated the agent, and does not call a model. A declaration is declared evidence, not
+authenticated identity; a digest detects inconsistency, not forgery. `acc` does not verify
+signatures: attestations are read as pre-verified input and the manifest records who said they
+verified them. A clean result is a statement
+about the recorded scope, not a compliance certification. See the
+[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signature verification
+inside `acc`.
+
+Manifests contain employee activity data; keep real exports out of public Git repositories. Read
+[the model](docs/model.md), [authorship](docs/agent-authorship.md), [privacy](docs/privacy.md) and
+[security](SECURITY.md).
+
+The full list, with where each limit is described, is in [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md).
 
 ## How it works
 
@@ -171,11 +236,8 @@ approval-after-merge data produces ACV001, separately from governance findings.
 | `acc pr NUMBER --repo OWNER/REPO` | Collect and check one pull request (`GITHUB_REPOSITORY` is honored) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages |
 
-Global flags: `-q` silences status lines on stderr. Every evaluated command accepts
-`--format table|json|yaml|sarif|in-toto|in-toto-jsonl` and `--output FILE`; the format is inferred
-from the output name when omitted (`.intoto.json` and `.intoto.jsonl` select the attestation
-forms). `export` emits normalized JSON only. `scan` without output flags
-writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
+Global flags: `-q` silences status lines on stderr. Output formats and exit codes are
+[below](#output-formats-and-exit-codes).
 
 The collecting commands (`scan`, `export`, `pr`) take the evidence flags: `--agent-account
 LOGIN=AGENT` and `--agent-vendor AGENT=VENDOR` for accounts and vendors your organization has
@@ -232,21 +294,13 @@ or `--verified-by` the claims count as `signed` and the manifest records who ver
 without, they count as `declared`. See [authorship](docs/agent-authorship.md#signed-tier) and
 the examples under [`examples/`](examples/).
 
-## Conformance
+## Output formats and exit codes
 
-An ACP evaluator conforms when it passes the published corpus in [`conformance/`](conformance/README.md):
-accept, reject and incomplete vectors run through a small external-verifier contract (`<cmd>
-<vector-file>`, verdict in the exit status, one JSON result line on stdout). `acc` passes it with
-`acc evaluate --conformance-json`, and another implementation can run it in one step:
-
-```bash
-python3 conformance/run.py --verifier "acc evaluate --conformance-json"
-```
-
-The corpus is an answer key, not a proof; independent implementations that disagree with it are
-the most useful reports.
-
-## Exit codes
+Every evaluated command accepts
+`--format table|json|yaml|sarif|in-toto|in-toto-jsonl` and `--output FILE`; the format is inferred
+from the output name when omitted (`.intoto.json` and `.intoto.jsonl` select the attestation
+forms). `export` emits normalized JSON only. `scan` without output flags
+writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
 
 | Code | Meaning |
 | --- | --- |
@@ -262,26 +316,19 @@ the most useful reports.
 Warnings do not fail the default policy. `scan` and `evaluate` write findings without returning
 policy exit 1; use `check` to enforce policy. See [policy semantics](docs/policy.md).
 
-## Limits and non-goals
+## Conformance
 
-The collector uses bounded pages (`--max-pages`, default 100 per endpoint; maximum 1000) and 8 MiB
-per response. Collection is a best-effort snapshot, not an atomic historical archive. GitHub
-identity changes, deleted users and mutable declarations cannot be reconstructed reliably from
-current REST data. The PR opener is the default effective author unless explicit agent evidence
-overrides it; mixed human authorship is not resolved in this release.
+An ACP evaluator conforms when it passes the published corpus in [`conformance/`](conformance/README.md):
+accept, reject and incomplete vectors run through a small external-verifier contract (`<cmd>
+<vector-file>`, verdict in the exit status, one JSON result line on stdout). `acc` passes it with
+`acc evaluate --conformance-json`, and another implementation can run it in one step:
 
-`acc` does not detect AI-written code, does not treat bots as agents, does not guess that the
-merger operated the agent, and does not call a model. A declaration is declared evidence, not
-authenticated identity; a digest detects inconsistency, not forgery. `acc` does not verify
-signatures: attestations are read as pre-verified input and the manifest records who said they
-verified them. A clean result is a statement
-about the recorded scope, not a compliance certification. See the
-[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signature verification
-inside `acc`.
+```bash
+python3 conformance/run.py --verifier "acc evaluate --conformance-json"
+```
 
-Manifests contain employee activity data; keep real exports out of public Git repositories. Read
-[the model](docs/model.md), [authorship](docs/agent-authorship.md), [privacy](docs/privacy.md) and
-[security](SECURITY.md).
+The corpus is an answer key, not a proof; independent implementations that disagree with it are
+the most useful reports.
 
 ## Development
 
@@ -300,19 +347,43 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the layout, how to add a rule, and 
 updated. Proposals for rules, collectors and specification changes have
 [issue templates](https://github.com/noru-tech/agent-change-control/issues/new/choose).
 
-## About
-
-Built and maintained by [Noru](https://noru.tech), a compliance platform. The tool, the schemas and
-the specification are MIT-licensed and independent of the platform; Noru consumes the same
-manifests everyone else does.
-
-## Citing
+## How to cite
 
 Every release is archived on Zenodo. Cite the concept DOI
 [10.5281/zenodo.23042500](https://doi.org/10.5281/zenodo.23042500), which resolves to the latest
 release, or the version DOI of the release you used, listed on that record, when the exact bytes
 matter (an audit report, or a conformance claim). `CITATION.cff` has the citation metadata.
 
+The specification is [AI Change Provenance 0.3](spec/ai-change-provenance.md); its predicate type
+URIs are listed in [Attestations](#attestations).
+
+## Trust
+
+How a release gets from this repository to your machine, and how to check it:
+
+- **Built in CI, from a tag.** Releases are built by [cargo-dist](https://github.com/axodotdev/cargo-dist)
+  in GitHub Actions ([release.yml](.github/workflows/release.yml)) from the tagged commit; no
+  release artifact is built on a workstation.
+- **Attested.** Every archive has a GitHub artifact attestation (SLSA build provenance, signed
+  through Sigstore) naming the workflow and commit that built it. Verify it as shown in
+  [Verify before you run](#verify-before-you-run).
+- **Checksums.** Each archive has a `.sha256` file, and `sha256.sum` lists every archive in the
+  release.
+- **SBOM.** Releases after 0.5.2 attach a CycloneDX SBOM (`agent-change-control.cdx.xml`)
+  generated by `cargo-cyclonedx`.
+- **Signed conformance corpus and verdicts.** The conformance corpus digest list is attested at
+  every tag ([workflow](.github/workflows/conformance-release.yml)), and the change-control
+  verdict of every merged pull request is attested ([workflow](.github/workflows/attest.yml)).
+- **Pinned and scored.** Every GitHub Action is pinned to a commit SHA and kept current by
+  Dependabot. The repository's supply-chain posture is measured by
+  [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/noru-tech/agent-change-control).
+- **Vulnerabilities.** Report privately through
+  [GitHub private vulnerability reporting](https://github.com/noru-tech/agent-change-control/security/advisories/new);
+  see [SECURITY.md](SECURITY.md) for scope and response times.
+
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE). The tool, the schemas and the specification are MIT-licensed and
+independent of the Noru platform; Noru consumes the same manifests everyone else does.
+
+Maintained by [Noru](https://noru.tech), a continuous compliance platform.
