@@ -11,7 +11,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
 [![spec](https://img.shields.io/badge/spec-AI%20Change%20Provenance%200.3-informational)](./spec/ai-change-provenance.md)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23042500.svg)](https://doi.org/10.5281/zenodo.23042500)
 
@@ -59,9 +58,14 @@ The convention it implements is published as [AI Change Provenance 0.3](spec/ai-
 
 ```bash
 brew install noru-tech/tap/acc            # macOS and Linux
+```
+
+<!--
+Restore once agent-change-control is published on crates.io (the short name `acc` there belongs
+to an unrelated tool; always use the full crate name):
 cargo binstall agent-change-control       # prebuilt binary from GitHub Releases
 cargo install agent-change-control --locked
-```
+-->
 
 Or download an archive from [GitHub Releases](https://github.com/noru-tech/agent-change-control/releases).
 Release binaries carry GitHub artifact attestations:
