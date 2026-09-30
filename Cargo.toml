@@ -43,7 +43,7 @@ serde-saphyr = "1.2"
 sha2 = "0.10"
 thiserror = "2"
 ureq = { version = "3.4", default-features = false, features = ["rustls"] }
-base64 = "0.22"
+base64 = "0.23"
 
 [dev-dependencies]
 assert_cmd = "2.2"
