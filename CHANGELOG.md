@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-09-30
+
 Distribution, documentation and CI only; no change to the tool's behaviour.
 
 ### Added
@@ -237,7 +239,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/noru-tech/agent-change-control/compare/v0.4.0...v0.5.0
