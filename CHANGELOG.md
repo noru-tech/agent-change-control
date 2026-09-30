@@ -20,8 +20,8 @@ Distribution, documentation and CI only; no change to the tool's behaviour.
   weekly grouped Dependabot updates for Cargo dependencies.
 
 ### Changed
-- README: install instructions no longer point at crates.io, where the crate is not published
-  yet (the badge and the `cargo install` / `cargo binstall` lines return once it is); a "Verify
+- The crate is published on crates.io as `agent-change-control`: README shows its badge and the
+  `cargo binstall` / `cargo install` lines again. Also in the README: a "Verify
   before you run" section with the exact attestation and checksum commands; a Trust section;
   sections reordered (install first, then quick start, what it does and what it is not).
 - `Cargo.toml`: a one-sentence description, and `in-toto` and `provenance` keywords in place of

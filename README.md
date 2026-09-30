@@ -15,6 +15,7 @@ Deterministic change control for code written by AI coding agents. Checks each c
 [![ci](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml/badge.svg)](https://github.com/noru-tech/agent-change-control/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/noru-tech/agent-change-control/badge)](https://scorecard.dev/viewer/?uri=github.com/noru-tech/agent-change-control)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![crates.io](https://img.shields.io/crates/v/agent-change-control.svg)](https://crates.io/crates/agent-change-control)
 
 ## Install
 
@@ -26,17 +27,15 @@ The binary is called `acc`; the package is `agent-change-control` everywhere.
 brew install noru-tech/tap/acc            # macOS and Linux
 ```
 
-<!--
 ### crates.io
 
-Restore once agent-change-control is published on crates.io (the short name `acc` there belongs
-to an unrelated tool; always use the full crate name):
+The crate is `agent-change-control` (the short name `acc` on crates.io belongs to an unrelated
+tool). The binary it installs is `acc`.
 
 ```bash
 cargo binstall agent-change-control       # prebuilt binary from GitHub Releases
 cargo install agent-change-control --locked
 ```
--->
 
 ### Prebuilt binaries
 
