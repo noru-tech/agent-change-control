@@ -15,7 +15,9 @@ Please report security issues **privately** — do not open a public issue for a
 vulnerability.
 
 - Email: **security@noru.tech** with a subject line beginning `[SECURITY] agent-change-control`.
-- Or use GitHub **Private vulnerability reporting** (Security → *Report a vulnerability*).
+- Or use GitHub **private vulnerability reporting**:
+  <https://github.com/noru-tech/agent-change-control/security/advisories/new> (Security →
+  *Report a vulnerability*).
 
 Please include: a description of the issue, the affected version or commit, reproduction steps or a
 proof of concept, and the impact you foresee. Do not put tokens, private exports or employee data
@@ -42,7 +44,9 @@ triage. We will credit reporters who wish to be named once a fix is released.
   contact GitHub.
 - Release binaries are built by GitHub Actions from tagged commits, published with SHA-256 checksums
   and GitHub artifact attestations. Verify with
-  `gh attestation verify <archive> --repo noru-tech/agent-change-control`.
+  `gh attestation verify <archive> --repo noru-tech/agent-change-control --signer-workflow
+  noru-tech/agent-change-control/.github/workflows/release.yml` and `shasum -a 256 -c
+  <archive>.sha256` (see the README's *Verify before you run*).
 
 An explicit agent declaration is not authenticated provenance. A source digest detects changes, not
 malicious replacement of an entire export. GitHub snapshots are mutable and non-atomic, and may omit

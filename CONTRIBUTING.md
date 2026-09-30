@@ -119,7 +119,13 @@ head. [cargo-dist](https://opensource.axo.dev/cargo-dist/) builds the binaries, 
 formula and GitHub Release. Run `dist plan` locally after changing `dist-workspace.toml`, and
 regenerate `.github/workflows/release.yml` with `dist generate` rather than editing its steps. The
 only hand edit is pinning the `uses:` actions to commit SHAs, as in `ci.yml`; `allow-dirty = ["ci"]`
-in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current.
+in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current. `dist
+generate` refuses to run while `ci` is allow-dirty: comment the line out, regenerate, restore it,
+and re-apply the pins (the SHAs already in the file).
+
+The crate is published to crates.io by `.github/workflows/publish-crate.yml` with Trusted
+Publishing (no stored token). A release created by the workflow token does not trigger it, so
+after the GitHub Release is out run `gh workflow run publish-crate.yml -f tag=vX.Y.Z`.
 
 Each published GitHub Release is archived by Zenodo, which mints a version DOI under the
 project's concept DOI. Zenodo reads the deposit's metadata from `.zenodo.json` in the tagged tree
