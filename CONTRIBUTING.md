@@ -117,17 +117,25 @@ any `.github/workflows/*.yml` file, so a tag that trails a workflow edit fails i
 `HTTP 403: Resource not accessible by integration`. If that happens, delete the tag and re-tag the
 head. [cargo-dist](https://opensource.axo.dev/cargo-dist/) builds the binaries, installer, Homebrew
 formula and GitHub Release. Run `dist plan` locally after changing `dist-workspace.toml`, and
-regenerate `.github/workflows/release.yml` with `dist generate` rather than editing its steps. The
-hand edits are pinning the `uses:` actions to commit SHAs, as in `ci.yml`, and correcting
-`steps.cargo-cyclonedx.output.paths` to `outputs.paths` (dist's template has the typo);
-`allow-dirty = ["ci"]`
-in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current. `dist
-generate` refuses to run while `ci` is allow-dirty: comment the line out, regenerate, restore it,
-and re-apply both edits (the pins are the SHAs already in the file).
+regenerate `.github/workflows/release.yml` with `dist generate` rather than editing its steps.
+Three hand edits sit on top of the generated file:
+
+- every `uses:` action is pinned to a commit SHA, as in `ci.yml` (Dependabot keeps them current);
+- `steps.cargo-cyclonedx.output.paths` is corrected to `outputs.paths` (dist's template has the
+  typo);
+- `secrets: inherit` is deleted from the `custom-publish-crate` job (Trusted Publishing needs no
+  secret, so the job gets none).
+
+`allow-dirty = ["ci"]` in `dist-workspace.toml` lets dist tolerate them. `dist generate` refuses to
+run while `ci` is allow-dirty: comment the line out, regenerate, restore it, and re-apply the three
+edits (the pins are the SHAs already in the file).
 
 The crate is published to crates.io by `.github/workflows/publish-crate.yml` with Trusted
-Publishing (no stored token). A release created by the workflow token does not trigger it, so
-after the GitHub Release is out run `gh workflow run publish-crate.yml -f tag=vX.Y.Z`.
+Publishing (no stored token). `release.yml` calls it as a dist custom publish job once the GitHub
+Release is up, so every release publishes the crate. A version already on crates.io is skipped, so
+re-running a release is safe. If the job fails, fix the cause and run it by hand:
+`gh workflow run publish-crate.yml -f tag=vX.Y.Z`. crates.io matches the top-level workflow, so the
+crate has trusted publishers for both `release.yml` and `publish-crate.yml`.
 
 Each published GitHub Release is archived by Zenodo, which mints a version DOI under the
 project's concept DOI. Zenodo reads the deposit's metadata from `.zenodo.json` in the tagged tree
