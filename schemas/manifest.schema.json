@@ -1029,7 +1029,7 @@
               "generated": {
                 "properties": {
                   "version": {
-                    "const": "0.5.2"
+                    "const": "0.5.3"
                   }
                 }
               }
