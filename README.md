@@ -4,7 +4,7 @@
 
 # agent-change-control
 
-Deterministic change control for code written by AI coding agents. Records who authored, operated, reviewed and merged each change, with in-toto attestations.
+Deterministic change control for code written by AI coding agents. Checks each change for independent human approval and emits SARIF and in-toto statements.
 
 > **Enforcing the four-eyes principle for coding agents.**
 >

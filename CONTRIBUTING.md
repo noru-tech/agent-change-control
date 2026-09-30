@@ -118,10 +118,12 @@ any `.github/workflows/*.yml` file, so a tag that trails a workflow edit fails i
 head. [cargo-dist](https://opensource.axo.dev/cargo-dist/) builds the binaries, installer, Homebrew
 formula and GitHub Release. Run `dist plan` locally after changing `dist-workspace.toml`, and
 regenerate `.github/workflows/release.yml` with `dist generate` rather than editing its steps. The
-only hand edit is pinning the `uses:` actions to commit SHAs, as in `ci.yml`; `allow-dirty = ["ci"]`
+hand edits are pinning the `uses:` actions to commit SHAs, as in `ci.yml`, and correcting
+`steps.cargo-cyclonedx.output.paths` to `outputs.paths` (dist's template has the typo);
+`allow-dirty = ["ci"]`
 in `dist-workspace.toml` lets dist tolerate that, and Dependabot keeps the pins current. `dist
 generate` refuses to run while `ci` is allow-dirty: comment the line out, regenerate, restore it,
-and re-apply the pins (the SHAs already in the file).
+and re-apply both edits (the pins are the SHAs already in the file).
 
 The crate is published to crates.io by `.github/workflows/publish-crate.yml` with Trusted
 Publishing (no stored token). A release created by the workflow token does not trigger it, so
