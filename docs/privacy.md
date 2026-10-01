@@ -10,4 +10,6 @@ default.
 
 Do not publish real employee manifests by default. Keep raw exports outside Git, restrict access, and configure retention appropriate to your organization. Use synthetic fixtures for reports and debugging. Pseudonymize actor IDs consistently before sharing when appropriate, including references and free text; the CLI does not yet offer an automatic pseudonymization mode. Re-evaluate after changing normalized identities rather than editing derived hashes.
 
-Only explicit collection commands (`scan`, `export`, `pr`) contact GitHub. `evaluate`, `validate` and `check` operate offline. No telemetry or proprietary reporting endpoint is present.
+Only explicit collection commands (`scan`, `export`, `pr`) contact GitHub, plus `acc doctor --online`
+when you ask for it (it reads the rate limit and the latest acc release, and sends nothing about your
+repositories). There is no automatic update check. `evaluate`, `validate` and `check` operate offline. No telemetry or proprietary reporting endpoint is present.

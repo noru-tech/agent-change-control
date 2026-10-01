@@ -48,6 +48,12 @@ All notable changes to this project are documented here. The format is based on
   printed on stderr and the window is recorded in the output exactly as if passed, so evaluation
   stays deterministic. Only the collecting commands read the clock (`ACC_NOW` replaces it in
   tests).
+- `acc doctor [--online] [--format text|json]`: the version, whether `GITHUB_TOKEN`/`GH_TOKEN` is
+  set (never its value), whether the default policy file parses, and the repository `scan` would
+  detect. `--online` adds GET-only checks: the token and rate limit (`GET /rate_limit`) and the
+  latest release, to report a newer `acc`; this is the only update check and it never runs on its
+  own. Exit 0 when healthy, 2 when a check failed. The JSON report is a new machine output
+  (README).
 - `ACC_GITHUB_API_URL`, testing only: points the binary at the loopback replay server. Only
   `http://127.0.0.1:PORT`/`http://localhost:PORT` without a token is accepted.
 

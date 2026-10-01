@@ -8,7 +8,7 @@ once, in `Exit` in [`src/lib.rs`](../src/lib.rs), and a unit test pins each valu
 | --- | --- | --- |
 | [0](#0-success) | Success, or the policy threshold passed | every command |
 | [1](#1-policy-threshold-exceeded) | Policy threshold exceeded | `check`, `pr` |
-| [2](#2-invalid-command-line-arguments) | Invalid command-line arguments | every command |
+| [2](#2-invalid-command-line-arguments) | Invalid command-line arguments; `doctor` found a broken check | every command |
 | [3](#3-invalid-input-or-manifest) | Invalid input or manifest | every command that reads a file |
 | [4](#4-collection-incomplete) | Collection incomplete (takes precedence over 1) | `scan`, `export`, `pr`, `evaluate`, `check` |
 | [5](#5-authentication-rejected) | Authentication rejected | `scan`, `export`, `pr` |
@@ -54,7 +54,9 @@ $ acc -q check tests/fixtures/human-self-approved/expected-manifest.json > /dev/
 The command line could not be used: an unknown subcommand or flag, a bad value (`--format nope`),
 a malformed date or window (`--since` after `--until`), a malformed `LOGIN=AGENT` mapping, a
 missing `--repo` for `pr`, `--verified-by` without attestations, or `check` on a manifest with
-non-open dispositions but no `--as-of` date. The message says which.
+non-open dispositions but no `--as-of` date. The message says which. `acc doctor` also exits 2 when
+one of its checks failed (an invalid default policy file, a rejected token, GitHub unreachable with
+`--online`); its report says which.
 
 ```console
 $ acc scan github acme/api --since 2026-08-31 --until 2026-08-01; echo $?

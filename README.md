@@ -265,6 +265,7 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 | `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
 | `acc pr NUMBER [--repo OWNER/REPO]` | Collect and check one pull request (the repository is found like `scan`'s) |
+| `acc doctor [--online]` | Check the environment: version, token set (never printed), default policy file, detected repository; `--online` adds the token, the rate limit and whether a newer `acc` exists (GET only; the only update check, never automatic). Exit 0 healthy, 2 broken. `--format json` prints a [report object](#doctor-report-object) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |
 
 Global flags: `-q` silences status lines on stderr; `-v` (`--verbose`) adds diagnostics there
@@ -354,6 +355,16 @@ newline, whether or not the input is valid:
 
 `valid` and `message` are always present; `code` (the validation code) and `help_uri` (its page)
 only when an `ACV` code applies. The exit status is the same as in text.
+
+<a id="doctor-report-object"></a>
+`acc doctor --format json` prints one object (RFC 8785 bytes and a newline): `version`, `healthy`
+(false when any check failed; the exit status is then 2), and `checks`, each with `name`
+(`version`, `token`, `policy`, `repository`, and with `--online` `github` and `update`), `status`
+(`ok`, `warn` or `fail`), `detail` and, when there is something to do, `hint`:
+
+```json
+{"checks":[{"detail":"acc 0.5.4","name":"version","status":"ok"},{"detail":"GITHUB_TOKEN is set","name":"token","status":"ok"}],"healthy":true,"version":"0.5.4"}
+```
 
 | Code | Meaning |
 | --- | --- |

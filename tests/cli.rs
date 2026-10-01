@@ -777,3 +777,53 @@ fn usage_and_input_failures_print_a_hint_and_a_docs_link() {
         assert_eq!(lines[2], see, "{args:?}");
     }
 }
+
+#[test]
+fn doctor_reports_offline_checks_and_fails_on_a_broken_policy() {
+    let out = stdout(acc().args(["doctor", "--format", "json"]));
+    let report: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(report["healthy"], true);
+    assert_eq!(report["version"], env!("CARGO_PKG_VERSION"));
+    let names: Vec<&str> = report["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["version", "token", "policy", "repository"]);
+    assert_eq!(report["checks"][1]["status"], "warn");
+    assert_eq!(report["checks"][3]["status"], "warn");
+    acc()
+        .env("GITHUB_REPOSITORY", "acme/api")
+        .arg("doctor")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "ok    repository  acme/api (from GITHUB_REPOSITORY)",
+        ))
+        .stdout(predicate::str::ends_with("healthy\n"));
+
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir(dir.path().join(".agent-change-control")).unwrap();
+    let policy = dir.path().join(".agent-change-control/policy.yml");
+    std::fs::copy(common::root().join("examples/policy.yml"), &policy).unwrap();
+    acc()
+        .current_dir(dir.path())
+        .arg("doctor")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "policy.yml parses (fail_on: medium)",
+        ));
+    std::fs::write(&policy, "fail_on: [nope\n").unwrap();
+    acc()
+        .current_dir(dir.path())
+        .arg("doctor")
+        .assert()
+        .code(2)
+        .stdout(predicate::str::contains(
+            "fail  policy      invalid policy file",
+        ))
+        .stdout(predicate::str::contains("help: fix the file against"))
+        .stdout(predicate::str::ends_with("1 check(s) failed\n"));
+}

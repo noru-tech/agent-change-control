@@ -4,6 +4,7 @@ pub mod check;
 pub mod completions;
 pub mod conformance;
 pub mod detect;
+pub mod doctor;
 pub mod evaluate;
 pub mod export;
 pub mod forge;
@@ -24,11 +25,11 @@ acc — change control for software written with coding agents.
 
 Records the agent, human operator, reviewers and merger of each pull request, then evaluates
 explicit separation-of-duty rules (ACC001 to ACC010) deterministically and offline.
-Only `scan`, `export` and `pr` contact GitHub (and only they read the clock, for the default
-window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
+Only `scan`, `export`, `pr` and `doctor --online` contact GitHub (and only the collecting commands
+read the clock, for the default window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
 network or the clock. No LLM is involved, and agent authorship alone is never a finding.
 
-Exit codes: 0 ok · 1 policy threshold exceeded (check, pr) · 2 usage · 3 invalid input or
+Exit codes: 0 ok · 1 policy threshold exceeded (check, pr) · 2 usage (or doctor: broken) · 3 invalid input or
 manifest · 4 collection incomplete (beats 1) · 5 authentication rejected · 6 API, permission,
 rate-limit or transport failure · 7 unsupported API data.";
 
@@ -76,6 +77,9 @@ pub enum Command {
     Check(check::Args),
     /// Collect and evaluate one pull request.
     Pr(pr::Args),
+    /// Check that this environment is ready to collect: version, token, policy file, repository;
+    /// with --online, the token, the rate limit and whether a newer acc exists (GET only).
+    Doctor(doctor::Args),
     /// Generate shell completions.
     Completions(completions::Args),
     /// Generate man pages.
@@ -113,6 +117,7 @@ pub fn run(cli: Cli) -> Result<Exit> {
         Command::Validate(args) => validate::run(&ctx, args),
         Command::Check(args) => check::run(&ctx, args),
         Command::Pr(args) => pr::run(&ctx, args),
+        Command::Doctor(args) => doctor::run(&ctx, args),
         Command::Completions(args) => completions::run(&ctx, args),
         Command::Manpage(args) => completions::run_man(&ctx, args),
     }

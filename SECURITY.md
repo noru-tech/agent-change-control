@@ -41,7 +41,8 @@ triage. We will credit reporters who wish to be named once a fix is released.
   Terminal control characters are removed from table identifiers. SARIF and JSON use escaped
   serialization.
 - `evaluate`, `validate` and `check` perform no network calls. Only `scan`, `export` and `pr`
-  contact GitHub.
+  contact GitHub, and `doctor --online` when asked (GET `/rate_limit` and the latest acc release).
+  There is no automatic update check.
 - Release binaries are built by GitHub Actions from tagged commits, published with SHA-256 checksums
   and GitHub artifact attestations. Verify with
   `gh attestation verify <archive> --repo noru-tech/agent-change-control --signer-workflow
