@@ -38,7 +38,7 @@ Repository: <https://github.com/noru-tech/agent-change-control> (below, `REPO` s
 | `sites_https` | MUST | Met | Repository, releases and crates.io are HTTPS only: REPO, https://crates.io/crates/agent-change-control |
 | `discussion` | MUST | Met | GitHub issues and pull requests: searchable, URL-addressable, open to new participants, no proprietary client needed. REPO/issues |
 | `english` | SHOULD | Met | All documentation is in English; reports are accepted in English. |
-| `maintained` | MUST | Met | Regular releases (0.2.0 to 0.5.4 between 2026-09-19 and 2026-10-01) and weekly Dependabot updates. REPO/releases |
+| `maintained` | MUST | Met | Regular releases (0.2.0 to 0.6.0 between 2026-09-19 and 2026-10-01) and weekly Dependabot updates. REPO/releases |
 
 ## Change Control
 
