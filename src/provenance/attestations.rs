@@ -19,7 +19,6 @@ use crate::model::{ActorKind, Attestation, Evidence, EvidenceKind, ReviewState, 
 use anyhow::{Context, Result, ensure};
 use base64::Engine;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -214,7 +213,7 @@ impl Attestations {
     }
 
     fn push(&mut self, c: Container, path: &Path, i: usize, signer: Option<Signer>) {
-        let digest = format!("sha256:{:x}", Sha256::digest(&c.payload));
+        let digest = crate::canonical::sha256(&c.payload);
         let id = format!("attestation:{}", &digest[7..23]);
         if let Some(existing) = self.loaded.iter_mut().find(|l| l.id == id) {
             // The same payload seen again: keep the record that knows more.

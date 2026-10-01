@@ -6,6 +6,8 @@
 //! that does not conform to its schema. ACV005 to ACV009 (I-JSON) are raised while parsing, in
 //! [`crate::canonical::ijson`].
 
+mod schema_order;
+
 use crate::model::*;
 use anyhow::{Context, Result, bail, ensure};
 use chrono::{DateTime, Utc};
@@ -28,9 +30,18 @@ pub fn schema(value: &Value, name: &str) -> Result<()> {
     let validator = jsonschema::options()
         .should_validate_formats(true)
         .build(&definition)?;
-    if let Some(error) = validator.iter_errors(value).next() {
+    // Report the same violation whatever order this `jsonschema` release evaluates in.
+    let first = validator
+        .iter_errors(value)
+        .map(|error| {
+            let at = error.instance_path().to_string();
+            let key = schema_order::key(&definition, &error.evaluation_path().to_string(), &at);
+            (key, at)
+        })
+        .reduce(|first, next| if next.0 < first.0 { next } else { first });
+    if let Some((_, at)) = first {
         // Do not echo untrusted input values (which may contain secrets).
-        bail!("ACV010 schema validation failed at {}", error.instance_path);
+        bail!("ACV010 schema validation failed at {at}");
     }
     Ok(())
 }

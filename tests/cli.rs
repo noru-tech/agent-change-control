@@ -160,10 +160,7 @@ fn attestations_validate_and_are_inferred_from_their_suffix() {
     let m: Manifest = serde_json::from_slice(&bytes).unwrap();
     let digest = agent_change_control::canonical::digest(&m).unwrap();
     assert_eq!(
-        format!(
-            "sha256:{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(&bytes)
-        ),
+        format!("sha256:{}", common::sha256_hex(&bytes)),
         digest,
         "the file's digest is the canonical digest"
     );
@@ -371,7 +368,7 @@ fn legacy_0_2_documents_validate_with_a_note() {
         "_type": "https://in-toto.io/Statement/v1",
         "subject": [{
             "name": "acc-manifest.json",
-            "digest": {"sha256": format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(&bytes))}
+            "digest": {"sha256": common::sha256_hex(&bytes)}
         }],
         "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.2",
         "predicate": m,
