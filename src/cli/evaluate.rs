@@ -35,9 +35,9 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     ));
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
     args.output.render(ctx, &m, Format::Json)?;
-    Ok(if io::incomplete(&m.events) {
-        Exit::Incomplete
-    } else {
-        Exit::Ok
-    })
+    if io::incomplete(&m.events) {
+        super::warn_incomplete(ctx, &m.events, super::RECOLLECTED);
+        return Ok(Exit::Incomplete);
+    }
+    Ok(Exit::Ok)
 }

@@ -7,7 +7,7 @@ use crate::model::*;
 use crate::normalize::timestamp;
 use crate::provenance::agent_trace::AgentTraces;
 use crate::provenance::attestations::{self, Attestations};
-use crate::{Exit, failure};
+use crate::{Exit, Failure, failure};
 use anyhow::{Result, ensure};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -53,6 +53,28 @@ fn api(message: &'static str) -> anyhow::Error {
 
 fn unsupported(message: &'static str) -> anyhow::Error {
     failure(Exit::Unsupported, message)
+}
+
+/// The token variables, for hints.
+const SET_TOKEN: &str =
+    "set GITHUB_TOKEN or GH_TOKEN to a token with read access to contents and pull requests";
+
+/// What to do about a failed request: `status` is the HTTP status (0 when no response arrived),
+/// `rate_limited` whether GitHub said the rate limit was the cause, `token` whether the request
+/// carried one. Hints never quote the response.
+pub fn hint(status: u16, rate_limited: bool, token: bool) -> String {
+    match (status, rate_limited, token) {
+        (0, ..) => "check the network connection to api.github.com (and HTTPS_PROXY, if you use one), then retry".into(),
+        (401, _, true) => "the token in GITHUB_TOKEN or GH_TOKEN was rejected: it is expired, revoked or mistyped; replace it with one that has read access to contents and pull requests".into(),
+        (401, _, false) => SET_TOKEN.into(),
+        (_, true, true) => "the token's rate limit is exhausted; wait until it resets, or narrow the window to make fewer requests".into(),
+        (_, true, false) => format!("unauthenticated requests are limited to 60 an hour; {SET_TOKEN}"),
+        (403, false, true) => "the token cannot read this repository: it needs read access to contents and pull requests (a fine-grained token must select the repository)".into(),
+        (403, false, false) => format!("GitHub refused an unauthenticated request; {SET_TOKEN}"),
+        (404, _, true) => "check OWNER/REPO and the pull request number, and that the token can read this repository".into(),
+        (404, _, false) => format!("check OWNER/REPO and the pull request number; a private repository looks missing without a token: {SET_TOKEN}"),
+        _ => "GitHub answered with an unexpected status; retry, and check https://www.githubstatus.com".into(),
+    }
 }
 
 /// `http://127.0.0.1:PORT` or `http://localhost:PORT`.
@@ -103,13 +125,38 @@ impl Github {
         if let Some(token) = &self.token {
             request = request.header("Authorization", format!("Bearer {token}"));
         }
-        let mut response = request.call().map_err(|_| api("GitHub request failed"))?;
-        match response.status().as_u16() {
+        let token = self.token.is_some();
+        let mut response = request
+            .call()
+            .map_err(|_| self.failed(Exit::Api, "GitHub request failed", 0, false))?;
+        let status = response.status().as_u16();
+        match status {
             200 => {}
             404 => return Ok(Response::NotFound),
-            401 => return Err(failure(Exit::Auth, "GitHub authentication failed")),
-            403 | 429 => return Err(api("GitHub request forbidden or rate limited")),
-            _ => return Err(api("GitHub API returned an unexpected status")),
+            401 => {
+                return Err(self.failed(Exit::Auth, "GitHub authentication failed", 401, false));
+            }
+            403 | 429 => {
+                let headers = response.headers();
+                let limited = status == 429
+                    || headers.contains_key("retry-after")
+                    || headers
+                        .get("x-ratelimit-remaining")
+                        .is_some_and(|v| v.as_bytes() == b"0");
+                return Err(self.failed(
+                    Exit::Api,
+                    "GitHub request forbidden or rate limited",
+                    status,
+                    limited,
+                ));
+            }
+            _ => {
+                return Err(
+                    Failure::new(Exit::Api, "GitHub API returned an unexpected status")
+                        .hint(hint(status, false, token))
+                        .into(),
+                );
+            }
         }
         let next = response
             .headers()
@@ -131,10 +178,27 @@ impl Github {
         Ok(Response::Found(value, next))
     }
 
+    /// A failure with the hint for `status`.
+    fn failed(
+        &self,
+        exit: Exit,
+        message: &'static str,
+        status: u16,
+        limited: bool,
+    ) -> anyhow::Error {
+        Failure::new(exit, message)
+            .hint(hint(status, limited, self.token.is_some()))
+            .into()
+    }
+
+    fn not_found(&self) -> anyhow::Error {
+        self.failed(Exit::Api, "GitHub resource not found", 404, false)
+    }
+
     fn object(&self, path: &str) -> Result<Value> {
         match self.get(path)? {
             Response::Found(value, _) => Ok(value),
-            Response::NotFound => Err(api("GitHub resource not found")),
+            Response::NotFound => Err(self.not_found()),
         }
     }
 
@@ -147,7 +211,7 @@ impl Github {
             let Response::Found(value, next) =
                 self.get(&format!("{path}{sep}per_page=100&page={page}"))?
             else {
-                return Err(api("GitHub resource not found"));
+                return Err(self.not_found());
             };
             let items = value
                 .as_array()
@@ -721,6 +785,20 @@ mod tests {
         ] {
             assert!(validate_repo(bad).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn hints_depend_on_the_status_the_rate_limit_and_the_token() {
+        assert!(hint(0, false, true).contains("network"));
+        assert!(hint(401, false, true).contains("was rejected"));
+        assert!(hint(401, false, false).starts_with("set GITHUB_TOKEN"));
+        assert!(hint(403, true, true).contains("rate limit is exhausted"));
+        assert!(hint(429, true, false).contains("60 an hour"));
+        assert!(hint(403, false, true).contains("cannot read this repository"));
+        assert!(hint(403, false, false).contains("unauthenticated"));
+        assert!(hint(404, false, false).contains("private repository"));
+        assert!(hint(404, false, true).contains("token can read"));
+        assert!(hint(500, false, true).contains("unexpected status"));
     }
 
     #[test]

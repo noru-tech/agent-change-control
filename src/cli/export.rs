@@ -39,5 +39,8 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     if let Some(path) = &c.output.output {
         ctx.note(format!("wrote {}", path.display()));
     }
+    if exit == Exit::Incomplete {
+        super::warn_incomplete(ctx, &events, super::forge::RECOLLECT);
+    }
     Ok(exit)
 }

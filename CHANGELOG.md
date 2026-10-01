@@ -31,6 +31,17 @@ All notable changes to this project are documented here. The format is based on
   object with `valid`, `message`, and `code` and `help_uri` when a validation code applies (README,
   "Output formats and exit codes"). Text, the default, is unchanged.
 - `acc completions SHELL --output FILE` and `acc manpage --output FILE` write to a file.
+- Errors with a fix and a docs link. The common failures print two more stderr lines after
+  `error: …`: `help: …` (what to do) and `see: <url>` (the section of `docs/exit-codes.md`, or the
+  policy page): a missing or rejected token (exit 5), a rate limit, a forbidden or missing
+  repository and transport failures (exit 6; a 403 with an exhausted rate limit is told apart from a
+  permission problem), a missing `--repo`/`GITHUB_REPOSITORY`, a bad `--since`/`--until`/`--as-of`
+  or a reversed window (exit 2), and an invalid policy file (exit 3). An incomplete collection
+  (exit 4) prints `warning: collection incomplete: <reason>` with the same lines, unless `-q`.
+  Messages, exit codes and every machine-readable output are unchanged. `Failure` gains optional
+  `hint` and `see` fields.
+- `ACC_GITHUB_API_URL`, testing only: points the binary at the loopback replay server. Only
+  `http://127.0.0.1:PORT`/`http://localhost:PORT` without a token is accepted.
 
 ### Changed
 - README: four headings are now the questions people ask ("How do I enforce separation of duties

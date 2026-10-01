@@ -2,7 +2,7 @@
 
 use crate::canonical::Canonicalization;
 use crate::model::*;
-use crate::{Exit, failure};
+use crate::{Exit, failure_with_hint};
 use anyhow::{Result, anyhow, bail, ensure};
 use chrono::NaiveDate;
 
@@ -172,9 +172,10 @@ pub fn check(
             false
         } else {
             let date = as_of.ok_or_else(|| {
-                failure(
+                failure_with_hint(
                     Exit::Usage,
                     "--as-of is required when evaluating dispositions",
+                    "pass --as-of YYYY-MM-DD, the date the dispositions are evaluated on; acc never reads the clock",
                 )
             })?;
             suppressed(d, date)?

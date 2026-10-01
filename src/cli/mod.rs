@@ -116,13 +116,49 @@ pub fn run(cli: Cli) -> Result<Exit> {
     }
 }
 
-/// Print an error to stderr. When it names a validation code, the line ends with a pointer to
-/// that code's documentation page; machine-readable outputs never carry it.
-pub fn report(err: &anyhow::Error) {
-    match conformance::validation_codes(err).first() {
-        Some(code) => eprintln!("error: {err:#} (see {})", crate::rule_doc_url(code)),
-        None => eprintln!("error: {err:#}"),
+/// The lines [`report`] prints for an error. When it names a validation code, the first line
+/// ends with a pointer to that code's documentation page. A [`crate::Failure`] with a hint adds
+/// `help: …` and `see: <url>` lines.
+pub fn report_lines(err: &anyhow::Error) -> Vec<String> {
+    let mut lines = vec![match conformance::validation_codes(err).first() {
+        Some(code) => format!("error: {err:#} (see {})", crate::rule_doc_url(code)),
+        None => format!("error: {err:#}"),
+    }];
+    if let Some(f) = err.downcast_ref::<crate::Failure>() {
+        if let Some(hint) = &f.hint {
+            lines.push(format!("help: {hint}"));
+        }
+        if let Some(url) = f.doc_url() {
+            lines.push(format!("see: {url}"));
+        }
     }
+    lines
+}
+
+/// Print an error to stderr; machine-readable outputs never carry it.
+pub fn report(err: &anyhow::Error) {
+    for line in report_lines(err) {
+        eprintln!("{line}");
+    }
+}
+
+/// What to do when an export or manifest records an incomplete collection.
+pub const RECOLLECTED: &str = "the input records an incomplete collection; collect again (raise --max-pages or narrow the window) before relying on the result";
+
+/// Warn on stderr (unless `--quiet`) that the collection behind a result is incomplete, why,
+/// and what to do: the output is written, but exit 4 says a clean result cannot be claimed.
+pub fn warn_incomplete(ctx: &Ctx, events: &crate::model::Events, hint: &str) {
+    let reason = events.window.reason.clone().unwrap_or_else(|| {
+        let n = events
+            .changes
+            .iter()
+            .filter(|c| !c.reviews_complete)
+            .count();
+        format!("review history incomplete for {n} change(s)")
+    });
+    ctx.note(format!("warning: collection incomplete: {reason}"));
+    ctx.note(format!("help: {hint}"));
+    ctx.note(format!("see: {}", Exit::Incomplete.doc_url()));
 }
 
 /// Whether color is switched off: `--no-color` anywhere before a `--`, or a non-empty `NO_COLOR`
