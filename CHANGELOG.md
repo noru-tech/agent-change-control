@@ -9,6 +9,27 @@ All notable changes to this project are documented here. The format is based on
 ### Added
 - `codeql.yml`: CodeQL static analysis of the Rust, Python and workflow code on every pull request,
   on main and weekly; results go to code scanning.
+- A stable documentation page for every rule (`docs/rules/ACC001.md` …), every validation code
+  (`docs/rules/ACV001.md` to `ACV010.md`) and the exit codes (`docs/exit-codes.md`), with an index
+  at `docs/rules/README.md`. Each rule page gives the rule in one sentence, why it matters, every
+  outcome with its exact reason text, the documented control mapping, a failing and a passing
+  example on a real fixture, how to fix it and how to record a disposition.
+- SARIF rule descriptors carry `helpUri`, linking each rule to its page. The base URL is one
+  constant (`DOCS_BASE_URL`), so the pages can move to a docs site later.
+- Error messages that name a validation code end with `(see <url>)`, the code's page. Only the
+  human-readable stderr line changes; JSON, YAML, SARIF results, manifests and the conformance
+  result line are unchanged.
+- `llms.txt` at the repository root (llms.txt convention): what `acc` is, install commands and
+  links to the most important pages.
+- `docs/openssf-best-practices.md`: prepared answers for the OpenSSF Best Practices passing level.
+
+### Changed
+- README: four headings are now the questions people ask ("How do I enforce separation of duties
+  for AI coding agents?", "What does acc not do?", "How does acc decide whether a change was
+  independently approved?", "Which rules does acc check?"); the old anchors still resolve. Each
+  rule in the Rules table links to its page.
+- `tests/metadata.rs` checks that every rule and validation code has a page and that the
+  documented action pins name the crate version.
 
 ## [0.5.4] - 2026-10-01
 
