@@ -35,6 +35,15 @@ pub struct Sources<'a> {
     pub vendors: &'a BTreeMap<String, String>,
 }
 
+/// The core rate limit, from `GET /rate_limit`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RateLimit {
+    pub remaining: u64,
+    pub limit: u64,
+    /// When the limit resets, in Unix seconds.
+    pub reset: u64,
+}
+
 pub struct Github {
     agent: ureq::Agent,
     token: Option<String>,
@@ -67,7 +76,7 @@ pub fn hint(status: u16, rate_limited: bool, token: bool) -> String {
         (0, ..) => "check the network connection to api.github.com (and HTTPS_PROXY, if you use one), then retry".into(),
         (401, _, true) => "the token in GITHUB_TOKEN or GH_TOKEN was rejected: it is expired, revoked or mistyped; replace it with one that has read access to contents and pull requests".into(),
         (401, _, false) => SET_TOKEN.into(),
-        (_, true, true) => "the token's rate limit is exhausted; wait until it resets, or narrow the window to make fewer requests".into(),
+        (_, true, true) => "the token's rate limit is exhausted; wait until it resets (`acc doctor --online` shows when), or narrow the window to make fewer requests".into(),
         (_, true, false) => format!("unauthenticated requests are limited to 60 an hour; {SET_TOKEN}"),
         (403, false, true) => "the token cannot read this repository: it needs read access to contents and pull requests (a fine-grained token must select the repository)".into(),
         (403, false, false) => format!("GitHub refused an unauthenticated request; {SET_TOKEN}"),
@@ -223,6 +232,33 @@ impl Github {
             }
         }
         Ok((all, false))
+    }
+
+    /// `GET /rate_limit` (which does not count against the limit): the core resource's
+    /// remaining requests, limit and reset time (Unix seconds).
+    pub fn rate_limit(&self) -> Result<RateLimit> {
+        let v = self.object("/rate_limit")?;
+        let core = &v["resources"]["core"];
+        let field = |name: &str| {
+            core[name]
+                .as_u64()
+                .ok_or_else(|| unsupported("GitHub rate limit response is missing a field"))
+        };
+        Ok(RateLimit {
+            remaining: field("remaining")?,
+            limit: field("limit")?,
+            reset: field("reset")?,
+        })
+    }
+
+    /// `GET /repos/{repository}/releases/latest`: the latest release's tag name.
+    pub fn latest_release(&self, repository: &str) -> Result<String> {
+        validate_repo(repository)?;
+        let v = self.object(&format!("/repos/{repository}/releases/latest"))?;
+        v["tag_name"]
+            .as_str()
+            .map(str::to_string)
+            .ok_or_else(|| unsupported("GitHub release has no tag name"))
     }
 
     /// Collect the pull requests merged in `from..=to` (or the single pull request `pr`),

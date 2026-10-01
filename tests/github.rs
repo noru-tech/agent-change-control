@@ -148,6 +148,24 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
         "redirect" => return ("302 Found", "", "{}".into()),
         _ => {}
     }
+    if path == "/rate_limit" {
+        let remaining = if mode == "rate-exhausted" { 0 } else { 59 };
+        let core =
+            format!("{{\"limit\":60,\"remaining\":{remaining},\"reset\":1790000000,\"used\":1}}");
+        return (
+            "200 OK",
+            "",
+            format!("{{\"resources\":{{\"core\":{core}}},\"rate\":{core}}}"),
+        );
+    }
+    if path == "/repos/noru-tech/agent-change-control/releases/latest" {
+        let tag = if mode == "newer-release" {
+            "v99.0.0".to_string()
+        } else {
+            format!("v{}", env!("CARGO_PKG_VERSION"))
+        };
+        return ("200 OK", "", format!("{{\"tag_name\":\"{tag}\"}}"));
+    }
     if path.starts_with("/repos/acme/api/pulls?") {
         let page = path.rsplit("page=").next().unwrap_or("1");
         return match (mode, page) {
@@ -894,4 +912,104 @@ fn the_repository_is_inferred_from_the_origin_remote() {
         stderr.contains("help: pass OWNER/REPO, set GITHUB_REPOSITORY"),
         "{stderr}"
     );
+}
+
+/// `acc doctor` output as JSON, requiring exit `code`.
+fn doctor(cmd: &mut assert_cmd::Command, code: i32) -> Value {
+    let (stdout, _) = output(cmd.args(["doctor", "--online", "--format", "json"]), code);
+    serde_json::from_slice(&stdout).unwrap()
+}
+
+fn check<'a>(report: &'a Value, name: &str) -> &'a Value {
+    report["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["name"] == name)
+        .unwrap_or_else(|| panic!("no {name} check in {report}"))
+}
+
+#[test]
+fn doctor_online_checks_the_rate_limit_and_the_latest_release() {
+    let server = Server::start("clean");
+    let report = doctor(&mut acc_against(&server), 0);
+    assert_eq!(report["healthy"], true);
+    assert_eq!(check(&report, "github")["status"], "ok");
+    assert_eq!(
+        check(&report, "github")["detail"],
+        "unauthenticated: 59 of 60 requests left this hour (resets 2026-09-21T14:13:20Z)"
+    );
+    assert_eq!(check(&report, "update")["status"], "ok");
+    assert!(
+        check(&report, "update")["detail"]
+            .as_str()
+            .unwrap()
+            .starts_with("up to date")
+    );
+
+    let server = Server::start("newer-release");
+    let report = doctor(&mut acc_against(&server), 0);
+    assert_eq!(check(&report, "update")["status"], "warn");
+    assert!(
+        check(&report, "update")["detail"]
+            .as_str()
+            .unwrap()
+            .starts_with("acc 99.0.0 is available")
+    );
+
+    let server = Server::start("rate-exhausted");
+    let report = doctor(&mut acc_against(&server), 0);
+    assert_eq!(check(&report, "github")["status"], "warn");
+
+    let server = Server::start("unauthorized");
+    let report = doctor(&mut acc_against(&server), 2);
+    assert_eq!(report["healthy"], false);
+    assert_eq!(check(&report, "github")["status"], "fail");
+    assert_eq!(
+        check(&report, "github")["detail"],
+        "GitHub authentication failed"
+    );
+    assert!(
+        check(&report, "github")["hint"]
+            .as_str()
+            .unwrap()
+            .contains("GITHUB_TOKEN")
+    );
+
+    // Text: the same checks, one line each, and a verdict.
+    let server = Server::start("clean");
+    let (stdout, _) = output(acc_against(&server).args(["doctor", "--online"]), 0);
+    let text = String::from_utf8(stdout).unwrap();
+    assert!(
+        text.contains("ok    github      unauthenticated: 59 of 60"),
+        "{text}"
+    );
+    assert!(text.ends_with("healthy\n"), "{text}");
+}
+
+#[test]
+fn doctor_never_prints_the_token() {
+    let secret = "ghp_doctorMustNeverPrintThis0123456789";
+    let server = Server::start("clean");
+    for args in [
+        &["doctor"][..],
+        &["doctor", "--format", "json"],
+        &["-v", "doctor", "--online"],
+        &["doctor", "--online", "--format", "json"],
+    ] {
+        for var in ["GITHUB_TOKEN", "GH_TOKEN"] {
+            let out = acc_against(&server)
+                .env(var, secret)
+                .args(args)
+                .output()
+                .unwrap();
+            let all = format!(
+                "{}{}",
+                String::from_utf8_lossy(&out.stdout),
+                String::from_utf8_lossy(&out.stderr)
+            );
+            assert!(!all.contains(secret), "{args:?}: {all}");
+            assert!(all.contains(&format!("{var} is set")), "{args:?}: {all}");
+        }
+    }
 }
