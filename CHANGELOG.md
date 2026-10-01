@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-01
+
 ### Added
 - `codeql.yml`: CodeQL static analysis of the Rust, Python and workflow code on every pull request,
   on main and weekly; results go to code scanning.
@@ -314,7 +316,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/noru-tech/agent-change-control/compare/v0.5.4...v0.6.0
 [0.5.4]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...v0.5.2

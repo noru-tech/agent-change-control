@@ -24,7 +24,7 @@ jobs:
   acc:
     runs-on: ubuntu-latest
     steps:
-      - uses: noru-tech/agent-change-control@v0.5.4
+      - uses: noru-tech/agent-change-control@v0.6.0
 ```
 
 Try it offline: `acc evaluate tests/fixtures/claude-operator-self-approved/events.json --format table`. Rule identifiers are `ACC001` to `ACC010` (ACC004 and ACC005 reserved); validation codes are `ACV001` to `ACV010`; exit codes are 0 to 7, with 1 for a policy failure and 4 for incomplete collection.

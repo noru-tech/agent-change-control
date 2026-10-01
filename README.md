@@ -59,7 +59,7 @@ checksum file next to it (`<archive>.sha256`; `sha256.sum` lists all of them). C
 you unpack:
 
 ```bash
-VERSION=v0.5.4
+VERSION=v0.6.0
 ARCHIVE=agent-change-control-aarch64-apple-darwin.tar.xz
 gh release download "$VERSION" --repo noru-tech/agent-change-control \
   --pattern "$ARCHIVE" --pattern "$ARCHIVE.sha256"
@@ -119,7 +119,7 @@ jobs:
   acc:
     runs-on: ubuntu-latest
     steps:
-      - uses: noru-tech/agent-change-control@v0.5.4
+      - uses: noru-tech/agent-change-control@v0.6.0
 ```
 
 <a id="what-it-does"></a>
@@ -370,7 +370,7 @@ only when an `ACV` code applies. The exit status is the same as in text.
 (`ok`, `warn` or `fail`), `detail` and, when there is something to do, `hint`:
 
 ```json
-{"checks":[{"detail":"acc 0.5.4","name":"version","status":"ok"},{"detail":"GITHUB_TOKEN is set","name":"token","status":"ok"}],"healthy":true,"version":"0.5.4"}
+{"checks":[{"detail":"acc 0.6.0","name":"version","status":"ok"},{"detail":"GITHUB_TOKEN is set","name":"token","status":"ok"}],"healthy":true,"version":"0.6.0"}
 ```
 
 | Code | Meaning |
