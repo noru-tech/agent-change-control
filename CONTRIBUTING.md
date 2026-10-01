@@ -118,16 +118,19 @@ any `.github/workflows/*.yml` file, so a tag that trails a workflow edit fails i
 head. [cargo-dist](https://opensource.axo.dev/cargo-dist/) builds the binaries, installer, Homebrew
 formula and GitHub Release. Run `dist plan` locally after changing `dist-workspace.toml`, and
 regenerate `.github/workflows/release.yml` with `dist generate` rather than editing its steps.
-Three hand edits sit on top of the generated file:
+Four hand edits sit on top of the generated file:
 
 - every `uses:` action is pinned to a commit SHA, as in `ci.yml` (Dependabot keeps them current);
+- top-level `permissions` is `contents: read`, and only the `plan` and `host` jobs, which create and
+  upload to the GitHub Release, get `contents: write` (least privilege, scored by OpenSSF
+  Scorecard's Token-Permissions check);
 - `steps.cargo-cyclonedx.output.paths` is corrected to `outputs.paths` (dist's template has the
   typo);
 - `secrets: inherit` is deleted from the `custom-publish-crate` job (Trusted Publishing needs no
   secret, so the job gets none).
 
 `allow-dirty = ["ci"]` in `dist-workspace.toml` lets dist tolerate them. `dist generate` refuses to
-run while `ci` is allow-dirty: comment the line out, regenerate, restore it, and re-apply the three
+run while `ci` is allow-dirty: comment the line out, regenerate, restore it, and re-apply the four
 edits (the pins are the SHAs already in the file).
 
 The crate is published to crates.io by `.github/workflows/publish-crate.yml` with Trusted
