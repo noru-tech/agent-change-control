@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-10-01
+
 ### Changed
 - Dependencies updated: `jsonschema` 0.29 → 0.58 (`ACV010` still names the same violation:
   the one 0.29 reported first), `sha2` 0.10 → 0.11, `base64` 0.22 → 0.23, `thiserror` 2.0.21,
@@ -245,7 +247,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/noru-tech/agent-change-control/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/noru-tech/agent-change-control/compare/v0.5.0...v0.5.1

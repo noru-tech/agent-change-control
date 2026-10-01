@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: noru-tech/agent-change-control@v0.5.3
+      - uses: noru-tech/agent-change-control@v0.5.4
         with:
           fail-on-findings: false   # the verdict is recorded either way
           format: json

@@ -52,7 +52,7 @@ checksum file next to it (`<archive>.sha256`; `sha256.sum` lists all of them). C
 you unpack:
 
 ```bash
-VERSION=v0.5.3
+VERSION=v0.5.4
 ARCHIVE=agent-change-control-aarch64-apple-darwin.tar.xz
 gh release download "$VERSION" --repo noru-tech/agent-change-control \
   --pattern "$ARCHIVE" --pattern "$ARCHIVE.sha256"
@@ -102,7 +102,7 @@ jobs:
   acc:
     runs-on: ubuntu-latest
     steps:
-      - uses: noru-tech/agent-change-control@v0.5.3
+      - uses: noru-tech/agent-change-control@v0.5.4
 ```
 
 ## What it does

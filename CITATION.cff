@@ -15,8 +15,8 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23042500
     description: Concept DOI for every archived release (resolves to the latest).
-version: "0.5.3"
-date-released: "2026-09-30"
+version: "0.5.4"
+date-released: "2026-10-01"
 keywords:
   - change control
   - separation of duties
