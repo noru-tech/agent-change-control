@@ -27,6 +27,9 @@ The binary is called `acc`; the package is `agent-change-control` everywhere.
 brew install noru-tech/tap/acc            # macOS and Linux
 ```
 
+The formula installs bash, zsh and fish completions and the man pages (`man acc`) along with the
+binary.
+
 ### crates.io
 
 The crate is `agent-change-control` (the short name `acc` on crates.io belongs to an unrelated
@@ -43,7 +46,11 @@ Download an archive for your platform from
 [GitHub Releases](https://github.com/noru-tech/agent-change-control/releases): fully static Linux
 builds (`x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`) and macOS builds
 (`aarch64-apple-darwin`, `x86_64-apple-darwin`), each named
-`agent-change-control-<target>.tar.xz` and holding `acc`, the README, the changelog and the license.
+`agent-change-control-<target>.tar.xz` and holding `acc`, the README, the changelog, the license,
+shell completions (`completions/acc.bash`, `completions/_acc`, `completions/acc.fish`) and man
+pages (`man/*.1`). Homebrew installs the completions and man pages for you; from an archive, copy
+them where your shell and `man` look, or generate them with `acc completions <shell>` and
+`acc manpage --out-dir DIR`.
 
 ### Verify before you run
 

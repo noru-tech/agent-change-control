@@ -1,0 +1,94 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-export 1  "export 0.5.4" 
+.SH NAME
+acc\-export \- Export normalized events as JSON for offline evaluation
+.SH SYNOPSIS
+\fBacc export\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-until\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] [\fIsubcommands\fR]
+.SH DESCRIPTION
+Export normalized events as JSON for offline evaluation
+.SH OPTIONS
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-\-since\fR \fI<DATE>\fR
+Start of the merge window, inclusive: YYYY\-MM\-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before \-\-until
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-\-until\fR \fI<DATE>\fR
+End of the merge window, inclusive: YYYY\-MM\-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one
+.TP
+\fB\-\-policy\fR \fI<FILE>\fR
+Policy file (defaults to .agent\-change\-control/policy.yml when present)
+.TP
+\fB\-\-agent\-account\fR \fI<LOGIN=AGENT>\fR
+Treat LOGIN as the verified account of AGENT (repeatable)
+.TP
+\fB\-\-agent\-trailer\fR \fI<EMAIL=AGENT>\fR
+Treat commits whose Co\-Authored\-By trailer carries EMAIL as written by AGENT (repeatable; extends the built\-in vendor registry)
+.TP
+\fB\-\-ignore\-trailers\fR
+Do not read Co\-Authored\-By trailers; only declarations and account mappings establish agent authorship
+.TP
+\fB\-\-agent\-trace\fR \fI<PATH>\fR
+Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)
+.TP
+\fB\-\-attestations\fR \fI<PATH>\fR
+Attestation files or directories (in\-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see \-\-verified\-by
+.TP
+\fB\-\-verified\-by\fR \fI<TEXT>\fR
+Who verified the attestations\*(Aq signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed
+.TP
+\fB\-\-verification\fR \fI<PATH>\fR
+A verifier\*(Aqs JSON output (`gh attestation verify \-\-format json`): its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires \-\-verified\-by)
+.TP
+\fB\-\-agent\-vendor\fR \fI<AGENT=VENDOR>\fR
+Treat AGENT as built and operated by VENDOR (repeatable; extends the built\-in registry)
+.TP
+\fB\-\-max\-pages\fR \fI<N>\fR [default: 100]
+Maximum pages per list endpoint (100 items each)
+.TP
+\fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
+Output format; inferred from the \-\-output extension when omitted
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+json
+.IP \(bu 2
+yaml
+.IP \(bu 2
+table: A plain\-text table for people; `text` is an alias
+.IP \(bu 2
+sarif
+.IP \(bu 2
+in\-toto: An unsigned in\-toto Statement v1 whose predicate is the manifest
+.IP \(bu 2
+in\-toto\-jsonl: JSON Lines of unsigned in\-toto Statements, one per change
+.RE
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write to FILE instead of stdout
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.TP
+[\fIREPOSITORY\fR]
+Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory
+.SH SUBCOMMANDS
+.TP
+acc\-export\-github(1)
+A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
+.SH VERSION
+v0.5.4

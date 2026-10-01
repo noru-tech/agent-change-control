@@ -335,6 +335,28 @@ jobs:
           pattern: artifacts-*
           path: Formula/
           merge-multiple: true
+      # Hand edit (re-apply after `dist generate`): dist's formula template moves everything but
+      # the binary and docs into pkgshare. Install the archive's completions/ and man/ where
+      # Homebrew links them instead. Fails if the template's anchor line ever changes.
+      - name: Install completions and man pages from the formula
+        run: |
+          python3 - Formula/acc.rb <<'EOF'
+          import sys
+          path = sys.argv[1]
+          text = open(path).read()
+          anchor = "    install_binary_aliases!\n"
+          extras = (
+              '    bash_completion.install "completions/acc.bash" => "acc"\n'
+              '    zsh_completion.install "completions/_acc"\n'
+              '    fish_completion.install "completions/acc.fish"\n'
+              '    man1.install Dir["man/*.1"]\n'
+          )
+          if "bash_completion.install" not in text:
+              if text.count(anchor) != 1:
+                  sys.exit(f"{path}: anchor line not found; update this step for the new template")
+              text = text.replace(anchor, anchor + extras)
+              open(path, "w").write(text)
+          EOF
       # This is extra complex because you can make your Formula name not match your app name
       # so we need to find releases with a *.rb file, and publish with that filename.
       - name: Commit formula files

@@ -1,0 +1,60 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-check 1  "check 0.5.4" 
+.SH NAME
+acc\-check \- Enforce policy against a manifest, honoring recorded dispositions
+.SH SYNOPSIS
+\fBacc check\fR [\fB\-\-policy\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-as\-of\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-\-no\-color\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIINPUT\fR> 
+.SH DESCRIPTION
+Enforce policy against a manifest, honoring recorded dispositions
+.SH OPTIONS
+.TP
+\fB\-\-policy\fR \fI<FILE>\fR
+Policy file; overrides the policy embedded in the manifest
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-\-as\-of\fR \fI<DATE>\fR
+Calendar date dispositions are evaluated on (YYYY\-MM\-DD). Required when any finding has a non\-open disposition; the machine clock is never consulted
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
+Output format; inferred from the \-\-output extension when omitted
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+json
+.IP \(bu 2
+yaml
+.IP \(bu 2
+table: A plain\-text table for people; `text` is an alias
+.IP \(bu 2
+sarif
+.IP \(bu 2
+in\-toto: An unsigned in\-toto Statement v1 whose predicate is the manifest
+.IP \(bu 2
+in\-toto\-jsonl: JSON Lines of unsigned in\-toto Statements, one per change
+.RE
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write to FILE instead of stdout
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.TP
+<\fIINPUT\fR>
+A manifest (JSON or YAML) written by `scan` or `evaluate`
+.SH VERSION
+v0.5.4

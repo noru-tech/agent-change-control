@@ -1,0 +1,728 @@
+#compdef acc
+
+autoload -U is-at-least
+
+_acc() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_acc_commands" \
+"*::: :->acc" \
+&& ret=0
+    case $state in
+    (acc)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-command-$line[1]:"
+        case $line[1] in
+            (scan)
+_arguments "${_arguments_options[@]}" : \
+'--since=[Start of the merge window, inclusive\: YYYY-MM-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before --until]:DATE:_default' \
+'--until=[End of the merge window, inclusive\: YYYY-MM-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one]:DATE:_default' \
+'--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'*--agent-account=[Treat LOGIN as the verified account of AGENT (repeatable)]:LOGIN=AGENT:_default' \
+'*--agent-trailer=[Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable; extends the built-in vendor registry)]:EMAIL=AGENT:_default' \
+'*--agent-trace=[Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)]:PATH:_files' \
+'*--attestations=[Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see --verified-by]:PATH:_files' \
+'--verified-by=[Who verified the attestations'\'' signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed]:TEXT:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
+'*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
+'--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::repository -- Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory:_default' \
+":: :_acc__subcmd__scan_commands" \
+"*::: :->scan" \
+&& ret=0
+
+    case $state in
+    (scan)
+        words=($line[2] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-scan-command-$line[2]:"
+        case $line[2] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+'--since=[Start of the merge window, inclusive\: YYYY-MM-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before --until]:DATE:_default' \
+'--until=[End of the merge window, inclusive\: YYYY-MM-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one]:DATE:_default' \
+'--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'*--agent-account=[Treat LOGIN as the verified account of AGENT (repeatable)]:LOGIN=AGENT:_default' \
+'*--agent-trailer=[Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable; extends the built-in vendor registry)]:EMAIL=AGENT:_default' \
+'*--agent-trace=[Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)]:PATH:_files' \
+'*--attestations=[Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see --verified-by]:PATH:_files' \
+'--verified-by=[Who verified the attestations'\'' signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed]:TEXT:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
+'*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
+'--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::repository -- Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_acc__subcmd__scan__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-scan-help-command-$line[1]:"
+        case $line[1] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+'--since=[Start of the merge window, inclusive\: YYYY-MM-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before --until]:DATE:_default' \
+'--until=[End of the merge window, inclusive\: YYYY-MM-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one]:DATE:_default' \
+'--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'*--agent-account=[Treat LOGIN as the verified account of AGENT (repeatable)]:LOGIN=AGENT:_default' \
+'*--agent-trailer=[Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable; extends the built-in vendor registry)]:EMAIL=AGENT:_default' \
+'*--agent-trace=[Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)]:PATH:_files' \
+'*--attestations=[Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see --verified-by]:PATH:_files' \
+'--verified-by=[Who verified the attestations'\'' signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed]:TEXT:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
+'*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
+'--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::repository -- Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory:_default' \
+":: :_acc__subcmd__export_commands" \
+"*::: :->export" \
+&& ret=0
+
+    case $state in
+    (export)
+        words=($line[2] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-export-command-$line[2]:"
+        case $line[2] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+'--since=[Start of the merge window, inclusive\: YYYY-MM-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before --until]:DATE:_default' \
+'--until=[End of the merge window, inclusive\: YYYY-MM-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one]:DATE:_default' \
+'--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'*--agent-account=[Treat LOGIN as the verified account of AGENT (repeatable)]:LOGIN=AGENT:_default' \
+'*--agent-trailer=[Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable; extends the built-in vendor registry)]:EMAIL=AGENT:_default' \
+'*--agent-trace=[Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)]:PATH:_files' \
+'*--attestations=[Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see --verified-by]:PATH:_files' \
+'--verified-by=[Who verified the attestations'\'' signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed]:TEXT:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
+'*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
+'--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::repository -- Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory:_default' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_acc__subcmd__export__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-export-help-command-$line[1]:"
+        case $line[1] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(evaluate)
+_arguments "${_arguments_options[@]}" : \
+'(--conformance-json)--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'(-f --format -o --output)--conformance-json[Read INPUT as an ACP conformance vector (an object with \`events\` and \`policy\`) and print the corpus contract'\''s single-line JSON result\: verdict, codes, assessments and manifest digest. Exit 0 evaluated, 3 invalid, 4 incomplete. See conformance/README.md]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+':input -- Normalized events (JSON or YAML), as written by `export`; with --conformance-json, a conformance vector:_files' \
+&& ret=0
+;;
+(validate)
+_arguments "${_arguments_options[@]}" : \
+'-f+[Result format\: \`text\` (the status line, on stderr) or \`json\` (a result object, on stdout); inferred from the --output extension when omitted]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'--format=[Result format\: \`text\` (the status line, on stderr) or \`json\` (a result object, on stdout); inferred from the --output extension when omitted]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'-o+[Write the result to FILE instead (the status line in text, the object in JSON)]:FILE:_files' \
+'--output=[Write the result to FILE instead (the status line in text, the object in JSON)]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+':input -- A manifest written by `scan` or `evaluate`, an in-toto Statement, or JSON Lines of Statements:_files' \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+'--policy=[Policy file; overrides the policy embedded in the manifest]:FILE:_files' \
+'--as-of=[Calendar date dispositions are evaluated on (YYYY-MM-DD). Required when any finding has a non-open disposition; the machine clock is never consulted]:DATE:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+':input -- A manifest (JSON or YAML) written by `scan` or `evaluate`:_files' \
+&& ret=0
+;;
+(pr)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory]:OWNER/REPO:_default' \
+'--policy=[Policy file (defaults to .agent-change-control/policy.yml when present)]:FILE:_files' \
+'*--agent-account=[Treat LOGIN as the verified account of AGENT (repeatable)]:LOGIN=AGENT:_default' \
+'*--agent-trailer=[Treat commits whose Co-Authored-By trailer carries EMAIL as written by AGENT (repeatable; extends the built-in vendor registry)]:EMAIL=AGENT:_default' \
+'*--agent-trace=[Agent Trace record files or directories, bound to commits by vcs.revision (repeatable)]:PATH:_files' \
+'*--attestations=[Attestation files or directories (in-toto Statements, DSSE envelopes or Sigstore bundles, .json or .jsonl), bound to changes by their head commit (repeatable). acc does not verify signatures; see --verified-by]:PATH:_files' \
+'--verified-by=[Who verified the attestations'\'' signatures before this run, recorded verbatim (for example "gh attestation verify, run 123"). Without it attestation claims count as declared, not signed]:TEXT:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
+'*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
+'--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'--format=[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
+yaml\:""
+table\:"A plain-text table for people; \`text\` is an alias"
+sarif\:""
+in-toto\:"An unsigned in-toto Statement v1 whose predicate is the manifest"
+in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
+'-o+[Write to FILE instead of stdout]:FILE:_files' \
+'--output=[Write to FILE instead of stdout]:FILE:_files' \
+'--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+':number -- Pull request number:_default' \
+&& ret=0
+;;
+(doctor)
+_arguments "${_arguments_options[@]}" : \
+'-f+[Report format\: \`text\` (a line per check) or \`json\` (one object)]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'--format=[Report format\: \`text\` (a line per check) or \`json\` (one object)]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'--online[Also check the token, the rate limit and the latest release on api.github.com (GET only)]' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+&& ret=0
+;;
+(completions)
+_arguments "${_arguments_options[@]}" : \
+'-o+[Write the script to FILE instead of stdout]:FILE:_files' \
+'--output=[Write the script to FILE instead of stdout]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+':shell -- Shell to generate completions for:(bash elvish fish powershell zsh)' \
+&& ret=0
+;;
+(manpage)
+_arguments "${_arguments_options[@]}" : \
+'(-o --output)--out-dir=[Write one page per command into DIR instead of printing acc.1 to stdout]:DIR:_files' \
+'-o+[Write acc.1 (the top-level page) to FILE instead of stdout]:FILE:_files' \
+'--output=[Write acc.1 (the top-level page) to FILE instead of stdout]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_acc__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-help-command-$line[1]:"
+        case $line[1] in
+            (scan)
+_arguments "${_arguments_options[@]}" : \
+":: :_acc__subcmd__help__subcmd__scan_commands" \
+"*::: :->scan" \
+&& ret=0
+
+    case $state in
+    (scan)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-help-scan-command-$line[1]:"
+        case $line[1] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+":: :_acc__subcmd__help__subcmd__export_commands" \
+"*::: :->export" \
+&& ret=0
+
+    case $state in
+    (export)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:acc-help-export-command-$line[1]:"
+        case $line[1] in
+            (github)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(evaluate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(validate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(pr)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(doctor)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(completions)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(manpage)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_acc_commands] )) ||
+_acc_commands() {
+    local commands; commands=(
+'scan:Collect facts from a forge and write an evaluated manifest' \
+'export:Export normalized events as JSON for offline evaluation' \
+'evaluate:Evaluate a normalized event export offline' \
+'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
+'check:Enforce policy against a manifest, honoring recorded dispositions' \
+'pr:Collect and evaluate one pull request' \
+'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
+'completions:Generate shell completions' \
+'manpage:Generate man pages' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__check_commands] )) ||
+_acc__subcmd__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc check commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__completions_commands] )) ||
+_acc__subcmd__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc completions commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__doctor_commands] )) ||
+_acc__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc doctor commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__evaluate_commands] )) ||
+_acc__subcmd__evaluate_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc evaluate commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__export_commands] )) ||
+_acc__subcmd__export_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc export commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__export__subcmd__github_commands] )) ||
+_acc__subcmd__export__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc export github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__export__subcmd__help_commands] )) ||
+_acc__subcmd__export__subcmd__help_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc export help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__export__subcmd__help__subcmd__github_commands] )) ||
+_acc__subcmd__export__subcmd__help__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc export help github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__export__subcmd__help__subcmd__help_commands] )) ||
+_acc__subcmd__export__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc export help help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help_commands] )) ||
+_acc__subcmd__help_commands() {
+    local commands; commands=(
+'scan:Collect facts from a forge and write an evaluated manifest' \
+'export:Export normalized events as JSON for offline evaluation' \
+'evaluate:Evaluate a normalized event export offline' \
+'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
+'check:Enforce policy against a manifest, honoring recorded dispositions' \
+'pr:Collect and evaluate one pull request' \
+'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
+'completions:Generate shell completions' \
+'manpage:Generate man pages' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__check_commands] )) ||
+_acc__subcmd__help__subcmd__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help check commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__completions_commands] )) ||
+_acc__subcmd__help__subcmd__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help completions commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__doctor_commands] )) ||
+_acc__subcmd__help__subcmd__doctor_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help doctor commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__evaluate_commands] )) ||
+_acc__subcmd__help__subcmd__evaluate_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help evaluate commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__export_commands] )) ||
+_acc__subcmd__help__subcmd__export_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+    )
+    _describe -t commands 'acc help export commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__export__subcmd__github_commands] )) ||
+_acc__subcmd__help__subcmd__export__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help export github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__help_commands] )) ||
+_acc__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__manpage_commands] )) ||
+_acc__subcmd__help__subcmd__manpage_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help manpage commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__pr_commands] )) ||
+_acc__subcmd__help__subcmd__pr_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help pr commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__scan_commands] )) ||
+_acc__subcmd__help__subcmd__scan_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+    )
+    _describe -t commands 'acc help scan commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__scan__subcmd__github_commands] )) ||
+_acc__subcmd__help__subcmd__scan__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help scan github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__help__subcmd__validate_commands] )) ||
+_acc__subcmd__help__subcmd__validate_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help validate commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__manpage_commands] )) ||
+_acc__subcmd__manpage_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc manpage commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__pr_commands] )) ||
+_acc__subcmd__pr_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc pr commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__scan_commands] )) ||
+_acc__subcmd__scan_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc scan commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__scan__subcmd__github_commands] )) ||
+_acc__subcmd__scan__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc scan github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__scan__subcmd__help_commands] )) ||
+_acc__subcmd__scan__subcmd__help_commands() {
+    local commands; commands=(
+'github:A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'acc scan help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__scan__subcmd__help__subcmd__github_commands] )) ||
+_acc__subcmd__scan__subcmd__help__subcmd__github_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc scan help github commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__scan__subcmd__help__subcmd__help_commands] )) ||
+_acc__subcmd__scan__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc scan help help commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__validate_commands] )) ||
+_acc__subcmd__validate_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc validate commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_acc" ]; then
+    _acc "$@"
+else
+    compdef _acc acc
+fi

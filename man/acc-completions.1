@@ -1,0 +1,49 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-completions 1  "completions 0.5.4" 
+.SH NAME
+acc\-completions \- Generate shell completions
+.SH SYNOPSIS
+\fBacc completions\fR [\fB\-o\fR|\fB\-\-output\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fISHELL\fR> 
+.SH DESCRIPTION
+Generate shell completions
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write the script to FILE instead of stdout
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.TP
+<\fISHELL\fR>
+Shell to generate completions for
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+bash
+.IP \(bu 2
+elvish
+.IP \(bu 2
+fish
+.IP \(bu 2
+powershell
+.IP \(bu 2
+zsh
+.RE
+.SH VERSION
+v0.5.4

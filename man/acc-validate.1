@@ -1,0 +1,46 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-validate 1  "validate 0.5.4" 
+.SH NAME
+acc\-validate \- Validate a manifest: schema, timeline, references and recomputed contents
+.SH SYNOPSIS
+\fBacc validate\fR [\fB\-f\fR|\fB\-\-format\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIINPUT\fR> 
+.SH DESCRIPTION
+Validate a manifest: schema, timeline, references and recomputed contents
+.SH OPTIONS
+.TP
+\fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
+Result format: `text` (the status line, on stderr) or `json` (a result object, on stdout); inferred from the \-\-output extension when omitted
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+text: One status line; `table` is an alias
+.IP \(bu 2
+json: One JSON object (RFC 8785 bytes) followed by a newline
+.RE
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write the result to FILE instead (the status line in text, the object in JSON)
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.TP
+<\fIINPUT\fR>
+A manifest written by `scan` or `evaluate`, an in\-toto Statement, or JSON Lines of Statements
+.SH VERSION
+v0.5.4

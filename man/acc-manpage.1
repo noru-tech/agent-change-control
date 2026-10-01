@@ -1,0 +1,33 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-manpage 1  "manpage 0.5.4" 
+.SH NAME
+acc\-manpage \- Generate man pages
+.SH SYNOPSIS
+\fBacc manpage\fR [\fB\-\-out\-dir\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] 
+.SH DESCRIPTION
+Generate man pages
+.SH OPTIONS
+.TP
+\fB\-\-out\-dir\fR \fI<DIR>\fR
+Write one page per command into DIR instead of printing acc.1 to stdout
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write acc.1 (the top\-level page) to FILE instead of stdout
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH VERSION
+v0.5.4
