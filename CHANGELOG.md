@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- `codeql.yml`: CodeQL static analysis of the Rust, Python and workflow code on every pull request,
+  on main and weekly; results go to code scanning.
+
 ## [0.5.4] - 2026-10-01
 
 ### Changed
