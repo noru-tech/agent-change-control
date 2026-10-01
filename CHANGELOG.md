@@ -54,6 +54,11 @@ All notable changes to this project are documented here. The format is based on
   latest release, to report a newer `acc`; this is the only update check and it never runs on its
   own. Exit 0 when healthy, 2 when a check failed. The JSON report is a new machine output
   (README).
+- Release archives carry shell completions (`completions/acc.bash`, `_acc`, `acc.fish`) and man
+  pages (`man/acc.1` and one per subcommand), through cargo-dist's `include`; the Homebrew formula
+  installs them (`bash_completion`, `zsh_completion`, `fish_completion`, `man1`). They are
+  committed and a test keeps them identical to what `acc` generates. The formula step is a fifth
+  documented hand edit of `release.yml` (CONTRIBUTING).
 - `ACC_GITHUB_API_URL`, testing only: points the binary at the loopback replay server. Only
   `http://127.0.0.1:PORT`/`http://localhost:PORT` without a token is accepted.
 

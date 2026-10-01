@@ -827,3 +827,57 @@ fn doctor_reports_offline_checks_and_fails_on_a_broken_policy() {
         .stdout(predicate::str::contains("help: fix the file against"))
         .stdout(predicate::str::ends_with("1 check(s) failed\n"));
 }
+
+/// The completions and man pages committed for the release archives (`dist-workspace.toml`
+/// `include`) are exactly what this binary generates. Regenerate with
+/// `UPDATE_ASSETS=1 cargo test --test cli release_assets`.
+#[test]
+fn release_assets_match_the_cli() {
+    let dir = tempfile::tempdir().unwrap();
+    let fresh = |sub: &str| dir.path().join(sub);
+    for (shell, name) in [("bash", "acc.bash"), ("zsh", "_acc"), ("fish", "acc.fish")] {
+        acc()
+            .args(["-q", "completions", shell, "-o"])
+            .arg(fresh("completions").join(name))
+            .assert()
+            .success();
+    }
+    acc()
+        .args(["-q", "manpage", "--out-dir"])
+        .arg(fresh("man"))
+        .assert()
+        .success();
+    let update = std::env::var_os("UPDATE_ASSETS").is_some();
+    for sub in ["completions", "man"] {
+        let committed = common::root().join(sub);
+        let names = |d: &std::path::Path| {
+            let mut v: Vec<String> = std::fs::read_dir(d)
+                .map(|r| {
+                    r.map(|e| e.unwrap().file_name().into_string().unwrap())
+                        .collect()
+                })
+                .unwrap_or_default();
+            v.sort();
+            v
+        };
+        if update {
+            let _ = std::fs::remove_dir_all(&committed);
+            std::fs::create_dir_all(&committed).unwrap();
+            for name in names(&fresh(sub)) {
+                std::fs::copy(fresh(sub).join(&name), committed.join(&name)).unwrap();
+            }
+        }
+        assert_eq!(
+            names(&committed),
+            names(&fresh(sub)),
+            "{sub}/ is stale: UPDATE_ASSETS=1 cargo test --test cli release_assets"
+        );
+        for name in names(&committed) {
+            assert!(
+                std::fs::read(committed.join(&name)).unwrap()
+                    == std::fs::read(fresh(sub).join(&name)).unwrap(),
+                "{sub}/{name} is stale: UPDATE_ASSETS=1 cargo test --test cli release_assets"
+            );
+        }
+    }
+}

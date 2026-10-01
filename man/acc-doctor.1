@@ -1,0 +1,43 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-doctor 1  "doctor 0.5.4" 
+.SH NAME
+acc\-doctor \- Check that this environment is ready to collect: version, token, policy file, repository; with \-\-online, the token, the rate limit and whether a newer acc exists (GET only)
+.SH SYNOPSIS
+\fBacc doctor\fR [\fB\-\-online\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] 
+.SH DESCRIPTION
+Check that this environment is ready to collect: version, token, policy file, repository; with \-\-online, the token, the rate limit and whether a newer acc exists (GET only)
+.SH OPTIONS
+.TP
+\fB\-\-online\fR
+Also check the token, the rate limit and the latest release on api.github.com (GET only)
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR [default: text]
+Report format: `text` (a line per check) or `json` (one object)
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+text: One status line; `table` is an alias
+.IP \(bu 2
+json: One JSON object (RFC 8785 bytes) followed by a newline
+.RE
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH VERSION
+v0.5.4
