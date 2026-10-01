@@ -3,6 +3,7 @@
 pub mod check;
 pub mod completions;
 pub mod conformance;
+pub mod detect;
 pub mod evaluate;
 pub mod export;
 pub mod forge;
@@ -23,7 +24,8 @@ acc — change control for software written with coding agents.
 
 Records the agent, human operator, reviewers and merger of each pull request, then evaluates
 explicit separation-of-duty rules (ACC001 to ACC010) deterministically and offline.
-Only `scan`, `export` and `pr` contact GitHub; `evaluate`, `validate` and `check` never touch the
+Only `scan`, `export` and `pr` contact GitHub (and only they read the clock, for the default
+window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
 network or the clock. No LLM is involved, and agent authorship alone is never a finding.
 
 Exit codes: 0 ok · 1 policy threshold exceeded (check, pr) · 2 usage · 3 invalid input or

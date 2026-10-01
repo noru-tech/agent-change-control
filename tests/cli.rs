@@ -704,7 +704,7 @@ fn usage_and_input_failures_print_a_hint_and_a_docs_link() {
         (
             vec!["pr".into(), "421".into()],
             2,
-            "help: pass --repo OWNER/REPO, or set GITHUB_REPOSITORY",
+            "help: pass --repo OWNER/REPO, set GITHUB_REPOSITORY",
             usage.clone(),
         ),
         (

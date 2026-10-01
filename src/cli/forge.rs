@@ -1,8 +1,9 @@
 //! The forge selector and collection flags shared by `scan` and `export`.
 
 use super::Ctx;
+use super::detect;
 use super::io::{self, EvidenceArgs, OutputArgs};
-use crate::collectors::github::{Github, Sources, validate_repo};
+use crate::collectors::github::{Github, Sources};
 use crate::model::Events;
 use crate::{Exit, failure_with_hint};
 use anyhow::Result;
@@ -16,16 +17,40 @@ pub enum Forge {
     Github(Collect),
 }
 
+/// `scan`/`export` arguments: an optional forge (GitHub is the default) and, without one, the
+/// GitHub collection flags directly, so `acc scan` works with no arguments in a GitHub clone.
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct Target {
+    #[command(subcommand)]
+    pub forge: Option<Forge>,
+    #[command(flatten)]
+    pub collect: Collect,
+}
+
+impl Target {
+    /// The collection flags, whichever way they were given.
+    pub fn into_collect(self) -> Collect {
+        match self.forge {
+            Some(Forge::Github(c)) => c,
+            None => self.collect,
+        }
+    }
+}
+
 #[derive(Debug, Args)]
 pub struct Collect {
-    /// Repository as OWNER/REPO.
-    pub repository: String,
+    /// Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin
+    /// remote of the working directory.
+    pub repository: Option<String>,
     /// Start of the merge window, inclusive: YYYY-MM-DD (start of that UTC day) or RFC 3339.
+    /// Defaults to 30 days before --until.
     #[arg(long, value_name = "DATE")]
-    pub since: String,
+    pub since: Option<String>,
     /// End of the merge window, inclusive: YYYY-MM-DD (end of that UTC day) or RFC 3339.
+    /// Defaults to now. A defaulted window is printed and recorded like an explicit one.
     #[arg(long, value_name = "DATE")]
-    pub until: String,
+    pub until: Option<String>,
     /// Policy file (defaults to .agent-change-control/policy.yml when present).
     #[arg(long, value_name = "FILE")]
     pub policy: Option<PathBuf>,
@@ -68,9 +93,30 @@ pub fn client(max_pages: usize) -> Result<Github> {
 
 /// Collect the pull requests merged in the window.
 pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
-    validate_repo(&c.repository)?;
-    let from = io::boundary(&c.since, false)?;
-    let to = io::boundary(&c.until, true)?;
+    let repository = detect::resolve_repository(c.repository.as_deref(), |m| ctx.note(m))?;
+    let since = c
+        .since
+        .as_deref()
+        .map(|s| io::boundary(s, false))
+        .transpose()?;
+    let until = c
+        .until
+        .as_deref()
+        .map(|s| io::boundary(s, true))
+        .transpose()?;
+    let (from, to) = detect::window(since, until, detect::now)?;
+    if since.is_none() || until.is_none() {
+        ctx.note(format!(
+            "window: {} to {} (UTC; {}; pass --since/--until to choose)",
+            detect::show(from),
+            detect::show(to),
+            match (since, until) {
+                (None, None) => "the last 30 days",
+                (Some(_), None) => "ending now",
+                _ => "30 days before --until",
+            }
+        ));
+    }
     if from > to {
         return Err(failure_with_hint(
             Exit::Usage,
@@ -85,14 +131,14 @@ pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
     let vendors = c.evidence.vendors()?;
     ctx.debug(format!(
         "collecting {} merged from {} to {} (at most {} pages per endpoint)",
-        c.repository,
+        repository,
         from.to_rfc3339_opts(SecondsFormat::AutoSi, true),
         to.to_rfc3339_opts(SecondsFormat::AutoSi, true),
         c.max_pages
     ));
     debug_auth(ctx);
     client(c.max_pages)?.collect(
-        &c.repository,
+        &repository,
         from,
         to,
         None,

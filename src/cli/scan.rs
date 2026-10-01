@@ -1,7 +1,7 @@
 //! `acc scan github OWNER/REPO --since DATE --until DATE`
 
 use super::Ctx;
-use super::forge::{self, Forge};
+use super::forge::{self, Target};
 use super::io::{self, DEFAULT_MANIFEST};
 use crate::output::Format;
 use crate::{Exit, manifest};
@@ -9,12 +9,12 @@ use anyhow::Result;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    #[command(subcommand)]
-    pub forge: Forge,
+    #[command(flatten)]
+    pub target: Target,
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
-    let Forge::Github(mut c) = args.forge;
+    let mut c = args.target.into_collect();
     ctx.debug(format!(
         "policy: {}",
         io::policy_source(c.policy.as_deref())

@@ -1,7 +1,7 @@
 //! `acc export github OWNER/REPO --since DATE --until DATE`
 
 use super::Ctx;
-use super::forge::{self, Forge};
+use super::forge::{self, Target};
 use super::io;
 use crate::output::Format;
 use crate::{Exit, canonical, failure};
@@ -9,12 +9,12 @@ use anyhow::Result;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    #[command(subcommand)]
-    pub forge: Forge,
+    #[command(flatten)]
+    pub target: Target,
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
-    let Forge::Github(c) = args.forge;
+    let c = args.target.into_collect();
     if c.output.format.is_some_and(|f| f != Format::Json) {
         return Err(failure(Exit::Usage, "export supports JSON only"));
     }

@@ -1,7 +1,7 @@
 //! `acc pr NUMBER --repo OWNER/REPO`
 
 use super::io::{self, EvidenceArgs, OutputArgs};
-use super::{Ctx, forge};
+use super::{Ctx, detect, forge};
 use crate::collectors::github::{Sources, validate_repo};
 use crate::output::Format;
 use crate::{Exit, failure_with_hint, manifest};
@@ -13,7 +13,8 @@ use std::path::PathBuf;
 pub struct Args {
     /// Pull request number.
     pub number: u64,
-    /// Repository as OWNER/REPO.
+    /// Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin
+    /// remote of the working directory.
     #[arg(long, env = "GITHUB_REPOSITORY", value_name = "OWNER/REPO")]
     pub repo: Option<String>,
     /// Policy file (defaults to .agent-change-control/policy.yml when present).
@@ -32,13 +33,21 @@ pub struct Args {
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
-    let repo = args.repo.ok_or_else(|| {
-        failure_with_hint(
-            Exit::Usage,
-            "pr requires --repo OWNER/REPO or GITHUB_REPOSITORY",
-            "pass --repo OWNER/REPO, or set GITHUB_REPOSITORY (GitHub Actions sets it for you)",
-        )
-    })?;
+    let repo = match args.repo {
+        Some(repo) => repo,
+        None => detect::repository()
+            .map(|(repo, source)| {
+                ctx.note(format!("repository: {repo} (from {})", source.describe()));
+                repo
+            })
+            .ok_or_else(|| {
+                failure_with_hint(
+                    Exit::Usage,
+                    "pr requires --repo OWNER/REPO or GITHUB_REPOSITORY",
+                    "pass --repo OWNER/REPO, set GITHUB_REPOSITORY (GitHub Actions sets it for you), or run inside a clone whose origin remote is on github.com",
+                )
+            })?,
+    };
     validate_repo(&repo)?;
     let from = DateTime::<Utc>::UNIX_EPOCH;
     let to = Utc
