@@ -33,7 +33,9 @@ fn offline_workflow_and_exit_codes() {
         .arg(fixture("approval-after-merge", "events.json"))
         .assert()
         .code(3)
-        .stderr(predicate::str::contains("ACV001"));
+        .stderr(predicate::str::contains(
+            "ACV001 approval_after_merge (see https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACV001.md)",
+        ));
     acc().arg("unknown-command").assert().code(2);
     acc()
         .arg("evaluate")

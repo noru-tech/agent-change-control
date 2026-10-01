@@ -29,6 +29,15 @@ pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
+/// Base URL of the documentation tree. Every rule, validation code and exit code has a stable page
+/// under it; this is the one place to change when the docs move to their own site.
+pub const DOCS_BASE_URL: &str = "https://github.com/noru-tech/agent-change-control/blob/main/docs";
+
+/// The documentation page of a rule (`ACC001`) or validation code (`ACV001`).
+pub fn rule_doc_url(code: &str) -> String {
+    format!("{DOCS_BASE_URL}/rules/{code}.md")
+}
+
 /// Process exit codes used by `acc`.
 ///
 /// * `0` — successful generation/validation, or the policy threshold passed
@@ -103,6 +112,14 @@ mod tests {
         assert_eq!(Exit::Auth.code(), 5);
         assert_eq!(Exit::Api.code(), 6);
         assert_eq!(Exit::Unsupported.code(), 7);
+    }
+
+    #[test]
+    fn rule_pages_live_under_the_docs_base() {
+        assert_eq!(
+            rule_doc_url("ACC001"),
+            "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC001.md"
+        );
     }
 
     #[test]
