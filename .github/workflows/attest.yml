@@ -35,7 +35,7 @@ jobs:
         uses: ./
         with:
           # The last *published* release; bump together with change-control.yml.
-          version: "0.5.4"
+          version: "0.6.0"
           fail-on-findings: false
           format: json
           output: acc-manifest.json
