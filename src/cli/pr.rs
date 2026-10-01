@@ -2,9 +2,9 @@
 
 use super::io::{self, EvidenceArgs, OutputArgs};
 use super::{Ctx, forge};
-use crate::collectors::github::{Github, Sources, validate_repo};
+use crate::collectors::github::{Sources, validate_repo};
 use crate::output::Format;
-use crate::{Exit, failure, manifest};
+use crate::{Exit, failure_with_hint, manifest};
 use anyhow::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use std::path::PathBuf;
@@ -33,9 +33,10 @@ pub struct Args {
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let repo = args.repo.ok_or_else(|| {
-        failure(
+        failure_with_hint(
             Exit::Usage,
             "pr requires --repo OWNER/REPO or GITHUB_REPOSITORY",
+            "pass --repo OWNER/REPO, or set GITHUB_REPOSITORY (GitHub Actions sets it for you)",
         )
     })?;
     validate_repo(&repo)?;
@@ -51,7 +52,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let vendors = args.evidence.vendors()?;
     ctx.debug(format!("collecting {repo} pull request {}", args.number));
     forge::debug_auth(ctx);
-    let events = Github::new(io::token(), args.max_pages)?.collect(
+    let events = forge::client(args.max_pages)?.collect(
         &repo,
         from,
         to,
@@ -71,5 +72,12 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
     let (_, exit) = manifest::check(&m, None, None)?;
     args.output.render(ctx, &m, Format::Table)?;
+    if exit == Exit::Incomplete {
+        super::warn_incomplete(
+            ctx,
+            &m.events,
+            "raise --max-pages (at most 1000) or retry once the pull request stops changing",
+        );
+    }
     Ok(exit)
 }

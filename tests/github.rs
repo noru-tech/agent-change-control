@@ -1,5 +1,7 @@
 //! The GitHub collector against a loopback HTTP server that replays fixture responses.
 
+mod common;
+
 use agent_change_control::collectors::github::{Github, Sources, UNAVAILABLE_ACTOR};
 use agent_change_control::model::{
     ActorKind, Confidence, Events, EvidenceKind, Policy, ReviewState, RuleId, Status,
@@ -9,6 +11,7 @@ use agent_change_control::provenance::agent_trace::AgentTraces;
 use agent_change_control::provenance::attestations::Attestations;
 use agent_change_control::provenance::trailer_registry;
 use agent_change_control::{Exit, exit_for, manifest};
+use predicates::prelude::*;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::io::{ErrorKind, Read, Write};
@@ -137,6 +140,11 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
     match mode {
         "unauthorized" => return ("401 Unauthorized", "", "{}".into()),
         "rate-limit" => return ("429 Too Many Requests", "", "{}".into()),
+        "rate-limit-header" => {
+            return ("403 Forbidden", "X-RateLimit-Remaining: 0\r\n", "{}".into());
+        }
+        "forbidden" => return ("403 Forbidden", "", "{}".into()),
+        "not-found" => return ("404 Not Found", "", "{}".into()),
         "redirect" => return ("302 Found", "", "{}".into()),
         _ => {}
     }
@@ -617,4 +625,140 @@ fn known_agent_reviewers_cannot_count_as_humans() {
         m.findings.iter().map(|f| f.rule_id).collect::<Vec<_>>(),
         vec![RuleId::Acc001, RuleId::Acc003, RuleId::Acc007]
     );
+}
+
+/// `acc` against the replay server in `mode`, through the testing-only API base variable.
+fn acc_against(server: &Server) -> assert_cmd::Command {
+    let mut cmd = common::acc();
+    cmd.env("ACC_GITHUB_API_URL", &server.base);
+    cmd
+}
+
+const SCAN: [&str; 7] = [
+    "scan",
+    "github",
+    "acme/api",
+    "--since",
+    "2026-08-01",
+    "--until",
+    "2026-08-31",
+];
+
+#[test]
+fn failures_print_a_hint_and_a_docs_link() {
+    let docs = "https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md";
+    for (mode, code, help, anchor) in [
+        (
+            "unauthorized",
+            5,
+            "help: set GITHUB_TOKEN or GH_TOKEN",
+            "#5-authentication-rejected",
+        ),
+        (
+            "rate-limit",
+            6,
+            "limited to 60 an hour",
+            "#6-api-permission-rate-limit-or-transport-failure",
+        ),
+        (
+            "rate-limit-header",
+            6,
+            "limited to 60 an hour",
+            "#6-api-permission-rate-limit-or-transport-failure",
+        ),
+        (
+            "forbidden",
+            6,
+            "refused an unauthenticated request",
+            "#6-api-permission-rate-limit-or-transport-failure",
+        ),
+        (
+            "not-found",
+            6,
+            "a private repository looks missing",
+            "#6-api-permission-rate-limit-or-transport-failure",
+        ),
+    ] {
+        let server = Server::start(mode);
+        for args in [
+            &SCAN[..],
+            &[
+                "export",
+                "github",
+                "acme/api",
+                "--since",
+                "2026-08-01",
+                "--until",
+                "2026-08-31",
+            ],
+            &["pr", "421", "--repo", "acme/api"],
+        ] {
+            let out = acc_against(&server).args(args).output().unwrap();
+            let stderr = String::from_utf8(out.stderr).unwrap();
+            assert_eq!(out.status.code(), Some(code), "{mode} {args:?}: {stderr}");
+            assert!(out.stdout.is_empty(), "{mode}");
+            let lines: Vec<&str> = stderr.lines().collect();
+            assert!(lines[0].starts_with("error: GitHub "), "{stderr}");
+            assert!(
+                lines[1].starts_with("help: ") && lines[1].contains(help),
+                "{mode}: {stderr}"
+            );
+            assert_eq!(lines[2], format!("see: {docs}{anchor}"), "{mode}");
+            assert!(!stderr.contains("127.0.0.1"), "{stderr}");
+        }
+    }
+}
+
+#[test]
+fn incomplete_collection_warns_with_a_hint() {
+    let server = Server::start("capped");
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("m.json");
+    acc_against(&server)
+        .args(SCAN)
+        .args(["--max-pages", "1", "-o"])
+        .arg(&out)
+        .assert()
+        .code(4)
+        .stderr(predicates::str::contains(
+            "warning: collection incomplete: Pull request pagination limit reached",
+        ))
+        .stderr(predicates::str::contains("help: raise --max-pages"))
+        .stderr(predicates::str::contains(
+            "see: https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#4-collection-incomplete",
+        ));
+    assert!(out.exists());
+    acc_against(&server)
+        .args(["-q"])
+        .args(SCAN)
+        .args(["--max-pages", "1", "-o"])
+        .arg(&out)
+        .assert()
+        .code(4)
+        .stderr("");
+    acc_against(&server)
+        .args(["check"])
+        .arg(&out)
+        .assert()
+        .code(4)
+        .stderr(predicates::str::contains(
+            "help: the input records an incomplete collection",
+        ));
+}
+
+#[test]
+fn the_testing_api_base_never_receives_a_token() {
+    let server = Server::start("clean");
+    acc_against(&server)
+        .env("GITHUB_TOKEN", "ghp_should_never_be_sent")
+        .args(SCAN)
+        .assert()
+        .code(2)
+        .stderr(predicates::str::contains("unsupported API origin"))
+        .stderr(predicates::str::contains("ghp_should_never_be_sent").not());
+    common::acc()
+        .env("ACC_GITHUB_API_URL", "https://evil.example")
+        .args(SCAN)
+        .assert()
+        .code(2);
 }

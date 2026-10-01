@@ -64,6 +64,25 @@ impl Exit {
     pub const fn code(self) -> i32 {
         self as i32
     }
+
+    /// The anchor of this code's section in `docs/exit-codes.md`.
+    pub const fn anchor(self) -> &'static str {
+        match self {
+            Exit::Ok => "0-success",
+            Exit::PolicyFailed => "1-policy-threshold-exceeded",
+            Exit::Usage => "2-invalid-command-line-arguments",
+            Exit::InvalidInput => "3-invalid-input-or-manifest",
+            Exit::Incomplete => "4-collection-incomplete",
+            Exit::Auth => "5-authentication-rejected",
+            Exit::Api => "6-api-permission-rate-limit-or-transport-failure",
+            Exit::Unsupported => "7-unsupported-api-data-condition",
+        }
+    }
+
+    /// The documentation of this code: its section in `docs/exit-codes.md`.
+    pub fn doc_url(self) -> String {
+        format!("{DOCS_BASE_URL}/exit-codes.md#{}", self.anchor())
+    }
 }
 
 impl From<Exit> for std::process::ExitCode {
@@ -72,24 +91,65 @@ impl From<Exit> for std::process::ExitCode {
     }
 }
 
-/// An error that carries the process exit status it must produce.
+/// An error that carries the process exit status it must produce, and optionally how to fix it.
 ///
 /// Transport failures use fixed messages so that response headers and bodies never reach the
-/// terminal or a log.
+/// terminal or a log. The hint and the documentation link are printed on their own stderr lines
+/// (`help: …`, `see: …`) and never reach a machine-readable output.
 #[derive(Debug, thiserror::Error)]
 #[error("{message}")]
 pub struct Failure {
     pub exit: Exit,
     pub message: Cow<'static, str>,
+    /// What to do about it, in one sentence.
+    pub hint: Option<Cow<'static, str>>,
+    /// Where to read more; defaults to the exit code's section when a hint is given.
+    pub see: Option<String>,
+}
+
+impl Failure {
+    pub fn new(exit: Exit, message: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            exit,
+            message: message.into(),
+            hint: None,
+            see: None,
+        }
+    }
+
+    /// Attach a hint.
+    pub fn hint(mut self, hint: impl Into<Cow<'static, str>>) -> Self {
+        self.hint = Some(hint.into());
+        self
+    }
+
+    /// Attach a documentation link other than the exit code's section.
+    pub fn see(mut self, url: impl Into<String>) -> Self {
+        self.see = Some(url.into());
+        self
+    }
+
+    /// The documentation link to print: the explicit one, else the exit code's section when
+    /// there is a hint.
+    pub fn doc_url(&self) -> Option<String> {
+        self.see
+            .clone()
+            .or_else(|| self.hint.as_ref().map(|_| self.exit.doc_url()))
+    }
 }
 
 /// Build an [`anyhow::Error`] that exits with `exit`.
 pub fn failure(exit: Exit, message: impl Into<Cow<'static, str>>) -> anyhow::Error {
-    Failure {
-        exit,
-        message: message.into(),
-    }
-    .into()
+    Failure::new(exit, message).into()
+}
+
+/// Build an [`anyhow::Error`] that exits with `exit` and tells the user how to fix it.
+pub fn failure_with_hint(
+    exit: Exit,
+    message: impl Into<Cow<'static, str>>,
+    hint: impl Into<Cow<'static, str>>,
+) -> anyhow::Error {
+    Failure::new(exit, message).hint(hint).into()
 }
 
 /// The exit status for any error: a [`Failure`] carries its own, anything else is invalid input.
@@ -112,6 +172,49 @@ mod tests {
         assert_eq!(Exit::Auth.code(), 5);
         assert_eq!(Exit::Api.code(), 6);
         assert_eq!(Exit::Unsupported.code(), 7);
+    }
+
+    #[test]
+    fn exit_codes_link_to_their_section() {
+        assert_eq!(
+            Exit::Auth.doc_url(),
+            "https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#5-authentication-rejected"
+        );
+        let docs = include_str!("../docs/exit-codes.md");
+        for exit in [
+            Exit::Ok,
+            Exit::PolicyFailed,
+            Exit::Usage,
+            Exit::InvalidInput,
+            Exit::Incomplete,
+            Exit::Auth,
+            Exit::Api,
+            Exit::Unsupported,
+        ] {
+            assert!(
+                docs.contains(&format!("(#{})", exit.anchor())),
+                "{}",
+                exit.anchor()
+            );
+        }
+    }
+
+    #[test]
+    fn hints_default_to_the_exit_code_section() {
+        let plain = Failure::new(Exit::Usage, "bad flag");
+        assert_eq!(plain.doc_url(), None);
+        let hinted = Failure::new(Exit::Usage, "bad flag").hint("fix it");
+        assert_eq!(hinted.doc_url(), Some(Exit::Usage.doc_url()));
+        let linked = Failure::new(Exit::InvalidInput, "bad policy")
+            .hint("fix it")
+            .see("https://example.invalid/policy");
+        assert_eq!(
+            linked.doc_url().as_deref(),
+            Some("https://example.invalid/policy")
+        );
+        let err = failure_with_hint(Exit::Auth, "nope", "set a token");
+        assert_eq!(exit_for(&err), Exit::Auth);
+        assert_eq!(err.to_string(), "nope");
     }
 
     #[test]

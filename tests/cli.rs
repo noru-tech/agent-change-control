@@ -272,7 +272,11 @@ fn dispositions_require_as_of_and_expire() {
         .arg(&path)
         .assert()
         .code(2)
-        .stderr(predicate::str::contains("--as-of"));
+        .stderr(predicate::str::contains("--as-of"))
+        .stderr(predicate::str::contains("help: pass --as-of YYYY-MM-DD"))
+        .stderr(predicate::str::contains(
+            "see: https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#2-invalid-command-line-arguments",
+        ));
     acc()
         .args(["check", "--as-of", "2026-09-18"])
         .arg(&path)
@@ -677,4 +681,99 @@ fn completions_and_man_pages_write_to_a_file() {
 
 fn stdout_of_manpage() -> String {
     stdout(acc().arg("manpage"))
+}
+
+/// stderr of a run that must exit with `code`.
+fn stderr_of(cmd: &mut assert_cmd::Command, code: i32) -> String {
+    let out = cmd.output().expect("run acc");
+    assert_eq!(
+        out.status.code(),
+        Some(code),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stderr).unwrap()
+}
+
+#[test]
+fn usage_and_input_failures_print_a_hint_and_a_docs_link() {
+    let docs = "https://github.com/noru-tech/agent-change-control/blob/main/docs";
+    let usage = format!("see: {docs}/exit-codes.md#2-invalid-command-line-arguments");
+    let clean = fixture("human-clean", "expected-manifest.json");
+    let cases: Vec<(Vec<std::ffi::OsString>, i32, &str, String)> = vec![
+        (
+            vec!["pr".into(), "421".into()],
+            2,
+            "help: pass --repo OWNER/REPO, or set GITHUB_REPOSITORY",
+            usage.clone(),
+        ),
+        (
+            vec![
+                "scan".into(),
+                "github".into(),
+                "acme/api".into(),
+                "--since".into(),
+                "2026-08-32".into(),
+                "--until".into(),
+                "2026-09-01".into(),
+            ],
+            2,
+            "help: use YYYY-MM-DD",
+            usage.clone(),
+        ),
+        (
+            vec![
+                "scan".into(),
+                "github".into(),
+                "acme/api".into(),
+                "--since".into(),
+                "2026-09-01".into(),
+                "--until".into(),
+                "2026-08-01".into(),
+            ],
+            2,
+            "help: --since must not be later than --until",
+            usage.clone(),
+        ),
+        (
+            vec![
+                "check".into(),
+                "--as-of".into(),
+                "yesterday".into(),
+                clean.clone().into(),
+            ],
+            2,
+            "help: use a calendar date such as --as-of 2026-09-30",
+            usage.clone(),
+        ),
+        (
+            vec![
+                "evaluate".into(),
+                "--policy".into(),
+                "Cargo.toml".into(),
+                fixture("human-clean", "events.json").into(),
+            ],
+            3,
+            "help: fix the file against schemas/policy.schema.json",
+            format!("see: {docs}/policy.md"),
+        ),
+        (
+            vec![
+                "check".into(),
+                "--policy".into(),
+                "missing-policy.yml".into(),
+                clean.into(),
+            ],
+            3,
+            "help: fix the file against schemas/policy.schema.json",
+            format!("see: {docs}/policy.md"),
+        ),
+    ];
+    for (args, code, help, see) in cases {
+        let stderr = stderr_of(acc().args(&args), code);
+        let lines: Vec<&str> = stderr.lines().collect();
+        assert!(lines[0].starts_with("error: "), "{args:?}: {stderr}");
+        assert!(lines[1].starts_with(help), "{args:?}: {stderr}");
+        assert_eq!(lines[2], see, "{args:?}");
+    }
 }

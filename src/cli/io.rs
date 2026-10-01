@@ -4,7 +4,7 @@ use crate::model::*;
 use crate::output::Format;
 use crate::provenance::agent_trace::AgentTraces;
 use crate::provenance::attestations::Attestations;
-use crate::{Exit, failure};
+use crate::{Exit, Failure, failure, failure_with_hint};
 use anyhow::{Context, Result, anyhow, ensure};
 use chrono::NaiveDate;
 use clap::Args;
@@ -133,10 +133,20 @@ pub fn policy_source(path: Option<&Path>) -> String {
 
 /// Load `path`, else the default policy file when it exists, else the built-in defaults.
 pub fn load_policy(path: Option<&Path>) -> Result<Policy> {
-    match policy_path(path) {
-        Some(path) => crate::policy::resolve(read(path, "policy")?),
-        None => Ok(Policy::default()),
-    }
+    let Some(path) = policy_path(path) else {
+        return Ok(Policy::default());
+    };
+    read(path, "policy")
+        .and_then(crate::policy::resolve)
+        .map_err(|err| {
+            Failure::new(
+                crate::exit_for(&err),
+                format!("invalid policy file {}: {err:#}", path.display()),
+            )
+            .hint("fix the file against schemas/policy.schema.json, or remove it to use the built-in defaults")
+            .see(format!("{}/policy.md", crate::DOCS_BASE_URL))
+            .into()
+        })
 }
 
 /// Parse repeated `LOGIN=AGENT` mappings into a lowercase login map.
@@ -271,12 +281,20 @@ impl EvidenceArgs {
     }
 }
 
+fn bad_date(message: &'static str) -> anyhow::Error {
+    failure_with_hint(
+        Exit::Usage,
+        message,
+        "use YYYY-MM-DD (a whole UTC day) or an RFC 3339 timestamp such as 2026-08-01T00:00:00Z",
+    )
+}
+
 /// Parse a window boundary: a calendar date expands to the start (or `end`) of that UTC day; an
 /// RFC 3339 timestamp is taken as is.
 pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
     if s.len() == 10 {
-        let date = NaiveDate::parse_from_str(s, "%Y-%m-%d")
-            .map_err(|_| failure(Exit::Usage, "invalid date"))?;
+        let date =
+            NaiveDate::parse_from_str(s, "%Y-%m-%d").map_err(|_| bad_date("invalid date"))?;
         let time = if end {
             date.and_hms_nano_opt(23, 59, 59, 999_999_999)
         } else {
@@ -284,9 +302,9 @@ pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
         };
         return time
             .map(|t| t.and_utc())
-            .ok_or_else(|| failure(Exit::Usage, "invalid date"));
+            .ok_or_else(|| bad_date("invalid date"));
     }
-    crate::normalize::timestamp(s).map_err(|_| failure(Exit::Usage, "invalid date/time"))
+    crate::normalize::timestamp(s).map_err(|_| bad_date("invalid date/time"))
 }
 
 /// The GitHub token from the environment: `GITHUB_TOKEN`, else `GH_TOKEN`.

@@ -351,7 +351,9 @@ only when an `ACV` code applies. The exit status is the same as in text.
 | 6 | API, permission, rate-limit or transport failure |
 | 7 | Unsupported API data condition |
 
-What each code means and what to do about it: [exit codes](docs/exit-codes.md).
+What each code means and what to do about it: [exit codes](docs/exit-codes.md). Common failures
+(missing or rejected token, rate limit, missing repository, bad date, invalid policy file, incomplete
+collection) print a `help:` line with the fix and a `see:` line with that page's section on stderr.
 
 Warnings do not fail the default policy. `scan` and `evaluate` write findings without returning
 policy exit 1; use `check` to enforce policy. See [policy semantics](docs/policy.md).

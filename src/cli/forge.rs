@@ -4,7 +4,7 @@ use super::Ctx;
 use super::io::{self, EvidenceArgs, OutputArgs};
 use crate::collectors::github::{Github, Sources, validate_repo};
 use crate::model::Events;
-use crate::{Exit, failure};
+use crate::{Exit, failure_with_hint};
 use anyhow::Result;
 use chrono::SecondsFormat;
 use clap::{Args, Subcommand};
@@ -50,13 +50,33 @@ pub fn debug_auth(ctx: &Ctx) {
     });
 }
 
+/// What to do about an incomplete collection.
+pub const RECOLLECT: &str = "raise --max-pages (at most 1000) or narrow the window, then collect again; the output records the gap";
+
+/// Testing only: a loopback API base (`http://127.0.0.1:PORT`) for the integration tests'
+/// replay server. Any other value, or a token in the environment, is refused, so a token can
+/// never be sent anywhere but `api.github.com`.
+pub const API_URL_ENV: &str = "ACC_GITHUB_API_URL";
+
+/// The GitHub client for the environment's token, honoring the testing-only [`API_URL_ENV`].
+pub fn client(max_pages: usize) -> Result<Github> {
+    match std::env::var(API_URL_ENV) {
+        Ok(base) if !base.is_empty() => Github::with_base(io::token(), max_pages, &base),
+        _ => Github::new(io::token(), max_pages),
+    }
+}
+
 /// Collect the pull requests merged in the window.
 pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
     validate_repo(&c.repository)?;
     let from = io::boundary(&c.since, false)?;
     let to = io::boundary(&c.until, true)?;
     if from > to {
-        return Err(failure(Exit::Usage, "window is reversed"));
+        return Err(failure_with_hint(
+            Exit::Usage,
+            "window is reversed",
+            "--since must not be later than --until",
+        ));
     }
     let known = io::known(&c.agent_account)?;
     let registry = c.evidence.registry()?;
@@ -71,7 +91,7 @@ pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
         c.max_pages
     ));
     debug_auth(ctx);
-    Github::new(io::token(), c.max_pages)?.collect(
+    client(c.max_pages)?.collect(
         &c.repository,
         from,
         to,

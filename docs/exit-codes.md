@@ -15,6 +15,12 @@ once, in `Exit` in [`src/lib.rs`](../src/lib.rs), and a unit test pins each valu
 | [6](#6-api-permission-rate-limit-or-transport-failure) | API, permission, rate-limit or transport failure | `scan`, `export`, `pr` |
 | [7](#7-unsupported-api-data-condition) | Unsupported API data condition | `scan`, `export`, `pr` |
 
+Errors go to stderr as `error: …`. For the common failures (a missing or rejected token, a rate
+limit, a missing repository, a bad date, an invalid policy file) two more lines follow: `help: …`
+says what to do, and `see: <url>` links to the section below or to the page that explains it. An
+incomplete collection is not an error; it prints `warning: collection incomplete: <reason>` with the
+same two lines (unless `-q`). None of these lines ever reaches stdout or a machine-readable output.
+
 Findings never change the exit code of `scan` or `evaluate`: they write the manifest and exit 0
 (or 4). Only `check` and `pr` enforce the policy threshold. The [GitHub Action](github-action.md)
 treats 0, 1 and 4 as verdicts (it still renders SARIF and the job summary) and any other code as a
@@ -53,6 +59,8 @@ non-open dispositions but no `--as-of` date. The message says which.
 ```console
 $ acc scan github acme/api --since 2026-08-31 --until 2026-08-01; echo $?
 error: window is reversed
+help: --since must not be later than --until
+see: https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#2-invalid-command-line-arguments
 2
 ```
 
@@ -79,6 +87,9 @@ over exit 1: an incomplete window is never reported as a plain policy failure or
 
 ```console
 $ acc evaluate tests/fixtures/incomplete-window/events.json --format table > /dev/null; echo $?
+warning: collection incomplete: Review collection unavailable
+help: the input records an incomplete collection; collect again (raise --max-pages or narrow the window) before relying on the result
+see: https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#4-collection-incomplete
 4
 ```
 
@@ -91,12 +102,23 @@ GitHub answered 401 to a collecting command. The token in `GITHUB_TOKEN` (or `GH
 missing, expired or revoked. Public repositories can be read without a token; private ones need
 read access to contents and pull requests. Tokens never appear in messages or exports.
 
+```console
+$ acc scan github acme/private --since 2026-08-01 --until 2026-08-31; echo $?
+error: GitHub authentication failed
+help: the token in GITHUB_TOKEN or GH_TOKEN was rejected: it is expired, revoked or mistyped; replace it with one that has read access to contents and pull requests
+see: https://github.com/noru-tech/agent-change-control/blob/main/docs/exit-codes.md#5-authentication-rejected
+5
+```
+
 ## 6: API, permission, rate-limit or transport failure
 
 A request to `api.github.com` failed: the connection failed, GitHub answered 403 or 429 (forbidden
 or rate-limited), a resource was not found, the status was unexpected, the response exceeded
 8 MiB, or the body was not valid JSON. Messages are fixed strings so that response headers and
-bodies never reach a log. Check the token's permissions and the rate limit, then retry.
+bodies never reach a log. Check the token's permissions and the rate limit, then retry. The
+`help:` line says which it was: without a token GitHub allows 60 requests an hour, a 404 on a
+private repository usually means the token is missing or cannot read it, and a 403 with an
+exhausted rate limit is reported as a rate limit, not a permission problem.
 
 ## 7: Unsupported API data condition
 
