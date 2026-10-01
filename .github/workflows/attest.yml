@@ -17,15 +17,17 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
-  id-token: write
-  attestations: write
 
 jobs:
   attest:
     name: attest the verdict
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Evaluate the merged pull request

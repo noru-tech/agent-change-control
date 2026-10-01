@@ -13,6 +13,9 @@ All notable changes to this project are documented here. The format is based on
   the one 0.29 reported first), `sha2` 0.10 → 0.11, `base64` 0.22 → 0.23, `thiserror` 2.0.21,
   and the pinned `crate-ci/typos` action to v1.50.3. Output is unchanged; `deny.toml` now allows
   the `Zlib` license (`foldhash`, through `jsonschema`).
+- Workflows grant write permissions per job instead of workflow-wide: `release.yml` gives
+  `contents: write` only to the jobs that create and upload the release, and `attest.yml` and
+  `conformance-release.yml` give `id-token` and `attestations` write only to their signing job.
 
 ## [0.5.3] - 2026-09-30
 
