@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Dependencies updated: `jsonschema` 0.29 → 0.58 (`ACV010` still names the same violation:
+  the one 0.29 reported first), `sha2` 0.10 → 0.11, `base64` 0.22 → 0.23, `thiserror` 2.0.21,
+  and the pinned `crate-ci/typos` action to v1.50.3. Output is unchanged; `deny.toml` now allows
+  the `Zlib` license (`foldhash`, through `jsonschema`).
+
 ## [0.5.3] - 2026-09-30
 
 Distribution, documentation and CI only; no change to the tool's behaviour.
