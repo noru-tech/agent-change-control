@@ -15,8 +15,12 @@ pub struct Args {
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let Forge::Github(mut c) = args.forge;
+    ctx.debug(format!(
+        "policy: {}",
+        io::policy_source(c.policy.as_deref())
+    ));
     let policy = io::load_policy(c.policy.as_deref())?;
-    let events = forge::collect(&c)?;
+    let events = forge::collect(ctx, &c)?;
     let exit = if io::incomplete(&events) {
         Exit::Incomplete
     } else {
@@ -26,7 +30,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     if c.output.output.is_none() && c.output.format.is_none() {
         c.output.output = Some(DEFAULT_MANIFEST.into());
     }
-    c.output.render(&m, Format::Yaml)?;
+    c.output.render(ctx, &m, Format::Yaml)?;
     if let Some(path) = &c.output.output {
         ctx.note(format!("wrote {}", path.display()));
     }

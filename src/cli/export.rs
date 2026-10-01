@@ -24,12 +24,17 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             "export does not accept a policy; use evaluate",
         ));
     }
-    let events = forge::collect(&c)?;
+    let events = forge::collect(ctx, &c)?;
     let exit = if io::incomplete(&events) {
         Exit::Incomplete
     } else {
         Exit::Ok
     };
+    ctx.debug(format!(
+        "{} changes; writing json to {}",
+        events.changes.len(),
+        io::destination(c.output.output.as_deref())
+    ));
     io::write(&canonical::jcs_bytes(&events)?, c.output.output.as_deref())?;
     if let Some(path) = &c.output.output {
         ctx.note(format!("wrote {}", path.display()));

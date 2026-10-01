@@ -23,14 +23,24 @@ pub struct Args {
     pub output: OutputArgs,
 }
 
-pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
+pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let m = io::read(&args.input, "manifest")?;
     let policy = args
         .policy
         .as_deref()
         .map(|p| io::load_policy(Some(p)))
         .transpose()?;
+    ctx.debug(format!(
+        "policy: {}",
+        args.policy.as_deref().map_or_else(
+            || "embedded in the manifest".into(),
+            |p| p.display().to_string()
+        )
+    ));
+    if let Some(date) = args.as_of {
+        ctx.debug(format!("dispositions evaluated as of {date}"));
+    }
     let (checked, exit) = manifest::check(&m, policy, args.as_of)?;
-    args.output.render(&checked, Format::Table)?;
+    args.output.render(ctx, &checked, Format::Table)?;
     Ok(exit)
 }

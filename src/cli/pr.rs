@@ -1,7 +1,7 @@
 //! `acc pr NUMBER --repo OWNER/REPO`
 
-use super::Ctx;
 use super::io::{self, EvidenceArgs, OutputArgs};
+use super::{Ctx, forge};
 use crate::collectors::github::{Github, Sources, validate_repo};
 use crate::output::Format;
 use crate::{Exit, failure, manifest};
@@ -31,7 +31,7 @@ pub struct Args {
     pub output: OutputArgs,
 }
 
-pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
+pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let repo = args.repo.ok_or_else(|| {
         failure(
             Exit::Usage,
@@ -49,6 +49,8 @@ pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
     let traces = args.evidence.traces()?;
     let attestations = args.evidence.attestations()?;
     let vendors = args.evidence.vendors()?;
+    ctx.debug(format!("collecting {repo} pull request {}", args.number));
+    forge::debug_auth(ctx);
     let events = Github::new(io::token(), args.max_pages)?.collect(
         &repo,
         from,
@@ -62,8 +64,12 @@ pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
             vendors: &vendors,
         },
     )?;
+    ctx.debug(format!(
+        "policy: {}",
+        io::policy_source(args.policy.as_deref())
+    ));
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
     let (_, exit) = manifest::check(&m, None, None)?;
-    args.output.render(&m, Format::Table)?;
+    args.output.render(ctx, &m, Format::Table)?;
     Ok(exit)
 }

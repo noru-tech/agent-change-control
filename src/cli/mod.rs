@@ -13,7 +13,8 @@ pub mod validate;
 
 use crate::Exit;
 use anyhow::Result;
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, ColorChoice, CommandFactory, FromArgMatches, Parser, Subcommand};
+use std::ffi::OsString;
 use std::process::ExitCode;
 
 const ABOUT: &str = "acc — change control for software written with coding agents";
@@ -49,6 +50,14 @@ pub struct Global {
     /// Suppress status lines on stderr.
     #[arg(short, long, global = true)]
     pub quiet: bool,
+    /// Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never
+    /// changes stdout.
+    #[arg(short, long, global = true, conflicts_with = "quiet")]
+    pub verbose: bool,
+    /// Never color diagnostics. acc's own output is never colored; this and a non-empty
+    /// NO_COLOR environment variable switch off color in help and usage errors too.
+    #[arg(long, global = true)]
+    pub no_color: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -83,6 +92,13 @@ impl Ctx {
             eprintln!("{}", msg.as_ref());
         }
     }
+
+    /// Print a diagnostic line to stderr when `--verbose`.
+    pub fn debug(&self, msg: impl AsRef<str>) {
+        if self.global.verbose {
+            eprintln!("acc: {}", msg.as_ref());
+        }
+    }
 }
 
 /// Run a parsed command line.
@@ -109,9 +125,37 @@ pub fn report(err: &anyhow::Error) {
     }
 }
 
+/// Whether color is switched off: `--no-color` anywhere before a `--`, or a non-empty `NO_COLOR`
+/// (<https://no-color.org>).
+fn color_disabled(args: &[OsString]) -> bool {
+    std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty())
+        || args
+            .iter()
+            .skip(1)
+            .take_while(|a| *a != "--")
+            .any(|a| a == "--no-color")
+}
+
+/// The clap command, with color switched off when asked. Help and usage errors are the only
+/// colored output clap produces; acc's own output is plain text.
+pub fn command(no_color: bool) -> clap::Command {
+    let cmd = Cli::command();
+    if no_color {
+        cmd.color(ColorChoice::Never)
+    } else {
+        cmd
+    }
+}
+
+/// Parse `args` (including the program name), exiting through clap on a usage error.
+pub fn parse(args: Vec<OsString>) -> Cli {
+    let matches = command(color_disabled(&args)).get_matches_from(args);
+    Cli::from_arg_matches(&matches).unwrap_or_else(|e| e.exit())
+}
+
 /// Parse the process arguments, run, and map the outcome to an exit code.
 pub fn main() -> ExitCode {
-    match run(Cli::parse()) {
+    match run(parse(std::env::args_os().collect())) {
         Ok(exit) => exit.into(),
         Err(err) => {
             report(&err);
@@ -128,5 +172,31 @@ mod tests {
     fn cli_definition_is_consistent() {
         use clap::CommandFactory;
         Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn no_color_is_read_from_the_flag_before_a_double_dash() {
+        let args = |v: &[&str]| v.iter().map(OsString::from).collect::<Vec<_>>();
+        if std::env::var_os("NO_COLOR").is_none() {
+            assert!(!color_disabled(&args(&["acc", "validate", "x"])));
+            assert!(!color_disabled(&args(&[
+                "acc",
+                "validate",
+                "--",
+                "--no-color"
+            ])));
+        }
+        assert!(color_disabled(&args(&[
+            "acc",
+            "--no-color",
+            "validate",
+            "x"
+        ])));
+        assert!(color_disabled(&args(&[
+            "acc",
+            "validate",
+            "x",
+            "--no-color"
+        ])));
     }
 }
