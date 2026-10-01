@@ -122,3 +122,60 @@ fn the_doi_is_the_same_everywhere() {
         }
     }
 }
+
+/// Every rule the evaluator reports and every validation code has the documentation page that
+/// SARIF `helpUri` and error messages link to, and the README rules table links each rule to it.
+#[test]
+fn every_rule_and_validation_code_has_a_page() {
+    let readme = read("README.md");
+    for rule in agent_change_control::policy::RULES {
+        let code = rule.code();
+        let page = format!("docs/rules/{code}.md");
+        assert!(read(&page).starts_with(&format!("# {code}: ")), "{page}");
+        assert!(
+            agent_change_control::rule_doc_url(code).ends_with(&page),
+            "{code} links elsewhere"
+        );
+        assert!(
+            readme.contains(&format!("[{code}](docs/rules/{code}.md)")),
+            "the README rules table does not link {code}"
+        );
+    }
+    for n in 1..=10 {
+        let page = format!("docs/rules/ACV{n:03}.md");
+        assert!(read(&page).starts_with(&format!("# ACV{n:03}: ")), "{page}");
+    }
+}
+
+/// The documented `uses: noru-tech/agent-change-control@vX.Y.Z` pins, in the README, `llms.txt`
+/// and the docs, name the crate's version (the release pull request bumps them together).
+#[test]
+fn documented_action_pins_name_the_crate_version() {
+    let version = field(&read("Cargo.toml"), "version", " = ");
+    let mut files = vec!["README.md".to_string(), "llms.txt".to_string()];
+    for entry in std::fs::read_dir(common::root().join("docs")).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|e| e == "md") {
+            files.push(format!(
+                "docs/{}",
+                path.file_name().unwrap().to_string_lossy()
+            ));
+        }
+    }
+    let mut seen = 0;
+    for file in &files {
+        let text = read(file);
+        for (i, _) in text.match_indices("noru-tech/agent-change-control@v") {
+            let pin: String = text[i + "noru-tech/agent-change-control@v".len()..]
+                .chars()
+                .take_while(|c| c.is_ascii_digit() || *c == '.')
+                .collect();
+            seen += 1;
+            assert_eq!(pin, version, "{file} pins the action to v{pin}");
+        }
+    }
+    assert!(
+        seen >= 3,
+        "expected pins in the README and llms.txt, saw {seen}"
+    );
+}

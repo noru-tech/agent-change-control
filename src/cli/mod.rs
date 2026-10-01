@@ -100,12 +100,21 @@ pub fn run(cli: Cli) -> Result<Exit> {
     }
 }
 
+/// Print an error to stderr. When it names a validation code, the line ends with a pointer to
+/// that code's documentation page; machine-readable outputs never carry it.
+pub fn report(err: &anyhow::Error) {
+    match conformance::validation_codes(err).first() {
+        Some(code) => eprintln!("error: {err:#} (see {})", crate::rule_doc_url(code)),
+        None => eprintln!("error: {err:#}"),
+    }
+}
+
 /// Parse the process arguments, run, and map the outcome to an exit code.
 pub fn main() -> ExitCode {
     match run(Cli::parse()) {
         Ok(exit) => exit.into(),
         Err(err) => {
-            eprintln!("error: {err:#}");
+            report(&err);
             crate::exit_for(&err).into()
         }
     }

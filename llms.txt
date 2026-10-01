@@ -1,0 +1,50 @@
+# agent-change-control
+
+> Deterministic change control for code written by AI coding agents. Checks each change for independent human approval and emits SARIF and in-toto statements.
+
+The command-line tool is `acc`; the package is `agent-change-control` everywhere (the crate named `acc` on crates.io is an unrelated tool). It enforces the four-eyes principle for coding agents: did a human independent of the change's effective author (the human author, or the human who operated the agent) approve the current head before merge? Agent authorship alone is never a finding, an unknown operator is reported as unknown, and incomplete collection never yields a clean result. Evaluation is offline and reproducible and calls no model; only `scan`, `export` and `pr` contact the GitHub API, with GET requests only. The convention it implements is published as the AI Change Provenance specification. MIT licensed, maintained by Noru (https://noru.tech).
+
+Install:
+
+```bash
+brew install noru-tech/tap/acc                  # Homebrew, macOS and Linux
+cargo binstall agent-change-control             # prebuilt binary from GitHub Releases
+cargo install agent-change-control --locked     # build from crates.io
+```
+
+Gate every pull request with the GitHub Action:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+jobs:
+  acc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: noru-tech/agent-change-control@v0.5.4
+```
+
+Try it offline: `acc evaluate tests/fixtures/claude-operator-self-approved/events.json --format table`. Rule identifiers are `ACC001` to `ACC010` (ACC004 and ACC005 reserved); validation codes are `ACV001` to `ACV010`; exit codes are 0 to 7, with 1 for a policy failure and 4 for incomplete collection.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/README.md): what acc does, install, quick start, commands, output formats, how to cite
+- [AI Change Provenance specification](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/spec/ai-change-provenance.md): declarations, collection, the exact rule conditions, validation codes, output formats and conformance
+- [Rules and validation codes](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/rules/README.md): index of one page per rule (ACC) and validation code (ACV), each with controls, examples, fix and disposition
+- [Exit codes](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/exit-codes.md): the eight stable process exit codes and what to do about each
+- [GitHub Action](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/github-action.md): inputs, outputs, blocking or advisory mode, attesting the verdict
+- [Control mapping](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/control-mapping.md): where the evidence lands in SOC 2 CC8.1, ISO/IEC 27001 A.8.32, PCI DSS, NIST SP 800-53 and others
+- [Known limitations](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/KNOWN-LIMITATIONS.md): what acc does not do and cannot know
+- [Policy and dispositions](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/policy.md): policy file, severities, agent reviewers, recording exceptions
+
+## Optional
+
+- [Enforcing the four-eyes principle for coding agents](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/four-eyes.md): the argument behind the tool
+- [Agent authorship](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/agent-authorship.md): how the agent and its operator are established, by evidence tier
+- [in-toto attestations](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/in-toto.md): the predicate acc emits
+- [Signing](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/signing.md): signing verdicts and reading signed provenance and review documents
+- [Conformance corpus](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/conformance/README.md): test vectors and the external-verifier contract for other implementations
+- [Changelog](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/CHANGELOG.md): release history

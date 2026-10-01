@@ -42,7 +42,7 @@ fn parse_vector(text: &str) -> Result<(Events, Policy)> {
 }
 
 /// Every `ACVnnn` code mentioned anywhere in an error chain, in order of first appearance.
-fn validation_codes(err: &anyhow::Error) -> Vec<String> {
+pub(crate) fn validation_codes(err: &anyhow::Error) -> Vec<String> {
     let text = format!("{err:#}");
     let bytes = text.as_bytes();
     let mut codes: Vec<String> = Vec::new();
@@ -133,7 +133,7 @@ pub fn run(path: &Path) -> Result<Exit> {
         ),
     };
     if let Some(err) = err {
-        eprintln!("error: {err:#}");
+        super::report(&err);
     }
     println!("{}", jcs_bytes(&object)?);
     Ok(exit)

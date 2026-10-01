@@ -21,6 +21,7 @@ pub fn render(m: &Manifest) -> Result<String> {
                 "id": rule.code(),
                 "name": rule.name().as_str(),
                 "shortDescription": {"text": rule.name().as_str().replace('_', " ")},
+                "helpUri": crate::rule_doc_url(rule.code()),
             })
         })
         .collect();

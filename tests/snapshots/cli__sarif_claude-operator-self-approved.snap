@@ -132,35 +132,43 @@ runs:
       driver:
         name: agent-change-control
         rules:
-          - id: ACC001
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC001.md"
+            id: ACC001
             name: agent_change_without_independent_human
             shortDescription:
               text: agent change without independent human
-          - id: ACC002
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC002.md"
+            id: ACC002
             name: approver_is_author
             shortDescription:
               text: approver is author
-          - id: ACC003
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC003.md"
+            id: ACC003
             name: merged_without_independent_approval
             shortDescription:
               text: merged without independent approval
-          - id: ACC006
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC006.md"
+            id: ACC006
             name: unknown_agent_operator
             shortDescription:
               text: unknown agent operator
-          - id: ACC007
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC007.md"
+            id: ACC007
             name: agent_approval_recorded
             shortDescription:
               text: agent approval recorded
-          - id: ACC008
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC008.md"
+            id: ACC008
             name: same_vendor_write_and_review
             shortDescription:
               text: same vendor write and review
-          - id: ACC009
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC009.md"
+            id: ACC009
             name: agent_approval_not_independent
             shortDescription:
               text: agent approval not independent
-          - id: ACC010
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC010.md"
+            id: ACC010
             name: agent_approval_unsigned
             shortDescription:
               text: agent approval unsigned
