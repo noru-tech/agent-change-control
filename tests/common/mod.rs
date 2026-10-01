@@ -35,3 +35,13 @@ pub fn stdout(cmd: &mut Command) -> String {
     );
     String::from_utf8(out.stdout).expect("utf-8 stdout")
 }
+
+/// Lowercase hexadecimal SHA-256 of `bytes`, computed with `sha2` directly rather than through
+/// `acc`.
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}

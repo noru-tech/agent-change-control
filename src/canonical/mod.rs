@@ -25,7 +25,14 @@ pub fn digest<T: serde::Serialize>(value: &T) -> Result<String> {
 
 /// `sha256:<hex>` over raw bytes.
 pub fn sha256(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    use std::fmt::Write;
+    let digest = Sha256::digest(bytes);
+    let mut out = String::with_capacity("sha256:".len() + 2 * digest.len());
+    out.push_str("sha256:");
+    for b in digest {
+        write!(out, "{b:02x}").expect("writing to a String cannot fail");
+    }
+    out
 }
 
 /// Which serialization a document's digests were computed with.

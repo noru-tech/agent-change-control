@@ -7,14 +7,13 @@ mod common;
 use agent_change_control::model::*;
 use agent_change_control::{manifest, output};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 
 fn jcs<T: serde::Serialize>(v: &T) -> String {
     serde_json_canonicalizer::to_string(v).unwrap()
 }
 
 fn sha256(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!("sha256:{}", common::sha256_hex(bytes))
 }
 
 fn evaluated(name: &str) -> Manifest {
