@@ -16,6 +16,8 @@ use std::path::Path;
 pub enum Format {
     Json,
     Yaml,
+    /// A plain-text table for people; `text` is an alias.
+    #[value(alias = "text")]
     Table,
     Sarif,
     /// An unsigned in-toto Statement v1 whose predicate is the manifest.

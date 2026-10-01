@@ -22,6 +22,15 @@ All notable changes to this project are documented here. The format is based on
 - `llms.txt` at the repository root (llms.txt convention): what `acc` is, install commands and
   links to the most important pages.
 - `docs/openssf-best-practices.md`: prepared answers for the OpenSSF Best Practices passing level.
+- Consistent CLI flags. `--format text` is an alias of `table` wherever `table` is accepted, with
+  identical bytes. A global `-v`/`--verbose` prints extra diagnostics on stderr (resolved policy,
+  format and destination, counts, whether a token is used); stdout is unchanged. A global
+  `--no-color`, and a non-empty `NO_COLOR`, switch off color in clap's help and usage errors;
+  `acc`'s own output was and stays uncolored.
+- `acc validate --format text|json` and `--output FILE`. JSON is a new machine output: one result
+  object with `valid`, `message`, and `code` and `help_uri` when a validation code applies (README,
+  "Output formats and exit codes"). Text, the default, is unchanged.
+- `acc completions SHELL --output FILE` and `acc manpage --output FILE` write to a file.
 
 ### Changed
 - README: four headings are now the questions people ask ("How do I enforce separation of duties

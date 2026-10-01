@@ -39,12 +39,52 @@ impl OutputArgs {
             .unwrap_or(default)
     }
 
-    pub fn render(&self, m: &Manifest, default: Format) -> Result<()> {
+    /// Render `m` in the resolved format to the output file or stdout; `--verbose` reports
+    /// what is written where.
+    pub fn render(&self, ctx: &super::Ctx, m: &Manifest, default: Format) -> Result<()> {
+        ctx.debug(format!(
+            "{} changes, {} findings; writing {} to {}",
+            m.events.changes.len(),
+            m.findings.len(),
+            self.format(default).as_str(),
+            destination(self.output.as_deref())
+        ));
         write(
             &crate::output::render(m, self.format(default))?,
             self.output.as_deref(),
         )
     }
+}
+
+/// The format of a command's own result (`validate`), as opposed to a rendered manifest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum ResultFormat {
+    /// One status line; `table` is an alias.
+    #[value(alias = "table")]
+    Text,
+    /// One JSON object (RFC 8785 bytes) followed by a newline.
+    Json,
+}
+
+impl ResultFormat {
+    /// The explicit format, else JSON for a `.json` output file, else text.
+    pub fn resolve(format: Option<Self>, output: Option<&Path>) -> Self {
+        format.unwrap_or_else(|| {
+            if output
+                .and_then(|p| p.extension())
+                .is_some_and(|e| e == "json")
+            {
+                ResultFormat::Json
+            } else {
+                ResultFormat::Text
+            }
+        })
+    }
+}
+
+/// Where a rendered result goes, for `--verbose`.
+pub fn destination(path: Option<&Path>) -> String {
+    path.map_or_else(|| "stdout".into(), |p| p.display().to_string())
 }
 
 /// Read a bounded UTF-8 text file.
@@ -79,10 +119,21 @@ pub fn read<T: DeserializeOwned>(path: &Path, schema: &str) -> Result<T> {
     Ok(serde_json::from_value(value)?)
 }
 
+/// The policy file that [`load_policy`] reads: `path`, else the default policy file when it
+/// exists, else none (the built-in defaults).
+pub fn policy_path(path: Option<&Path>) -> Option<&Path> {
+    let default = Path::new(DEFAULT_POLICY);
+    path.or_else(|| default.exists().then_some(default))
+}
+
+/// A description of where the policy comes from, for `--verbose`.
+pub fn policy_source(path: Option<&Path>) -> String {
+    policy_path(path).map_or_else(|| "built-in defaults".into(), |p| p.display().to_string())
+}
+
 /// Load `path`, else the default policy file when it exists, else the built-in defaults.
 pub fn load_policy(path: Option<&Path>) -> Result<Policy> {
-    let default = Path::new(DEFAULT_POLICY);
-    match path.or_else(|| default.exists().then_some(default)) {
+    match policy_path(path) {
         Some(path) => crate::policy::resolve(read(path, "policy")?),
         None => Ok(Policy::default()),
     }
@@ -240,9 +291,17 @@ pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
 
 /// The GitHub token from the environment: `GITHUB_TOKEN`, else `GH_TOKEN`.
 pub fn token() -> Option<String> {
-    ["GITHUB_TOKEN", "GH_TOKEN"]
-        .iter()
-        .find_map(|name| std::env::var(name).ok().filter(|t| !t.is_empty()))
+    token_source().map(|(_, token)| token)
+}
+
+/// The name of the variable the token came from, and the token. Only the name may be printed.
+pub fn token_source() -> Option<(&'static str, String)> {
+    ["GITHUB_TOKEN", "GH_TOKEN"].into_iter().find_map(|name| {
+        std::env::var(name)
+            .ok()
+            .filter(|t| !t.is_empty())
+            .map(|t| (name, t))
+    })
 }
 
 /// Write to `path` (creating parent directories) or to stdout.

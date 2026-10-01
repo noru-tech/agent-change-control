@@ -2,7 +2,7 @@ mod common;
 
 use agent_change_control::manifest;
 use agent_change_control::model::{Disposition, DispositionStatus, Manifest};
-use common::{acc, fixture, stdout};
+use common::{acc, fixture, fixtures, stdout};
 use predicates::prelude::*;
 
 #[test]
@@ -498,4 +498,183 @@ fn conformance_json_prints_one_result_line() {
         .arg(fixture("human-clean", "events.json"))
         .assert()
         .code(2);
+}
+
+/// stdout of a run that may exit non-zero, with its exit code.
+fn run(cmd: &mut assert_cmd::Command) -> (Vec<u8>, i32) {
+    let out = cmd.output().expect("run acc");
+    (out.stdout, out.status.code().expect("exit code"))
+}
+
+#[test]
+fn text_is_an_alias_of_table_with_identical_bytes() {
+    let events = fixture("claude-operator-self-approved", "events.json");
+    let manifest = fixture("human-self-approved", "expected-manifest.json");
+    let table = run(acc().args(["evaluate", "-f", "table"]).arg(&events));
+    assert_eq!(
+        run(acc().args(["evaluate", "--format", "text"]).arg(&events)),
+        table
+    );
+    assert!(!table.0.is_empty());
+    let table = run(acc().args(["check", "-f", "table"]).arg(&manifest));
+    assert_eq!(table.1, 1);
+    assert_eq!(
+        run(acc().args(["check", "-f", "text"]).arg(&manifest)),
+        table
+    );
+}
+
+#[test]
+fn verbose_and_no_color_never_change_stdout() {
+    let events = fixture("claude-operator-self-approved", "events.json");
+    let manifest = fixture("human-self-approved", "expected-manifest.json");
+    let cases: Vec<Vec<std::ffi::OsString>> = vec![
+        vec!["evaluate".into(), events.clone().into()],
+        vec![
+            "evaluate".into(),
+            "-f".into(),
+            "table".into(),
+            events.clone().into(),
+        ],
+        vec![
+            "evaluate".into(),
+            "-f".into(),
+            "sarif".into(),
+            events.clone().into(),
+        ],
+        vec![
+            "evaluate".into(),
+            "-f".into(),
+            "in-toto".into(),
+            events.into(),
+        ],
+        vec!["check".into(), manifest.clone().into()],
+        vec![
+            "validate".into(),
+            "-f".into(),
+            "json".into(),
+            manifest.into(),
+        ],
+    ];
+    for args in cases {
+        let plain = run(acc().args(&args));
+        assert_eq!(run(acc().arg("-v").args(&args)), plain, "{args:?}");
+        assert_eq!(run(acc().arg("--no-color").args(&args)), plain, "{args:?}");
+        assert_eq!(
+            run(acc().env("NO_COLOR", "1").args(&args)),
+            plain,
+            "{args:?}"
+        );
+    }
+    acc()
+        .args(["--verbose", "evaluate"])
+        .arg(fixture("claude-clean", "events.json"))
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("acc: policy: built-in defaults"))
+        .stderr(predicate::str::contains("writing json to stdout"));
+    acc().args(["-q", "-v", "validate", "x"]).assert().code(2);
+    // Help and usage errors, the only output clap could color, stay plain.
+    for cmd in [
+        acc().args(["--no-color", "--help"]).assert().success(),
+        acc().env("NO_COLOR", "1").arg("--nope").assert().code(2),
+        acc()
+            .args(["evaluate", "--no-color", "--format", "nope", "x"])
+            .assert()
+            .code(2),
+    ] {
+        let out = cmd.get_output();
+        assert!(!out.stdout.contains(&0x1b) && !out.stderr.contains(&0x1b));
+    }
+}
+
+#[test]
+fn validate_reports_a_result_object_in_json() {
+    let clean = fixture("human-clean", "expected-manifest.json");
+    acc()
+        .args(["validate", "--format", "json"])
+        .arg(&clean)
+        .assert()
+        .success()
+        .stdout("{\"message\":\"Valid manifest\",\"valid\":true}\n")
+        .stderr(predicate::str::contains("Valid manifest"));
+    // Text keeps stdout empty, as before.
+    acc()
+        .args(["validate", "--format", "text"])
+        .arg(&clean)
+        .assert()
+        .success()
+        .stdout("");
+    let out = acc()
+        .args(["validate", "-f", "json"])
+        .arg(fixtures().join("ijson/duplicate-member.json"))
+        .assert()
+        .code(3)
+        .get_output()
+        .clone();
+    let object: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(object["valid"], false);
+    let code = object["code"].as_str().unwrap();
+    assert!(code.starts_with("ACV"), "{object}");
+    assert_eq!(
+        object["help_uri"],
+        format!("https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/{code}.md")
+    );
+    let out = acc()
+        .args(["validate", "-f", "json", "missing.json"])
+        .assert()
+        .code(3)
+        .get_output()
+        .clone();
+    let object: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(object["valid"], false);
+    assert!(object.get("code").is_none() && object.get("help_uri").is_none());
+
+    let dir = tempfile::tempdir().unwrap();
+    let json = dir.path().join("result.json");
+    acc()
+        .args(["validate", "-o"])
+        .arg(&json)
+        .arg(&clean)
+        .assert()
+        .success()
+        .stdout("");
+    assert_eq!(
+        std::fs::read_to_string(&json).unwrap(),
+        "{\"message\":\"Valid manifest\",\"valid\":true}\n"
+    );
+    let text = dir.path().join("result.txt");
+    acc()
+        .args(["validate", "--output"])
+        .arg(&text)
+        .arg(&clean)
+        .assert()
+        .success();
+    assert_eq!(std::fs::read_to_string(&text).unwrap(), "Valid manifest\n");
+}
+
+#[test]
+fn completions_and_man_pages_write_to_a_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let script = dir.path().join("completions/acc.bash");
+    acc()
+        .args(["completions", "bash", "--output"])
+        .arg(&script)
+        .assert()
+        .success()
+        .stdout("");
+    let stdout = stdout(acc().args(["completions", "bash"]));
+    assert_eq!(std::fs::read_to_string(&script).unwrap(), stdout);
+    let page = dir.path().join("acc.1");
+    acc().args(["manpage", "-o"]).arg(&page).assert().success();
+    assert_eq!(std::fs::read_to_string(&page).unwrap(), stdout_of_manpage());
+    acc()
+        .args(["manpage", "-o", "x.1", "--out-dir"])
+        .arg(dir.path())
+        .assert()
+        .code(2);
+}
+
+fn stdout_of_manpage() -> String {
+    stdout(acc().arg("manpage"))
 }

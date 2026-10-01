@@ -252,12 +252,15 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 | `acc scan github OWNER/REPO --since D --until D` | Collect merged PRs and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
 | `acc export github OWNER/REPO --since D --until D` | Write normalized events as JSON for offline evaluation |
 | `acc evaluate EVENTS` | Evaluate an export offline into a manifest (`--policy`, `-f`, `-o`) |
-| `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate) |
+| `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
 | `acc pr NUMBER --repo OWNER/REPO` | Collect and check one pull request (`GITHUB_REPOSITORY` is honored) |
-| `acc completions <shell>` / `acc manpage` | Shell completions and man pages |
+| `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |
 
-Global flags: `-q` silences status lines on stderr. Output formats and exit codes are
+Global flags: `-q` silences status lines on stderr; `-v` (`--verbose`) adds diagnostics there
+(resolved policy, format, destination, counts, whether a token is used, never its value);
+`--no-color` and a non-empty `NO_COLOR` keep help and usage errors uncolored (`acc`'s own output is
+never colored). None of them changes stdout. Output formats and exit codes are
 [below](#output-formats-and-exit-codes).
 
 The collecting commands (`scan`, `export`, `pr`) take the evidence flags: `--agent-account
@@ -320,8 +323,22 @@ the examples under [`examples/`](examples/).
 Every evaluated command accepts
 `--format table|json|yaml|sarif|in-toto|in-toto-jsonl` and `--output FILE`; the format is inferred
 from the output name when omitted (`.intoto.json` and `.intoto.jsonl` select the attestation
-forms). `export` emits normalized JSON only. `scan` without output flags
+forms). `text` is an alias of `table` wherever `table` is accepted, with identical bytes. `export`
+emits normalized JSON only. `scan` without output flags
 writes `.agent-change-control/manifest.yml`. Findings never prevent manifest generation.
+
+<a id="validate-result-object"></a>
+`acc validate` takes `--format text|json` and `--output FILE`. Text is the status line on stderr
+(stdout stays empty, as it always was); with `--output` the line goes to the file. JSON is one
+object on stdout (or in the file; a `.json` output name selects it), as RFC 8785 bytes and a
+newline, whether or not the input is valid:
+
+```json
+{"code":"ACV008","help_uri":"https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACV008.md","message":"ACV008 duplicate member name at byte 347","valid":false}
+```
+
+`valid` and `message` are always present; `code` (the validation code) and `help_uri` (its page)
+only when an `ACV` code applies. The exit status is the same as in text.
 
 | Code | Meaning |
 | --- | --- |

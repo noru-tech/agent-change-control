@@ -1,10 +1,12 @@
 //! The forge selector and collection flags shared by `scan` and `export`.
 
+use super::Ctx;
 use super::io::{self, EvidenceArgs, OutputArgs};
 use crate::collectors::github::{Github, Sources, validate_repo};
 use crate::model::Events;
 use crate::{Exit, failure};
 use anyhow::Result;
+use chrono::SecondsFormat;
 use clap::{Args, Subcommand};
 use std::path::PathBuf;
 
@@ -39,8 +41,17 @@ pub struct Collect {
     pub output: OutputArgs,
 }
 
+/// Report under `--verbose` whether requests are authenticated, naming the variable but never
+/// the token.
+pub fn debug_auth(ctx: &Ctx) {
+    ctx.debug(match io::token_source() {
+        Some((name, _)) => format!("authenticating with the token in {name}"),
+        None => "no token set: unauthenticated requests (public repositories only)".into(),
+    });
+}
+
 /// Collect the pull requests merged in the window.
-pub fn collect(c: &Collect) -> Result<Events> {
+pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
     validate_repo(&c.repository)?;
     let from = io::boundary(&c.since, false)?;
     let to = io::boundary(&c.until, true)?;
@@ -52,6 +63,14 @@ pub fn collect(c: &Collect) -> Result<Events> {
     let traces = c.evidence.traces()?;
     let attestations = c.evidence.attestations()?;
     let vendors = c.evidence.vendors()?;
+    ctx.debug(format!(
+        "collecting {} merged from {} to {} (at most {} pages per endpoint)",
+        c.repository,
+        from.to_rfc3339_opts(SecondsFormat::AutoSi, true),
+        to.to_rfc3339_opts(SecondsFormat::AutoSi, true),
+        c.max_pages
+    ));
+    debug_auth(ctx);
     Github::new(io::token(), c.max_pages)?.collect(
         &c.repository,
         from,

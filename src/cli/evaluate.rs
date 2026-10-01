@@ -24,13 +24,17 @@ pub struct Args {
     pub output: OutputArgs,
 }
 
-pub fn run(_ctx: &Ctx, args: Args) -> Result<Exit> {
+pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     if args.conformance_json {
         return super::conformance::run(&args.input);
     }
     let events = io::read(&args.input, "events")?;
+    ctx.debug(format!(
+        "policy: {}",
+        io::policy_source(args.policy.as_deref())
+    ));
     let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
-    args.output.render(&m, Format::Json)?;
+    args.output.render(ctx, &m, Format::Json)?;
     Ok(if io::incomplete(&m.events) {
         Exit::Incomplete
     } else {
