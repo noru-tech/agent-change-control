@@ -16,13 +16,18 @@ pub fn fixture(dir: &str, file: &str) -> PathBuf {
     fixtures().join(dir).join(file)
 }
 
-/// `acc` run from the repository root with no GitHub environment.
+/// `acc` run from the repository root with no GitHub environment: no token, no
+/// `GITHUB_REPOSITORY`, and no repository for `git` to find, so this checkout's own `origin`
+/// remote is never inferred.
 pub fn acc() -> Command {
     let mut cmd = Command::cargo_bin("acc").expect("acc binary");
     cmd.current_dir(root())
         .env_remove("GITHUB_TOKEN")
         .env_remove("GH_TOKEN")
-        .env_remove("GITHUB_REPOSITORY");
+        .env_remove("GITHUB_REPOSITORY")
+        .env_remove("ACC_GITHUB_API_URL")
+        .env_remove("ACC_NOW")
+        .env("GIT_DIR", root().join("tests/no-such-git-dir"));
     cmd
 }
 

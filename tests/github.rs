@@ -762,3 +762,136 @@ fn the_testing_api_base_never_receives_a_token() {
         .assert()
         .code(2);
 }
+
+/// Run `acc` and return (stdout bytes, stderr text), requiring exit `code`.
+fn output(cmd: &mut assert_cmd::Command, code: i32) -> (Vec<u8>, String) {
+    let out = cmd.output().unwrap();
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert_eq!(out.status.code(), Some(code), "{stderr}");
+    (out.stdout, stderr)
+}
+
+#[test]
+fn zero_config_scan_records_the_defaults_as_if_they_were_passed() {
+    let server = Server::start("clean");
+    let explicit = [
+        "acme/api",
+        "--since",
+        "2026-08-01T23:00:00Z",
+        "--until",
+        "2026-08-31T23:00:00Z",
+    ];
+    for command in ["scan", "export"] {
+        let (defaulted, stderr) = output(
+            acc_against(&server)
+                .env("ACC_NOW", "2026-08-31T23:00:00.75Z")
+                .env("GITHUB_REPOSITORY", "acme/api")
+                .args([command, "-f", "json"]),
+            0,
+        );
+        assert!(
+            stderr.contains("repository: acme/api (from GITHUB_REPOSITORY)"),
+            "{stderr}"
+        );
+        assert!(
+            stderr.contains(
+                "window: 2026-08-01T23:00:00Z to 2026-08-31T23:00:00Z (UTC; the last 30 days; pass --since/--until to choose)"
+            ),
+            "{stderr}"
+        );
+        let (passed, stderr) = output(
+            acc_against(&server)
+                .args([command, "github"])
+                .args(explicit)
+                .args(["-f", "json"]),
+            0,
+        );
+        assert!(!stderr.contains("window:"), "{stderr}");
+        assert_eq!(defaulted, passed, "{command}");
+        let value: Value = serde_json::from_slice(&defaulted).unwrap();
+        let window = if command == "scan" {
+            &value["events"]["window"]
+        } else {
+            &value["window"]
+        };
+        assert_eq!(window["from"], "2026-08-01T23:00:00Z");
+        assert_eq!(window["to"], "2026-08-31T23:00:00Z");
+    }
+    // One edge given: the other is filled in from it.
+    let (_, stderr) = output(
+        acc_against(&server).args(["scan", "acme/api", "--until", "2026-08-31", "-f", "json"]),
+        0,
+    );
+    assert!(
+        stderr.contains("window: 2026-08-01T23:59:59.999999999Z to 2026-08-31T23:59:59.999999999Z (UTC; 30 days before --until"),
+        "{stderr}"
+    );
+    output(
+        acc_against(&server)
+            .env("ACC_NOW", "not a time")
+            .args(["scan", "acme/api", "-f", "json"]),
+        2,
+    );
+}
+
+#[test]
+fn the_repository_is_inferred_from_the_origin_remote() {
+    let server = Server::start("clean");
+    let dir = tempfile::tempdir().unwrap();
+    let git = |args: &[&str]| {
+        let status = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir.path())
+            .stdout(std::process::Stdio::null())
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?}");
+    };
+    git(&["init", "-q"]);
+    git(&["remote", "add", "origin", "git@github.com:acme/api.git"]);
+    let (_, stderr) = output(
+        acc_against(&server)
+            .env_remove("GIT_DIR")
+            .current_dir(dir.path())
+            .env("ACC_NOW", "2026-08-31T23:00:00Z")
+            .args(["scan", "-f", "json"]),
+        0,
+    );
+    assert!(
+        stderr.contains("repository: acme/api (from the origin remote)"),
+        "{stderr}"
+    );
+    let (_, stderr) = output(
+        acc_against(&server)
+            .env_remove("GIT_DIR")
+            .current_dir(dir.path())
+            .args(["pr", "421", "-f", "json"]),
+        0,
+    );
+    assert!(
+        stderr.contains("repository: acme/api (from the origin remote)"),
+        "{stderr}"
+    );
+    git(&[
+        "remote",
+        "set-url",
+        "origin",
+        "https://gitlab.com/acme/api.git",
+    ]);
+    let (_, stderr) = output(
+        acc_against(&server)
+            .env_remove("GIT_DIR")
+            .current_dir(dir.path())
+            .env("GIT_CEILING_DIRECTORIES", dir.path().parent().unwrap())
+            .args(["scan"]),
+        2,
+    );
+    assert!(
+        stderr.contains("error: no repository given and none detected"),
+        "{stderr}"
+    );
+    assert!(
+        stderr.contains("help: pass OWNER/REPO, set GITHUB_REPOSITORY"),
+        "{stderr}"
+    );
+}

@@ -40,6 +40,14 @@ All notable changes to this project are documented here. The format is based on
   (exit 4) prints `warning: collection incomplete: <reason>` with the same lines, unless `-q`.
   Messages, exit codes and every machine-readable output are unchanged. `Failure` gains optional
   `hint` and `see` fields.
+- Zero-config collection: `acc scan` (and `export`) works with no arguments in a GitHub clone.
+  GitHub is the default forge (`acc scan acme/api` is `acc scan github acme/api`); `OWNER/REPO`
+  defaults to `GITHUB_REPOSITORY`, else the github.com `origin` remote (https, ssh and
+  `git@github.com:` forms), which `pr` now also falls back to; a missing `--until` is now and a
+  missing `--since` is 30 days before the end, in UTC. The resolved repository and window are
+  printed on stderr and the window is recorded in the output exactly as if passed, so evaluation
+  stays deterministic. Only the collecting commands read the clock (`ACC_NOW` replaces it in
+  tests).
 - `ACC_GITHUB_API_URL`, testing only: points the binary at the loopback replay server. Only
   `http://127.0.0.1:PORT`/`http://localhost:PORT` without a token is accepted.
 

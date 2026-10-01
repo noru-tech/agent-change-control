@@ -64,7 +64,9 @@ typos
 The GitHub collector tests use a local loopback HTTP server; no token is needed. CLI tests point
 the binary at it with `ACC_GITHUB_API_URL=http://127.0.0.1:PORT`, a testing-only variable: any other
 value is refused, and so is any value while `GITHUB_TOKEN` or `GH_TOKEN` is set, so a token can
-only ever be sent to `api.github.com`. Real authenticated
+only ever be sent to `api.github.com`. `ACC_NOW=<RFC 3339>`, also testing only, replaces the clock in the
+default collection window (`scan`/`export` without `--since`/`--until`). `tests/common` clears
+both and points `GIT_DIR` nowhere, so tests never infer this checkout's own `origin` remote. Real authenticated
 API testing is optional and should use a test repository you own.
 
 Rendered output (table, SARIF) is covered by [insta](https://insta.rs) snapshots. If you change output

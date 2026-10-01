@@ -81,10 +81,20 @@ acc evaluate tests/fixtures/claude-clean/events.json --format table
 # github:acme/api:pr:421  agent:claude-code  github:alice  PASS
 ```
 
-Scan a repository for a reporting period, then check it:
+In a clone of a GitHub repository, `acc scan` works with zero arguments: it finds the repository
+(from `GITHUB_REPOSITORY`, else the `origin` remote), scans the last 30 days in UTC ending now,
+prints the resolved repository and window on stderr, and writes
+`.agent-change-control/manifest.yml`:
 
 ```bash
 # GITHUB_TOKEN (or GH_TOKEN) should already be set through your secret manager.
+acc scan
+acc check .agent-change-control/manifest.yml
+```
+
+Or scan a named repository for a reporting period:
+
+```bash
 acc scan github acme/api --since 2026-08-01 --until 2026-08-31 --output manifest.json
 acc check manifest.json
 ```
@@ -249,12 +259,12 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 
 | Command | What it does |
 | --- | --- |
-| `acc scan github OWNER/REPO --since D --until D` | Collect merged PRs and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
-| `acc export github OWNER/REPO --since D --until D` | Write normalized events as JSON for offline evaluation |
+| `acc scan [github] [OWNER/REPO] [--since D] [--until D]` | Collect merged PRs and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
+| `acc export [github] [OWNER/REPO] [--since D] [--until D]` | Write normalized events as JSON for offline evaluation |
 | `acc evaluate EVENTS` | Evaluate an export offline into a manifest (`--policy`, `-f`, `-o`) |
 | `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
-| `acc pr NUMBER --repo OWNER/REPO` | Collect and check one pull request (`GITHUB_REPOSITORY` is honored) |
+| `acc pr NUMBER [--repo OWNER/REPO]` | Collect and check one pull request (the repository is found like `scan`'s) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |
 
 Global flags: `-q` silences status lines on stderr; `-v` (`--verbose`) adds diagnostics there
@@ -271,7 +281,12 @@ json` writes, with the verified signer) and `--verified-by TEXT` for signed auth
 documents ([signing](docs/signing.md)).
 
 Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
-the day. `pr` evaluates an open or merged PR directly. The token needs read access to repository
+the day. GitHub is the default forge, so `github` may be left out. Without `OWNER/REPO`, the
+collecting commands use `GITHUB_REPOSITORY`, else the github.com `origin` remote of the working
+directory (`https`, `ssh` and `git@github.com:` forms). Without `--until` the window ends now;
+without `--since` it starts 30 days before its end. A defaulted window is printed on stderr and
+recorded in the output exactly as if it had been passed, so evaluating that output later is as
+deterministic as ever; only the collecting commands read the clock. `pr` evaluates an open or merged PR directly. The token needs read access to repository
 contents and pull requests (public repositories can be read without a token). Requests are
 GET-only, restricted to `api.github.com`, with redirects disabled. Tokens are never written to
 exports or error messages.
