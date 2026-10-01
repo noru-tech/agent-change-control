@@ -105,7 +105,12 @@ jobs:
       - uses: noru-tech/agent-change-control@v0.5.4
 ```
 
-## What it does
+<a id="what-it-does"></a>
+## How do I enforce separation of duties for AI coding agents?
+
+Record the human behind each agent's change and require a different human to approve the commit
+that is merged: `acc` checks exactly that on every pull request, offline and deterministically,
+and fails the change when the approval is missing or came from the agent's own operator.
 
 ### Why do two accounts not mean two humans?
 
@@ -134,8 +139,14 @@ The convention it implements is published as [AI Change Provenance 0.3](spec/ai-
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
 | **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
+| **Rule pages** — one per rule, validation code and exit code: controls, examples, fixes | [`docs/rules/`](docs/rules/README.md), [exit codes](docs/exit-codes.md) |
 
-## What it is not, and known limitations
+<a id="what-it-is-not-and-known-limitations"></a>
+## What does acc not do?
+
+`acc` does not detect AI-written code, does not verify signatures and does not certify
+compliance; it checks recorded approvals against recorded authorship, and says so when the record
+is incomplete.
 
 The collector uses bounded pages (`--max-pages`, default 100 per endpoint; maximum 1000) and 8 MiB
 per response. Collection is a best-effort snapshot, not an atomic historical archive. GitHub
@@ -158,7 +169,11 @@ Manifests contain employee activity data; keep real exports out of public Git re
 
 The full list, with where each limit is described, is in [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md).
 
-## How it works
+<a id="how-it-works"></a>
+## How does acc decide whether a change was independently approved?
+
+It asks whether a human other than the change's effective human (the author, or the agent's
+operator) approved the current head before merge, with no later withdrawal, in four steps:
 
 1. **Declare.** The agent, or the engineer operating it, puts one fenced block in the pull request
    description. Only this exact block is read; prose, style and bot names never establish
@@ -195,18 +210,23 @@ The full list, with where each limit is described, is in [KNOWN-LIMITATIONS.md](
 4. **Report.** A manifest that re-validates byte for byte, a SARIF log for code scanning, or an
    in-toto statement to sign and file next to the release's build provenance.
 
-## Rules
+<a id="rules"></a>
+## Which rules does acc check?
+
+Eight rules, each with a page that explains it, maps it to controls, shows a failing and a passing
+example and says how to fix it or record a disposition ([all rules and validation
+codes](docs/rules/README.md)):
 
 | ID | Finding | Default severity |
 | --- | --- | --- |
-| ACC001 | Agent change without independent human approval | high |
-| ACC002 | Effective human author/operator approved own change | high |
-| ACC003 | Merged change without independent human approval | high |
-| ACC006 | Agent operator unknown | warning |
-| ACC007 | Agent approval recorded (observation) | info |
-| ACC008 | Same-vendor write and review | high |
-| ACC009 | Agent approval lacks required independence (under `agent_review`) | high |
-| ACC010 | Agent approval without signed identity (under `agent_review`) | warning |
+| [ACC001](docs/rules/ACC001.md) | Agent change without independent human approval | high |
+| [ACC002](docs/rules/ACC002.md) | Effective human author/operator approved own change | high |
+| [ACC003](docs/rules/ACC003.md) | Merged change without independent human approval | high |
+| [ACC006](docs/rules/ACC006.md) | Agent operator unknown | warning |
+| [ACC007](docs/rules/ACC007.md) | Agent approval recorded (observation) | info |
+| [ACC008](docs/rules/ACC008.md) | Same-vendor write and review | high |
+| [ACC009](docs/rules/ACC009.md) | Agent approval lacks required independence (under `agent_review`) | high |
+| [ACC010](docs/rules/ACC010.md) | Agent approval without signed identity (under `agent_review`) | warning |
 
 A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
 equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
@@ -222,7 +242,8 @@ conditions, with the fixture that exercises each, are in [docs/policy.md](docs/p
 Unknown operators yield ACC006 and `unknown` independence assessments, not invented violations.
 Incomplete collection produces exit 4 and cannot yield a clean result. A review or merge whose
 GitHub account no longer exists is recorded against the `unknown:unavailable` actor. Invalid
-approval-after-merge data produces ACV001, separately from governance findings.
+approval-after-merge data produces [ACV001](docs/rules/ACV001.md), separately from governance
+findings; every validation code has a page in the [rules index](docs/rules/README.md#validation-codes).
 
 ## Commands
 
@@ -312,6 +333,8 @@ writes `.agent-change-control/manifest.yml`. Findings never prevent manifest gen
 | 5 | Authentication rejected |
 | 6 | API, permission, rate-limit or transport failure |
 | 7 | Unsupported API data condition |
+
+What each code means and what to do about it: [exit codes](docs/exit-codes.md).
 
 Warnings do not fail the default policy. `scan` and `evaluate` write findings without returning
 policy exit 1; use `check` to enforce policy. See [policy semantics](docs/policy.md).
