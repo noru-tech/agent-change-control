@@ -122,6 +122,13 @@ jobs:
       - uses: noru-tech/agent-change-control@v0.6.0
 ```
 
+### See it on real pull requests
+
+[agent-change-control-demo](https://github.com/noru-tech/agent-change-control-demo) keeps ten
+pull requests open, one per verdict: a clean agent change, an operator approving their own
+agent's work, a stale approval, a reviewer from the same vendor, and four eyes with no human
+approval at all. Open any of them and read the `change-control` check. Nothing to install.
+
 <a id="what-it-does"></a>
 ## How do I enforce separation of duties for AI coding agents?
 
