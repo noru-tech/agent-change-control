@@ -16,9 +16,9 @@ pub fn fixture(dir: &str, file: &str) -> PathBuf {
     fixtures().join(dir).join(file)
 }
 
-/// `acc` run from the repository root with no GitHub environment: no token, no
-/// `GITHUB_REPOSITORY`, and no repository for `git` to find, so this checkout's own `origin`
-/// remote is never inferred.
+/// `acc` run from the repository root with no forge environment: no token, no
+/// `GITHUB_REPOSITORY` or GitLab CI variables, and no repository for `git` to find, so this
+/// checkout's own `origin` remote is never inferred.
 pub fn acc() -> Command {
     let mut cmd = Command::cargo_bin("acc").expect("acc binary");
     cmd.current_dir(root())
@@ -26,6 +26,11 @@ pub fn acc() -> Command {
         .env_remove("GH_TOKEN")
         .env_remove("GITHUB_REPOSITORY")
         .env_remove("ACC_GITHUB_API_URL")
+        .env_remove("GITLAB_TOKEN")
+        .env_remove("GITLAB_CI")
+        .env_remove("CI_PROJECT_PATH")
+        .env_remove("CI_SERVER_HOST")
+        .env_remove("ACC_GITLAB_API_URL")
         .env_remove("ACC_NOW")
         .env("GIT_DIR", root().join("tests/no-such-git-dir"));
     cmd

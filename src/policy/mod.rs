@@ -238,8 +238,8 @@ fn resolve_tiers(
         for team in &t.required_reviewer_teams {
             let parts: Vec<&str> = team.split('/').collect();
             anyhow::ensure!(
-                parts.len() == 2 && parts.iter().all(|s| !s.is_empty()),
-                "ACV010 required_reviewer_teams entries must be ORG/SLUG"
+                parts.len() >= 2 && parts.iter().all(|s| !s.is_empty()),
+                "ACV010 required_reviewer_teams entries must be ORG/SLUG or a GitLab GROUP/…/SUBGROUP path"
             );
         }
         t.required_reviewer_teams = t

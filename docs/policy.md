@@ -63,7 +63,9 @@ The required checks are `checks.required` plus, with `checks.from_forge: true` (
 what the repository's rules require on the branch a change merged into: active rulesets and
 classic branch protection, as read at collection time. `acc scan` and `acc pr` collect the check
 facts whenever the policy enables ACC004; `acc export --checks` collects them for a later
-`evaluate`. The token needs `checks: read` and `statuses: read`.
+`evaluate`. The token needs `checks: read` and `statuses: read`. On GitLab the required check is
+`pipeline` when the project's merge settings require pipelines to succeed, and each job is a
+result under its own name ([GitLab](gitlab.md)).
 
 A required check passes when, on the head commit or the merge commit, its latest result completed
 at or before the merge is `success`, `neutral` or `skipped` (every result at that instant, when
@@ -114,8 +116,9 @@ tier. It does not re-derive the tier.
   `0` is for the forge's pre-merge rules (an emergency); acc still holds the change to account.
 - **`agent_review`**: `allowed` or `forbidden` replaces `agent_review.satisfies_independence` for
   changes of the tier.
-- **`required_reviewer_teams`**: [ACC011](rules/ACC011.md) requires an approval from a member of each.
-  Membership is read at collection and needs organization members read access.
+- **`required_reviewer_teams`**: [ACC011](rules/ACC011.md) requires an approval from a member of each:
+  `ORG/SLUG` on GitHub, a group path (`acme/security`, `acme/eng/security`) on GitLab, whose
+  direct members count. Membership is read at collection and needs members read access.
 - **`retroactive_review_within_days`** (emergency only): see below.
 
 Without `tiers`, nothing here changes any result.

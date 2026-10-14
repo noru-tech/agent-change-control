@@ -1,4 +1,4 @@
-//! `acc export github OWNER/REPO --since DATE --until DATE`
+//! `acc export [github OWNER/REPO | gitlab GROUP/PROJECT] --since DATE --until DATE`
 
 use super::Ctx;
 use super::forge::{self, Target};
@@ -14,7 +14,7 @@ pub struct Args {
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
-    let c = args.target.into_collect();
+    let (kind, c) = args.target.into_collect();
     if c.output.format.is_some_and(|f| f != Format::Json) {
         return Err(failure(Exit::Usage, "export supports JSON only"));
     }
@@ -24,7 +24,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             "export does not accept a policy; use evaluate",
         ));
     }
-    let events = forge::collect(ctx, &c, false, false, &[])?;
+    let events = forge::collect(ctx, kind, &c, false, false, &[])?;
     let exit = if io::incomplete(&events) {
         Exit::Incomplete
     } else {

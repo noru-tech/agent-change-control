@@ -982,7 +982,7 @@ fn the_repository_is_inferred_from_the_origin_remote() {
         "remote",
         "set-url",
         "origin",
-        "https://gitlab.com/acme/api.git",
+        "https://git.example.com/acme/api.git",
     ]);
     let (_, stderr) = output(
         acc_against(&server)

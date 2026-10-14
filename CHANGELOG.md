@@ -7,6 +7,19 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **GitLab.com collection.** `acc scan gitlab GROUP/…/PROJECT`, `acc export gitlab` and
+  `acc pr N --forge gitlab` collect merge requests, reading `GITLAB_TOKEN` (`read_api`). Without a
+  forge, a gitlab.com pipeline or origin remote selects GitLab. GitLab records no commit for an
+  approval, so each is bound to the head of the latest diff version created before it, as derived
+  evidence; one within a second of a push is not bound and the history is incomplete (spec §4.4).
+  ACC004 reads pipelines and jobs (`pipeline` is required when "Pipelines must succeed" is on),
+  ACC011 reads a group's direct members, and ACC005 is recorded as unreadable. `acc doctor`
+  reports the GitLab project and token. The event schema adds the `gitlab` forge, `pipeline` and
+  `job` check kinds, the `project_settings` source, and team identifiers of more than two path
+  segments.
+- **GitLab CI/CD component** in `templates/acc.yml`: evaluates the current merge request, reading
+  the policy from the base, and keeps the manifest and rendered output as artifacts
+  ([docs/gitlab.md](docs/gitlab.md)).
 - **Risk tiers** (ACP 0.4). A policy's `tiers` vary what a change must meet by the tier a
   [change-risk](https://github.com/noru-tech/change-risk) assessment gives it (`low`, `standard`,
   `high`, `emergency`), read from an attestation bound to the head commit like the provenance and

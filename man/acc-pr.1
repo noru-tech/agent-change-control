@@ -4,7 +4,7 @@
 .SH NAME
 acc\-pr \- Collect and evaluate one pull request
 .SH SYNOPSIS
-\fBacc pr\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-repo\fR] [\fB\-\-policy\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-agent\-account\fR] [\fB\-\-no\-color\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fINUMBER\fR> 
+\fBacc pr\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-repo\fR] [\fB\-\-forge\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fINUMBER\fR> 
 .SH DESCRIPTION
 Collect and evaluate one pull request
 .SH OPTIONS
@@ -13,19 +13,32 @@ Collect and evaluate one pull request
 Suppress status lines on stderr
 .TP
 \fB\-\-repo\fR \fI<OWNER/REPO>\fR
-Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory
+Repository as OWNER/REPO (GitHub) or GROUP/…/PROJECT (GitLab); defaults to GITHUB_REPOSITORY or CI_PROJECT_PATH, else the origin remote of the working directory
 .TP
-\fB\-\-policy\fR \fI<FILE>\fR
-Policy file (defaults to .agent\-change\-control/policy.yml when present)
+\fB\-\-forge\fR \fI<FORGE>\fR
+The forge; defaults to the one GitHub Actions or GitLab CI reports, else the origin remote\*(Aqs, else GitHub
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+github
+.IP \(bu 2
+gitlab
+.RE
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
 .TP
-\fB\-\-agent\-account\fR \fI<LOGIN=AGENT>\fR
-Treat LOGIN as the verified account of AGENT (repeatable)
-.TP
 \fB\-\-no\-color\fR
 Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-\-policy\fR \fI<FILE>\fR
+Policy file (defaults to .agent\-change\-control/policy.yml when present)
+.TP
+\fB\-\-agent\-account\fR \fI<LOGIN=AGENT>\fR
+Treat LOGIN as the verified account of AGENT (repeatable)
 .TP
 \fB\-\-agent\-trailer\fR \fI<EMAIL=AGENT>\fR
 Treat commits whose Co\-Authored\-By trailer carries EMAIL as written by AGENT (repeatable; extends the built\-in vendor registry)
@@ -82,6 +95,6 @@ Print help (see a summary with \*(Aq\-h\*(Aq)
 Print version
 .TP
 <\fINUMBER\fR>
-Pull request number
+Pull request number (a merge request\*(Aqs IID on GitLab)
 .SH VERSION
 v0.6.0

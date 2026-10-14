@@ -1,4 +1,4 @@
-//! `acc scan github OWNER/REPO --since DATE --until DATE`
+//! `acc scan [github OWNER/REPO | gitlab GROUP/PROJECT] --since DATE --until DATE`
 
 use super::Ctx;
 use super::forge::{self, Target};
@@ -14,7 +14,7 @@ pub struct Args {
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
-    let mut c = args.target.into_collect();
+    let (kind, mut c) = args.target.into_collect();
     ctx.debug(format!(
         "policy: {}",
         io::policy_source(c.policy.as_deref())
@@ -22,6 +22,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let policy = io::load_policy(c.policy.as_deref())?;
     let events = forge::collect(
         ctx,
+        kind,
         &c,
         manifest::checks_required(&policy),
         manifest::bypass_required(&policy),

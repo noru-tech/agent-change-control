@@ -43,10 +43,10 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 
 ## Planned
 
-- **GitLab collector.** Merge requests, approvals and resource events. Known constraint: the
-  approvals API exposes the *current* approval set; the approval history with commit binding and
-  reset-on-push semantics comes from resource state events and notes, and some of it is tier-gated.
-  Whatever cannot be retrieved will be marked incomplete, not inferred.
+- **Self-managed GitLab.** The GitLab.com collector with a configurable origin, a documented
+  minimum GitLab version, and the same rule that a token is only ever sent to that origin.
+- **GitLab CI/CD Catalog.** The component published from a GitLab-hosted project, so it can be
+  included with `component:` instead of `include: remote`.
 - **ACP trailers** (`Agent-Author:`, `Agent-Operator:`) as an explicit-tier declaration form for
   agents that commit but do not open pull requests. Reserved since spec 0.1; to be defined in a later version, with
   precedence against the inline block.

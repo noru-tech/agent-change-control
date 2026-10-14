@@ -52,11 +52,17 @@ _acc() {
             acc__subcmd__export,github)
                 cmd="acc__subcmd__export__subcmd__github"
                 ;;
+            acc__subcmd__export,gitlab)
+                cmd="acc__subcmd__export__subcmd__gitlab"
+                ;;
             acc__subcmd__export,help)
                 cmd="acc__subcmd__export__subcmd__help"
                 ;;
             acc__subcmd__export__subcmd__help,github)
                 cmd="acc__subcmd__export__subcmd__help__subcmd__github"
+                ;;
+            acc__subcmd__export__subcmd__help,gitlab)
+                cmd="acc__subcmd__export__subcmd__help__subcmd__gitlab"
                 ;;
             acc__subcmd__export__subcmd__help,help)
                 cmd="acc__subcmd__export__subcmd__help__subcmd__help"
@@ -97,17 +103,29 @@ _acc() {
             acc__subcmd__help__subcmd__export,github)
                 cmd="acc__subcmd__help__subcmd__export__subcmd__github"
                 ;;
+            acc__subcmd__help__subcmd__export,gitlab)
+                cmd="acc__subcmd__help__subcmd__export__subcmd__gitlab"
+                ;;
             acc__subcmd__help__subcmd__scan,github)
                 cmd="acc__subcmd__help__subcmd__scan__subcmd__github"
                 ;;
+            acc__subcmd__help__subcmd__scan,gitlab)
+                cmd="acc__subcmd__help__subcmd__scan__subcmd__gitlab"
+                ;;
             acc__subcmd__scan,github)
                 cmd="acc__subcmd__scan__subcmd__github"
+                ;;
+            acc__subcmd__scan,gitlab)
+                cmd="acc__subcmd__scan__subcmd__gitlab"
                 ;;
             acc__subcmd__scan,help)
                 cmd="acc__subcmd__scan__subcmd__help"
                 ;;
             acc__subcmd__scan__subcmd__help,github)
                 cmd="acc__subcmd__scan__subcmd__help__subcmd__github"
+                ;;
+            acc__subcmd__scan__subcmd__help,gitlab)
+                cmd="acc__subcmd__scan__subcmd__help__subcmd__gitlab"
                 ;;
             acc__subcmd__scan__subcmd__help,help)
                 cmd="acc__subcmd__scan__subcmd__help__subcmd__help"
@@ -249,7 +267,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github gitlab help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -404,8 +422,86 @@ _acc() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        acc__subcmd__export__subcmd__gitlab)
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --since)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --until)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --policy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-account)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-trailer)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-trace)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --attestations)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verified-by)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verification)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-vendor)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --max-pages)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --team)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --format)
+                    COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
+                    return 0
+                    ;;
+                -f)
+                    COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
+                    return 0
+                    ;;
+                --output)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -o)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         acc__subcmd__export__subcmd__help)
-            opts="github help"
+            opts="github gitlab help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -419,6 +515,20 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export__subcmd__help__subcmd__github)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__export__subcmd__help__subcmd__gitlab)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -517,7 +627,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help__subcmd__export)
-            opts="github"
+            opts="github gitlab"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -531,6 +641,20 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help__subcmd__export__subcmd__github)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__help__subcmd__export__subcmd__gitlab)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -587,7 +711,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help__subcmd__scan)
-            opts="github"
+            opts="github gitlab"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -601,6 +725,20 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help__subcmd__scan__subcmd__github)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__help__subcmd__scan__subcmd__gitlab)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -669,7 +807,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__pr)
-            opts="-f -o -q -v -h -V --repo --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version"
+            opts="-f -o -q -v -h -V --repo --forge --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -677,6 +815,10 @@ _acc() {
             case "${prev}" in
                 --repo)
                     COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --forge)
+                    COMPREPLY=($(compgen -W "github gitlab" -- "${cur}"))
                     return 0
                     ;;
                 --policy)
@@ -739,7 +881,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github gitlab help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -894,8 +1036,86 @@ _acc() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        acc__subcmd__scan__subcmd__gitlab)
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --since)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --until)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --policy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-account)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-trailer)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-trace)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --attestations)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verified-by)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verification)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --agent-vendor)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --max-pages)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --team)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --format)
+                    COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
+                    return 0
+                    ;;
+                -f)
+                    COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
+                    return 0
+                    ;;
+                --output)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -o)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         acc__subcmd__scan__subcmd__help)
-            opts="github help"
+            opts="github gitlab help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -909,6 +1129,20 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan__subcmd__help__subcmd__github)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__scan__subcmd__help__subcmd__gitlab)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )

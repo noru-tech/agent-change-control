@@ -122,6 +122,13 @@ jobs:
       - uses: noru-tech/agent-change-control@v0.6.0
 ```
 
+On GitLab.com, include the CI/CD component in a merge request pipeline ([docs/gitlab.md](docs/gitlab.md)):
+
+```yaml
+include:
+  - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.6.0/templates/acc.yml
+```
+
 ### See it on real pull requests
 
 [agent-change-control-demo](https://github.com/noru-tech/agent-change-control-demo) keeps ten
@@ -159,8 +166,9 @@ The convention it implements is published as [AI Change Provenance 0.4](spec/ai-
 | --- | --- |
 | **Specification** — AI Change Provenance 0.4: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
 | **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
-| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check, deploy gate | [`src/`](src/), [verify](docs/verify.md) |
+| **CLI** — `acc`: GitHub and GitLab collectors, offline evaluator, validator, policy check, deploy gate | [`src/`](src/), [verify](docs/verify.md) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
+| **GitLab CI/CD component** — evaluate the current merge request on GitLab.com | [`templates/acc.yml`](templates/acc.yml), [docs](docs/gitlab.md) |
 | **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
 | **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
 | **Rule pages** — one per rule, validation code and exit code: controls, examples, fixes | [`docs/rules/`](docs/rules/README.md), [exit codes](docs/exit-codes.md) |
@@ -184,8 +192,8 @@ authenticated identity; a digest detects inconsistency, not forgery. `acc` does 
 signatures: attestations are read as pre-verified input and the manifest records who said they
 verified them. A clean result is a statement
 about the recorded scope, not a compliance certification. See the
-[roadmap](ROADMAP.md) for what comes next, including GitLab collection and signature verification
-inside `acc`.
+[roadmap](ROADMAP.md) for what comes next, including signature verification inside `acc` and
+self-managed GitLab.
 
 Manifests contain employee activity data; keep real exports out of public Git repositories. Read
 [the model](docs/model.md), [authorship](docs/agent-authorship.md), [privacy](docs/privacy.md) and
@@ -276,13 +284,13 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 
 | Command | What it does |
 | --- | --- |
-| `acc scan [github] [OWNER/REPO] [--since D] [--until D]` | Collect merged PRs and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
-| `acc export [github] [OWNER/REPO] [--since D] [--until D]` | Write normalized events as JSON for offline evaluation |
+| `acc scan [github OWNER/REPO \| gitlab GROUP/PROJECT] [--since D] [--until D]` | Collect merged PRs (GitLab: merge requests) and write an evaluated manifest (default `.agent-change-control/manifest.yml`) |
+| `acc export [github OWNER/REPO \| gitlab GROUP/PROJECT] [--since D] [--until D]` | Write normalized events as JSON for offline evaluation |
 | `acc evaluate EVENTS` | Evaluate an export offline into a manifest (`--policy`, `-f`, `-o`) |
 | `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
 | `acc verify --range BASE..HEAD` | Gate a deploy: every first-parent commit in the range must be landed by a change a signed attestation shows passing (`--verification` with `--signer`, or `--attestations` with `--verified-by`); exit 1 if not. See [verify](docs/verify.md) |
-| `acc pr NUMBER [--repo OWNER/REPO]` | Collect and check one pull request (the repository is found like `scan`'s) |
+| `acc pr NUMBER [--repo OWNER/REPO] [--forge github\|gitlab]` | Collect and check one pull request or merge request (the forge and repository are found like `scan`'s) |
 | `acc doctor [--online]` | Check the environment: version, token set (never printed), default policy file, detected repository; `--online` adds the token, the rate limit and whether a newer `acc` exists (GET only; the only update check, never automatic). Exit 0 healthy, 2 broken. `--format json` prints a [report object](#doctor-report-object) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |
 
