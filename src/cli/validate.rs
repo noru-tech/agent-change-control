@@ -28,8 +28,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    /// A manifest written by `scan` or `evaluate`, an in-toto Statement, or JSON Lines of
-    /// Statements.
+    /// A manifest written by `scan` or `evaluate`, an in-toto Statement (including a release
+    /// attestation), or JSON Lines of Statements.
     pub input: PathBuf,
     /// Result format: `text` (the status line, on stderr) or `json` (a result object, on
     /// stdout); inferred from the --output extension when omitted.
@@ -75,6 +75,14 @@ fn validate(ctx: &Ctx, path: &Path) -> Result<String> {
         ));
     }
     let value = io::parse(&text)?;
+    if value["predicateType"] == super::release::RELEASE_PREDICATE_TYPE {
+        ctx.debug("document: release attestation");
+        crate::normalize::schema(&value, "release").context("invalid release attestation")?;
+        return Ok(
+            "Valid release attestation (schema; `acc release` re-derives its verdicts from the manifests)"
+                .into(),
+        );
+    }
     if value.get("_type").is_some() {
         ctx.debug("document: in-toto Statement");
         let m = intoto::validate_statement(&value).context("invalid attestation")?;

@@ -92,12 +92,18 @@ fn fixtures_and_golden_outputs() {
         for part in &parts {
             manifest::validate(part).unwrap();
         }
+        // A finding on a branch or a deployment (ACC012, ACC013) belongs to no change, so only
+        // the single Statement carries it.
         assert_eq!(
             parts
                 .iter()
                 .flat_map(|p| p.findings.iter().map(|f| &f.id))
                 .collect::<Vec<_>>(),
-            m.findings.iter().map(|f| &f.id).collect::<Vec<_>>(),
+            m.findings
+                .iter()
+                .filter(|f| m.events.changes.iter().any(|c| c.id == f.change_id))
+                .map(|f| &f.id)
+                .collect::<Vec<_>>(),
             "{}: finding IDs survive the split",
             dir.display()
         );

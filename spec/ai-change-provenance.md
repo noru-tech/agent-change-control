@@ -366,6 +366,46 @@ How a GitLab collector meets §4 to §4.3, where GitLab's records differ from Gi
 - **Reviewer teams (§4.3).** A team is a group, and its members are the group's direct members.
   Members inherited from an ancestor group are not counted: they would make the parent group the
   team.
+- **Branch updates and deployments (§4.5, §4.6).** GitLab's push events say neither whether a
+  push was forced nor whether a merge request landed it, so branches are recorded with
+  `complete: false`; deployments are recorded with `complete: false` in this version.
+
+### 4.5 Branch updates
+
+When asked for the facts ACC012 reads (§6.2), a collector records, in `branches`, each protected
+branch the policy names (`branches.protected`), or the repository's default branch when it names
+none:
+
+- its subject identifier, `FORGE:REPOSITORY:branch:NAME`, and its name;
+- every update of it in the window, oldest first: the forge's identifier for the update, its kind
+  (`push`, `force_push`, `branch_creation`, `branch_deletion`, `pr_merge`, `merge_queue_merge`),
+  the commits the branch pointed at before and after, the time, and the updating account when
+  the forge names one, with evidence;
+- `complete: false` when the forge's record of the window could not be read in full, reaches
+  less far back than the window, or holds a kind outside the vocabulary.
+
+On GitHub the source is the repository activity record, which reaches a year back from
+collection. Changes are a population of pull requests; a direct push or a force push is not one,
+which is why branch updates are a population of their own.
+
+### 4.6 Deployments
+
+When asked for the facts ACC013 reads (§6.2), a collector records `deployments`: the environments
+that count as production (the policy's `deployments.environments`; when it names none, those the
+forge marks as production), the deployment window, and every successful deployment to them in
+that window:
+
+- its subject identifier, `FORGE:REPOSITORY:deployment:ID`, environment, the commit deployed, the
+  time it succeeded and the account that created it, with evidence;
+- the commit of the same environment's previous successful deployment, and the first-parent
+  commits after it up to and including the deployed one, newest first, each with its committer
+  date. A deployment of a commit at or behind the previous one shipped only that commit;
+- `commits_complete: false` when that history could not be read in full, or when no earlier
+  deployment bounds it. The deployed commit itself is then still recorded and judged.
+
+`complete: false` on the record when a listing could not be read in full. A deployment window
+that starts later than the merge window lets the changes a deployment shipped be merged inside
+the merge window; a commit dated before the merge window cannot be judged.
 
 ## 5. Actor classification
 
@@ -424,6 +464,8 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | **ACC009** Agent approval lacks required independence | `agent_review` applies, no human independent approval exists, at least one agent approval carries the required evidence, and every such approval is `dependent` on a required dimension. | `agent_review` is off or out of scope, a human independent approval exists, or no agent approval carries the required evidence. | Some such approval is `unknown` on a required dimension and `dependent` on none. |
 | **ACC010** Agent approval without signed identity (`warning`) | `agent_review` applies and an agent approval of the current head has evidence below `agent_review.minimum_evidence`. | `agent_review` is off or out of scope, or no agent approved the head. | never |
 | **ACC011** Missing required reviewer team | The change is merged, *H* is known, reviews complete, and for some team its tier requires, no member (§4.3) approved the current head before merge independently of *H*. | The change is not merged, or its tier requires no team. | *H* unknown, or reviews incomplete; or a team that did not approve has incomplete membership. |
+| **ACC012** Unaccounted branch update | A protected branch (§4.5) was force-pushed or deleted in the window, or pushed to a commit that is no merged change's merge commit. | never | The branch's record is incomplete and no such update was seen. |
+| **ACC013** Deployed without passing change | A production deployment (§4.6) shipped a commit dated inside the merge window that no merged change landed, or that a change landed which fails: an assessment of it at or above `fail_on` is `fail`. | never | No commit fails, and the history is incomplete or unbounded, a commit is dated before the merge window, or a change that landed one is unknown (an unknown assessment, incomplete reviews, or missing opt-in facts). |
 
 For ACC004, the required checks are the policy's `checks.required` and, when `checks.from_forge`
 is true (the default), the forge's required checks recorded under §4.1. A required check passes
@@ -438,6 +480,15 @@ ACC005 passes only when every recorded evaluation of the merge passed. It never 
 empty record (§4.2): absence is `unknown`. A recorded `bypass` fails even when the record is
 otherwise incomplete. ACC005 is disabled unless a policy enables it, and when it is enabled, a
 merged change whose protection facts are missing or incomplete makes collection incomplete.
+
+ACC012 and ACC013 judge subjects that are not changes: a branch and a deployment. Their assessments
+and findings name the subject's identifier where the others name a change (§7.1). ACC012 has one
+assessment per branch and a finding per offending update; ACC013 an assessment and, when it
+fails, a finding per deployment. ACC013 reads the change assessments of the same evaluation, so
+dispositions, which `check` applies later, do not clear it: a deployment of a change whose finding
+was accepted needs its own disposition. Both rules are disabled unless a policy enables them, and
+when one is enabled, missing or incomplete facts for it make collection incomplete. A single
+pull request evaluated alone (the reference implementation's `pr`) does not evaluate them.
 
 Retired identifiers are never reused. ACC007 and ACC008
 evaluate under every policy, as observations; ACC009 and ACC010 only under `agent_review`.
@@ -463,6 +514,11 @@ it does not name the effective human, so ACC006 fails with that reason and indep
 `unknown`, never `pass`. `minimum_review_evidence` (default `observed`) applies to approvals: a
 decision whose strongest evidence is below it does not qualify (§6.1). Neither key changes the
 facts; both can only move a verdict away from `pass`.
+
+Two blocks name the subjects of ACC012 and ACC013: `branches.protected` lists the protected
+branches (empty: the repository's default branch), and `deployments.environments` the production
+environments (empty: those the forge marks as production). Both are 0.4 keys, normalized sorted
+and de-duplicated, and present in a resolved policy only when given.
 
 The `agent_review` block lets an agent approval satisfy independence:
 
@@ -609,7 +665,9 @@ the events.
 
 Finding identifiers are `acc-` followed by the first 16 hexadecimal characters of SHA-256 over the
 §8.2 serialization of the array `[repository, change_id, rule_id, sorted_unique_actor_ids]`. They
-are stable across severities, policies and dispositions. The `source_digest` is SHA-256 over the
+are stable across severities, policies and dispositions. For ACC012 and ACC013, `change_id` names
+the branch or deployment (§6.2); in the preimage, an ACC012 finding's second element is the
+branch identifier, `#`, and the update's identifier, so each update has its own finding. The `source_digest` is SHA-256 over the
 §8.2 serialization of the normalized events.
 
 Because 0.2 hashed these preimages with a trailing newline (§8.2), every finding identifier
@@ -649,7 +707,8 @@ with:
 Two forms are emitted, both unsigned and serialized as §8.2 requires: one Statement whose subjects cover
 every change in the manifest, and JSON Lines with one Statement per change in change identifier
 order, where each predicate is a manifest covering that change alone and carrying only the actors
-it refers to. Each line is one Statement's §8.2 bytes followed by an LF that separates lines and
+it refers to. A branch or deployment (§4.5, §4.6) belongs to no change, so only the single
+Statement carries it and its findings. Each line is one Statement's §8.2 bytes followed by an LF that separates lines and
 is part of no Statement. Finding identifiers are identical in both forms. Signing is done by wrapping a
 Statement's bytes in a [DSSE](https://github.com/secure-systems-lab/dsse) envelope with a key or
 identity the organization trusts. A verifier MUST check that the subject digests cover the commits
@@ -667,6 +726,33 @@ the subject. `acc validate` accepts both subject forms. A `v0.3` or `v0.2` State
 as the version that produced it (§12). The Statement shape is published as
 [`schemas/statement.schema.json`](../schemas/statement.schema.json), and the predicate is
 documented in the in-toto predicate template in [`docs/in-toto.md`](../docs/in-toto.md).
+
+### 7.4 Release attestation
+
+A release attestation joins change-level evidence to the build provenance of the same artifacts.
+It is an in-toto Statement v1
+([`schemas/release.schema.json`](../schemas/release.schema.json)):
+
+- `subject`: the release artifacts, each a name and a `sha256` digest the producer supplies (at
+  least one);
+- `predicateType`: `https://noru.tech/spec/ai-change-provenance/release/v0.1`;
+- `predicate`: the range (`base`, `head`, as full commit identifiers), and for every first-parent
+  commit after `base` up to and including `head`, newest first, its coverage (`covered`,
+  `incomplete`, `uncovered`, `failing`) and the changes that landed it, each with its verdict
+  (`pass`, `incomplete`, `fail`), the identifiers of its failing findings, a `verdict_digest`
+  (SHA-256 over the §8.2 serialization of `{change_id, merge_commit_sha, verdict, failing}`) and
+  the digest of the manifest it came from; the commits no change landed (`uncovered`); the
+  manifests read, each with its digest and `source_digest`; whether the policy was the manifests'
+  own or one given (`policy`); the date dispositions were evaluated on (`as_of`); and the
+  producer (`generated`);
+- `verdict`: `pass` when every commit is covered, `incomplete` when a commit's only verdicts are
+  incomplete, and `fail` otherwise.
+
+Coverage is the deploy gate's: a commit is covered by a change whose merge commit it is and which
+passes the policy as `check` judges it, with dispositions; commits a merge brought in are covered
+by that merge's change. A producer writes the Statement whatever its verdict, because a release
+that shipped uncovered commits is itself a fact to attest. It is unsigned, and is signed as any
+other Statement is (§7.3).
 
 ## 8. Determinism
 
@@ -827,7 +913,9 @@ that validates against a version's schema validates against that version's, neve
   forge's head history as derived evidence (§4 rule 3), and how a GitLab collector records
   identity, approvals, checks (`pipeline` and `job` results, the `project_settings` source),
   bypass and reviewer teams (§4.4); team identifiers may be a group path of more than two
-  segments.
+  segments. Branch updates and deployments: the `branches` and `deployments` facts (§4.5, §4.6),
+  the `branches` and `deployments` policy blocks (§6.3), and rules ACC012 and ACC013 (§6.2), whose
+  subjects are a branch and a deployment; both disabled by default.
 
 - **0.3, revision 3 (2026-09-29)** — §9 no longer names a single suite revision for this
   version: revision 1 was published at `v0.5.0`, and later revisions (revision 2 adds vectors

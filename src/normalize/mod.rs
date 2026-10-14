@@ -24,6 +24,7 @@ pub fn schema(value: &Value, name: &str) -> Result<()> {
         "provenance" => include_str!("../../schemas/provenance.schema.json"),
         "statement" => include_str!("../../schemas/statement.schema.json"),
         "review" => include_str!("../../schemas/review.schema.json"),
+        "release" => include_str!("../../schemas/release.schema.json"),
         _ => bail!("unknown schema"),
     };
     let definition: Value = serde_json::from_str(raw)?;
@@ -143,6 +144,47 @@ pub fn events(mut e: Events) -> Result<Events> {
         evidence(&mut team.provenance, &attestations)?;
     }
     e.teams.sort_by(|a, b| a.id.cmp(&b.id));
+    let actors = e.actors.clone();
+    let resolves = |id: &Option<String>| id.as_ref().is_none_or(|a| actors.contains_key(a));
+    let mut branch_ids = BTreeSet::new();
+    for b in &mut e.branches {
+        ensure!(branch_ids.insert(b.id.clone()), "ACV004 duplicate branch");
+        let mut event_ids = BTreeSet::new();
+        for ev in &mut b.events {
+            ensure!(
+                event_ids.insert(ev.id.clone()),
+                "ACV004 duplicate branch update"
+            );
+            ensure!(resolves(&ev.actor_id), "ACV003 unresolved actor");
+            evidence(&mut ev.provenance, &attestations)?;
+        }
+        b.events.sort_by(|x, y| (x.at, &x.id).cmp(&(y.at, &y.id)));
+        evidence(&mut b.provenance, &attestations)?;
+    }
+    e.branches.sort_by(|a, b| a.id.cmp(&b.id));
+    if let Some(d) = &mut e.deployments {
+        ensure!(d.from <= d.to, "ACV004 deployment window is reversed");
+        d.environments.sort();
+        d.environments.dedup();
+        let mut deployment_ids = BTreeSet::new();
+        for dep in &mut d.deployments {
+            ensure!(
+                deployment_ids.insert(dep.id.clone()),
+                "ACV004 duplicate deployment"
+            );
+            ensure!(resolves(&dep.creator), "ACV003 unresolved actor");
+            ensure!(
+                dep.commits
+                    .first()
+                    .is_some_and(|c| c.sha.eq_ignore_ascii_case(&dep.sha)),
+                "ACV004 a deployment's commits must start with the deployed commit"
+            );
+            evidence(&mut dep.provenance, &attestations)?;
+        }
+        d.deployments
+            .sort_by(|x, y| (x.at, &x.id).cmp(&(y.at, &y.id)));
+        evidence(&mut d.provenance, &attestations)?;
+    }
     let mut ids = BTreeSet::new();
     for c in &mut e.changes {
         if let Some(r) = &mut c.risk {

@@ -2,9 +2,11 @@
 
 mod common;
 
+use agent_change_control::collectors::DeploymentQuery;
 use agent_change_control::collectors::github::{Github, Sources, UNAVAILABLE_ACTOR};
 use agent_change_control::model::{
-    ActorKind, Confidence, Events, EvidenceKind, Policy, ReviewState, RuleId, Status,
+    ActorKind, BranchEventKind, Confidence, Events, EvidenceKind, Policy, ReviewState, RuleId,
+    RuleName, Status,
 };
 use agent_change_control::normalize::timestamp;
 use agent_change_control::provenance::agent_trace::AgentTraces;
@@ -216,6 +218,9 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
     if let Some(response) = checks_response(mode, path) {
         return response;
     }
+    if let Some(response) = release_gates_response(mode, path) {
+        return response;
+    }
     *pull_reads += 1;
     let body = match mode {
         "moving" if *pull_reads > 1 => edited(PULL, |v| v["head"]["sha"] = "moved".into()),
@@ -287,6 +292,62 @@ fn checks_response(mode: &str, path: &str) -> Option<(&'static str, &'static str
     Some(response)
 }
 
+/// Branch activity, deployments and compare endpoints, for the `branches*` and `deploy*` modes.
+///
+/// `main` moved four times: a direct push in July (before the window), PR 421's merge to `merge`,
+/// a direct push from `merge` to `later` and a force push from `later` to `rewritten`. Production
+/// was deployed at `base` in July, at `merge` after PR 421 merged, and at `later`.
+fn release_gates_response(mode: &str, path: &str) -> Option<(&'static str, &'static str, String)> {
+    let user = |login: &str, id: u64| format!(r#"{{"login":"{login}","type":"User","id":{id}}}"#);
+    let body = if path
+        .starts_with("/repos/acme/api/activity?ref=refs%2Fheads%2Fmain&time_period=year&")
+    {
+        if mode == "branches-forbidden" {
+            return Some(("403 Forbidden", "", "{}".into()));
+        }
+        format!(
+            r#"[{{"id":900,"node_id":"a","activity_type":"force_push","before":"later","after":"rewritten","ref":"refs/heads/main","timestamp":"2026-08-20T10:00:00Z","actor":{alice}}},
+               {{"id":899,"node_id":"b","activity_type":"push","before":"merge","after":"later","ref":"refs/heads/main","timestamp":"2026-08-04T09:00:00Z","actor":{bob}}},
+               {{"id":898,"node_id":"c","activity_type":"pr_merge","before":"base","after":"merge","ref":"refs/heads/main","timestamp":"2026-08-03T12:00:01Z","actor":{alice}}},
+               {{"id":897,"node_id":"d","activity_type":"push","before":"x","after":"base","ref":"refs/heads/main","timestamp":"2026-07-20T00:00:00Z","actor":null}}]"#,
+            alice = user("alice", 1),
+            bob = user("bob", 2),
+        )
+    } else if path.starts_with("/repos/acme/api/deployments?environment=production&") {
+        format!(
+            r#"[{{"id":70,"sha":"later","ref":"main","environment":"production","production_environment":true,"created_at":"2026-08-05T09:59:00Z","creator":{carol}}},
+               {{"id":69,"sha":"merge","ref":"main","environment":"production","production_environment":true,"created_at":"2026-08-03T12:59:00Z","creator":{carol}}},
+               {{"id":68,"sha":"base","ref":"main","environment":"production","production_environment":true,"created_at":"2026-07-15T09:00:00Z","creator":{carol}}}]"#,
+            carol = user("carol", 3),
+        )
+    } else if let Some(id) = path
+        .strip_prefix("/repos/acme/api/deployments/")
+        .and_then(|rest| rest.strip_suffix("/statuses"))
+    {
+        let at = match id {
+            "70" => "2026-08-05T10:00:00Z",
+            "69" => "2026-08-03T13:00:00Z",
+            _ => "2026-07-15T09:05:00Z",
+        };
+        format!(
+            r#"[{{"state":"success","created_at":"{at}"}},{{"state":"in_progress","created_at":"{at}"}}]"#
+        )
+    } else if path.starts_with("/repos/acme/api/compare/base...merge?") {
+        // A merge commit: its first parent is the base, its second the branch it brought in.
+        r#"{"status":"ahead","total_commits":2,"commits":[
+            {"sha":"side","parents":[{"sha":"base"}],"commit":{"committer":{"date":"2026-08-02T10:00:00Z"}}},
+            {"sha":"merge","parents":[{"sha":"base"},{"sha":"side"}],"commit":{"committer":{"date":"2026-08-03T12:00:00Z"}}}]}"#
+            .into()
+    } else if path.starts_with("/repos/acme/api/compare/merge...later?") {
+        r#"{"status":"ahead","total_commits":1,"commits":[
+            {"sha":"later","parents":[{"sha":"merge"}],"commit":{"committer":{"date":"2026-08-04T09:00:00Z"}}}]}"#
+            .into()
+    } else {
+        return None;
+    };
+    Some(("200 OK", "", body))
+}
+
 fn window() -> (
     agent_change_control::model::Timestamp,
     agent_change_control::model::Timestamp,
@@ -299,6 +360,10 @@ fn window() -> (
 
 static TEAMS: std::sync::LazyLock<Vec<String>> =
     std::sync::LazyLock::new(|| vec!["acme/security".to_string()]);
+static BRANCHES: std::sync::LazyLock<Vec<String>> =
+    std::sync::LazyLock::new(|| vec!["main".to_string()]);
+static ENVIRONMENTS: std::sync::LazyLock<Vec<String>> =
+    std::sync::LazyLock::new(|| vec!["production".to_string()]);
 
 fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow::Result<Events> {
     let server = Server::start(mode);
@@ -371,6 +436,17 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
                     "2026-08-20T00:00:00Z"
                 })
                 .unwrap()
+            }),
+            branches: mode.starts_with("branches").then(|| {
+                (
+                    BRANCHES.as_slice(),
+                    timestamp("2026-09-01T00:00:00Z").unwrap(),
+                )
+            }),
+            deployments: mode.starts_with("deploy").then(|| DeploymentQuery {
+                environments: ENVIRONMENTS.as_slice(),
+                from,
+                to,
             }),
         },
     )
@@ -1257,4 +1333,125 @@ fn reviewer_teams_are_recorded_as_observed_and_never_empty_when_unreadable() {
     let e = collect("teams-unreadable").unwrap();
     assert!(!e.teams[0].complete);
     assert!(e.teams[0].members.is_empty());
+}
+
+fn enabled(rules: &[agent_change_control::model::RuleName]) -> Policy {
+    let mut p = Policy::default();
+    for rule in rules {
+        p.rules.get_mut(rule).unwrap().enabled = true;
+    }
+    p
+}
+
+fn assessment(m: &agent_change_control::model::Manifest, subject: &str, rule: RuleId) -> Status {
+    m.assessments
+        .iter()
+        .find(|a| a.change_id == subject && a.rule_id == rule)
+        .unwrap_or_else(|| panic!("no {rule} assessment for {subject}"))
+        .status
+}
+
+#[test]
+fn branch_updates_are_recorded_and_judged() {
+    let e = collect("branches").unwrap();
+    let b = &e.branches[0];
+    assert_eq!(b.id, "github:acme/api:branch:main");
+    assert!(b.complete, "the window is within a year of collection");
+    let kinds: Vec<(BranchEventKind, &str)> = b
+        .events
+        .iter()
+        .map(|ev| (ev.kind, ev.after.as_str()))
+        .collect();
+    // Oldest first; the July push is outside the window.
+    assert_eq!(
+        kinds,
+        vec![
+            (BranchEventKind::PrMerge, "merge"),
+            (BranchEventKind::Push, "later"),
+            (BranchEventKind::ForcePush, "rewritten"),
+        ]
+    );
+    assert_eq!(b.events[2].actor_id.as_deref(), Some("github:alice"));
+    let m = manifest::evaluate(e, enabled(&[RuleName::UnaccountedBranchUpdate])).unwrap();
+    assert_eq!(assessment(&m, &b_id(), RuleId::Acc012), Status::Fail);
+    let found: Vec<&str> = m
+        .findings
+        .iter()
+        .filter(|f| f.rule_id == RuleId::Acc012)
+        .map(|f| f.explanation.as_str())
+        .collect();
+    assert_eq!(found.len(), 2, "{found:?}");
+    assert!(
+        found
+            .iter()
+            .any(|x| x.starts_with("Force push to main by github:alice"))
+    );
+    assert!(
+        found
+            .iter()
+            .any(|x| x.starts_with("Direct push to main by github:bob"))
+    );
+    manifest::validate(&m).unwrap();
+}
+
+fn b_id() -> String {
+    "github:acme/api:branch:main".into()
+}
+
+#[test]
+fn unreadable_branch_activity_is_unknown_and_incomplete() {
+    let e = collect("branches-forbidden").unwrap();
+    assert!(!e.branches[0].complete);
+    let m = manifest::evaluate(e, enabled(&[RuleName::UnaccountedBranchUpdate])).unwrap();
+    assert_eq!(assessment(&m, &b_id(), RuleId::Acc012), Status::Unknown);
+    assert!(manifest::incomplete(&m.events, &m.policy));
+}
+
+#[test]
+fn deployments_are_judged_by_every_commit_they_shipped() {
+    let e = collect("deploy").unwrap();
+    let d = e.deployments.as_ref().unwrap();
+    assert!(d.complete);
+    let shipped: Vec<(&str, Option<&str>, Vec<&str>)> = d
+        .deployments
+        .iter()
+        .map(|dep| {
+            (
+                dep.sha.as_str(),
+                dep.previous_sha.as_deref(),
+                dep.commits.iter().map(|c| c.sha.as_str()).collect(),
+            )
+        })
+        .collect();
+    // The July deployment only bounds the first one; the merge's second parent is not on the
+    // first-parent history.
+    assert_eq!(
+        shipped,
+        vec![
+            ("merge", Some("base"), vec!["merge"]),
+            ("later", Some("merge"), vec!["later"]),
+        ]
+    );
+    assert_eq!(d.deployments[0].creator.as_deref(), Some("github:carol"));
+    let m = manifest::evaluate(e, enabled(&[RuleName::DeployedWithoutPassingChange])).unwrap();
+    assert_eq!(
+        assessment(&m, "github:acme/api:deployment:69", RuleId::Acc013),
+        Status::Pass
+    );
+    assert_eq!(
+        assessment(&m, "github:acme/api:deployment:70", RuleId::Acc013),
+        Status::Fail
+    );
+    let finding = m
+        .findings
+        .iter()
+        .find(|f| f.rule_id == RuleId::Acc013)
+        .unwrap();
+    assert_eq!(finding.change_id, "github:acme/api:deployment:70");
+    assert!(
+        finding.explanation.contains("landed by no change: later"),
+        "{}",
+        finding.explanation
+    );
+    manifest::validate(&m).unwrap();
 }

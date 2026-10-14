@@ -25,6 +25,8 @@ that exercise each are listed in [policy](../policy.md#exact-deterministic-condi
 | [ACC009](ACC009.md) | Agent approval lacks required independence | high | `agent_review` |
 | [ACC010](ACC010.md) | Agent approval without signed identity | warning | `agent_review` |
 | [ACC011](ACC011.md) | Missing required reviewer team | high | a policy whose tiers require teams |
+| [ACC012](ACC012.md) | Unaccounted branch update (subject: a branch) | high | a policy that enables it |
+| [ACC013](ACC013.md) | Deployed without passing change (subject: a deployment) | high | a policy that enables it |
 
 Severities order `info < warning < medium < high`; with the default `fail_on: medium`, `high`
 findings fail `acc check` and `warning`/`info` findings do not. A [policy](../policy.md) can change

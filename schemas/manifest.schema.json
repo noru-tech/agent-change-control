@@ -757,6 +757,15 @@
           "items": {
             "$ref": "#/$defs/team"
           }
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/branch"
+          }
+        },
+        "deployments": {
+          "$ref": "#/$defs/deployments"
         }
       },
       "required": [
@@ -920,6 +929,12 @@
             "signed"
           ]
         },
+        "branches": {
+          "$ref": "#/$defs/branches_policy"
+        },
+        "deployments": {
+          "$ref": "#/$defs/deployments_policy"
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -954,6 +969,12 @@
               "$ref": "#/$defs/rule_policy"
             },
             "missing_required_reviewer_team": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "unaccounted_branch_update": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "deployed_without_passing_change": {
               "$ref": "#/$defs/rule_policy"
             }
           },
@@ -1065,7 +1086,9 @@
             "ACC008",
             "ACC009",
             "ACC010",
-            "ACC011"
+            "ACC011",
+            "ACC012",
+            "ACC013"
           ]
         },
         "rule": {
@@ -1081,7 +1104,9 @@
             "same_vendor_write_and_review",
             "agent_approval_not_independent",
             "agent_approval_unsigned",
-            "missing_required_reviewer_team"
+            "missing_required_reviewer_team",
+            "unaccounted_branch_update",
+            "deployed_without_passing_change"
           ]
         },
         "severity": {
@@ -1182,7 +1207,9 @@
             "ACC008",
             "ACC009",
             "ACC010",
-            "ACC011"
+            "ACC011",
+            "ACC012",
+            "ACC013"
           ]
         },
         "status": {
@@ -1520,6 +1547,251 @@
         "tier",
         "source"
       ],
+      "additionalProperties": false
+    },
+    "branch_event": {
+      "description": "One update of a protected branch, as the forge's activity record names it (ACP 0.4, ACC012).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "push",
+            "force_push",
+            "branch_creation",
+            "branch_deletion",
+            "pr_merge",
+            "merge_queue_merge"
+          ]
+        },
+        "before": {
+          "type": "string"
+        },
+        "after": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "before",
+        "after",
+        "at",
+        "actor_id",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "branch": {
+      "description": "A protected branch and its updates in the window (ACP 0.4, ACC012).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/branch_event"
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "events",
+        "complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "deployed_commit": {
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "committed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "sha",
+        "committed_at"
+      ],
+      "additionalProperties": false
+    },
+    "deployment": {
+      "description": "One successful deployment to a production environment (ACP 0.4, ACC013).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "creator": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "previous_sha": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deployed_commit"
+          }
+        },
+        "commits_complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "environment",
+        "sha",
+        "at",
+        "creator",
+        "previous_sha",
+        "commits",
+        "commits_complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "deployments": {
+      "description": "The production deployments in a deployment window (ACP 0.4, ACC013).",
+      "type": "object",
+      "properties": {
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deployments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deployment"
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "environments",
+        "from",
+        "to",
+        "deployments",
+        "complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "branches_policy": {
+      "description": "The protected branches ACC012 watches; empty means the repository's default branch (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "protected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "deployments_policy": {
+      "description": "The environments ACC013 treats as production; empty means those the forge marks as production (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
       "additionalProperties": false
     }
   }

@@ -53,6 +53,9 @@ Enforce policy against a manifest, honoring recorded dispositions
 acc\-verify(1)
 Gate a deploy: every first\-parent commit in a range must be landed by a change that a signed acc attestation shows passing
 .TP
+acc\-release(1)
+Attest a release: every first\-parent commit in a range, the changes that landed it and their verdicts, as an in\-toto Statement about the release artifacts
+.TP
 acc\-pr(1)
 Collect and evaluate one pull request
 .TP

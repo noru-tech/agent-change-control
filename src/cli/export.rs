@@ -24,7 +24,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             "export does not accept a policy; use evaluate",
         ));
     }
-    let events = forge::collect(ctx, kind, &c, false, false, &[])?;
+    let events = forge::collect(ctx, kind, &c, &forge::Wanted::default())?;
     let exit = if io::incomplete(&events) {
         Exit::Incomplete
     } else {

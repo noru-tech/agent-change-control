@@ -72,6 +72,29 @@ pub fn render(m: &Manifest) -> String {
         ]);
     }
     let mut out = columns(&rows);
+    // Branches and deployments (ACC012, ACC013) are subjects of their own, not changes.
+    let mut subjects = vec![["SUBJECT", "RULE", "RESULT"].map(String::from).to_vec()];
+    for a in m
+        .assessments
+        .iter()
+        .filter(|a| !m.events.changes.iter().any(|c| c.id == a.change_id))
+    {
+        let result = match a.status {
+            Status::Fail => "FAIL",
+            Status::Unknown => "UNKNOWN",
+            Status::Pass => "PASS",
+            Status::NotApplicable => "N/A",
+        };
+        subjects.push(vec![
+            plain(&a.change_id),
+            a.rule_id.code().into(),
+            result.into(),
+        ]);
+    }
+    if subjects.len() > 1 {
+        out.push('\n');
+        out.push_str(&columns(&subjects));
+    }
     let s = &m.summary;
     out.push('\n');
     for (count, label) in [
@@ -118,10 +141,22 @@ pub fn render(m: &Manifest) -> String {
             .flat_map(|c| crate::manifest::gaps(c, &m.policy, &m.events.teams))
             .collect();
         let rules: Vec<&str> = rules.iter().map(|r| r.code()).collect();
-        out.push_str(&format!(
-            "INCOMPLETE: data for {} is missing or partial for a merged change, and the policy enables it\n",
-            rules.join(" and ")
-        ));
+        if !rules.is_empty() {
+            out.push_str(&format!(
+                "INCOMPLETE: data for {} is missing or partial for a merged change, and the policy enables it\n",
+                rules.join(" and ")
+            ));
+        }
+        let subjects: Vec<&str> = crate::manifest::subject_gaps(&m.events, &m.policy)
+            .iter()
+            .map(|r| r.code())
+            .collect();
+        if !subjects.is_empty() {
+            out.push_str(&format!(
+                "INCOMPLETE: data for {} is missing or partial, and the policy enables it\n",
+                subjects.join(" and ")
+            ));
+        }
     }
     out
 }

@@ -1,0 +1,48 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-release 1  "release 0.6.0" 
+.SH NAME
+acc\-release \- Attest a release: every first\-parent commit in a range, the changes that landed it and their verdicts, as an in\-toto Statement about the release artifacts
+.SH SYNOPSIS
+\fBacc release\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-as\-of\fR] [\fB\-\-checkout\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fB\-\-range\fR> <\fB\-\-subject\fR> <\fIMANIFEST\fR> 
+.SH DESCRIPTION
+Attest a release: every first\-parent commit in a range, the changes that landed it and their verdicts, as an in\-toto Statement about the release artifacts
+.SH OPTIONS
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-\-range\fR \fI<BASE..HEAD>\fR
+The commits the release shipped, as BASE..HEAD: the previous release and this one, for example v1.4.0..v1.5.0
+.TP
+\fB\-\-subject\fR \fI<NAME=sha256:HEX>\fR
+A release artifact, as NAME=sha256:HEX (repeatable; at least one): the subjects of the Statement, for example the archive and checksum your build produced
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-\-policy\fR \fI<FILE>\fR
+Policy file; overrides the policy embedded in each manifest
+.TP
+\fB\-\-as\-of\fR \fI<DATE>\fR
+Calendar date dispositions are evaluated on (YYYY\-MM\-DD). Required when a finding has a non\-open disposition; the machine clock is never consulted
+.TP
+\fB\-\-checkout\fR \fI<DIR>\fR [default: .]
+The local clone the range is read from
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write the Statement to FILE instead of stdout
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.TP
+<\fIMANIFEST\fR>
+Manifests (JSON or YAML) whose changes may have landed the range\*(Aqs commits
+.SH VERSION
+v0.6.0

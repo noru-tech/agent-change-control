@@ -91,7 +91,7 @@ pub struct Args {
 
 /// `BASE..HEAD`, each side a revision git can resolve. A symmetric range (`...`) and anything
 /// that looks like an option are refused before git sees them.
-fn parse_range(range: &str) -> Result<(&str, &str)> {
+pub(crate) fn parse_range(range: &str) -> Result<(&str, &str)> {
     let invalid = || {
         failure_with_hint(
             Exit::Usage,
@@ -140,7 +140,7 @@ fn git(dir: &Path, args: &[&str]) -> Result<String> {
 }
 
 /// The full commit SHA `rev` names.
-fn resolve(dir: &Path, rev: &str) -> Result<String> {
+pub(crate) fn resolve(dir: &Path, rev: &str) -> Result<String> {
     let sha = git(
         dir,
         &["rev-parse", "--verify", &format!("{rev}^{{commit}}")],
@@ -149,7 +149,7 @@ fn resolve(dir: &Path, rev: &str) -> Result<String> {
 }
 
 /// The first-parent commits after `base` up to and including `head`, newest first.
-fn first_parent(dir: &Path, base: &str, head: &str) -> Result<Vec<String>> {
+pub(crate) fn first_parent(dir: &Path, base: &str, head: &str) -> Result<Vec<String>> {
     if git(dir, &["rev-parse", "--is-shallow-repository"])?.trim() == "true" {
         return Err(failure_with_hint(
             Exit::Usage,

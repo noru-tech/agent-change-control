@@ -262,6 +262,8 @@ codes](docs/rules/README.md)):
 | [ACC009](docs/rules/ACC009.md) | Agent approval lacks required independence (under `agent_review`) | high |
 | [ACC010](docs/rules/ACC010.md) | Agent approval without signed identity (under `agent_review`) | warning |
 | [ACC011](docs/rules/ACC011.md) | Missing required reviewer team (under risk tiers) | high |
+| [ACC012](docs/rules/ACC012.md) | Protected branch force-pushed, deleted or pushed to directly (opt-in) | high |
+| [ACC013](docs/rules/ACC013.md) | Production deployment shipped a commit no passing change landed (opt-in) | high |
 
 A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
 equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
@@ -290,6 +292,7 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 | `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
 | `acc verify --range BASE..HEAD` | Gate a deploy: every first-parent commit in the range must be landed by a change a signed attestation shows passing (`--verification` with `--signer`, or `--attestations` with `--verified-by`); exit 1 if not. See [verify](docs/verify.md) |
+| `acc release MANIFEST... --range BASE..HEAD --subject NAME=sha256:HEX` | Attest a release: an in-toto Statement about the release artifacts listing every first-parent commit in the range and the verdicts of the changes that landed it; exit 1 if a commit is uncovered or failing. See [release](docs/release.md) |
 | `acc pr NUMBER [--repo OWNER/REPO] [--forge github\|gitlab]` | Collect and check one pull request or merge request (the forge and repository are found like `scan`'s) |
 | `acc doctor [--online]` | Check the environment: version, token set (never printed), default policy file, detected repository; `--online` adds the token, the rate limit and whether a newer `acc` exists (GET only; the only update check, never automatic). Exit 0 healthy, 2 broken. `--format json` prints a [report object](#doctor-report-object) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |

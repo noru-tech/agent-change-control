@@ -4,6 +4,7 @@ use super::forge::Kind;
 use super::io::{self, EvidenceArgs, OutputArgs};
 use super::{Ctx, detect, forge};
 use crate::collectors::Sources;
+use crate::model::RuleId;
 use crate::output::Format;
 use crate::{Exit, failure_with_hint, manifest};
 use anyhow::Result;
@@ -78,7 +79,19 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         "policy: {}",
         io::policy_source(args.policy.as_deref())
     ));
-    let policy = io::load_policy(args.policy.as_deref())?;
+    let mut policy = io::load_policy(args.policy.as_deref())?;
+    // ACC012 and ACC013 judge a window's branch updates and deployments, not one change: `pr`
+    // leaves them to `scan`, and records that it did in the policy it embeds.
+    for rule in [RuleId::Acc012, RuleId::Acc013] {
+        if let Some(r) = policy.rules.get_mut(&rule.name())
+            && r.enabled
+        {
+            r.enabled = false;
+            ctx.note(format!(
+                "{rule} judges a window, not one change; run `acc scan` for it"
+            ));
+        }
+    }
     let teams = manifest::teams_required_by(&policy);
     ctx.debug(format!("collecting {repo} change {}", args.number));
     forge::debug_auth(ctx, kind);
@@ -96,6 +109,8 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             checks: manifest::checks_required(&policy),
             bypass_as_of: manifest::bypass_required(&policy).then(chrono::Utc::now),
             teams: (!teams.is_empty()).then(|| (teams.as_slice(), chrono::Utc::now())),
+            branches: None,
+            deployments: None,
         },
     )?;
     let m = manifest::evaluate(events, policy)?;

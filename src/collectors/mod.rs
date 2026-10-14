@@ -29,4 +29,18 @@ pub struct Sources<'a> {
     /// Reviewer teams to record (GitHub `ORG/SLUG` or a GitLab group path, ACC011), and the
     /// instant their membership is observed: forges expose current membership only.
     pub teams: Option<(&'a [String], Timestamp)>,
+    /// Protected branches whose updates to record (ACC012; empty names the default branch), and
+    /// the instant of collection: the forge's activity record reaches back a year from it.
+    pub branches: Option<(&'a [String], Timestamp)>,
+    /// Production deployments to record (ACC013).
+    pub deployments: Option<DeploymentQuery<'a>>,
+}
+
+/// Which deployments to record, and over which window.
+#[derive(Debug, Clone, Copy)]
+pub struct DeploymentQuery<'a> {
+    /// Environments that count as production; empty means those the forge marks as production.
+    pub environments: &'a [String],
+    pub from: Timestamp,
+    pub to: Timestamp,
 }

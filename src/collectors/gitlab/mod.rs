@@ -482,6 +482,8 @@ impl Gitlab {
             actors: BTreeMap::new(),
             attestations: BTreeMap::new(),
             teams: Vec::new(),
+            branches: Vec::new(),
+            deployments: None,
             changes: vec![],
         };
         let (numbers, complete) = match mr {
@@ -534,6 +536,41 @@ impl Gitlab {
             for id in ids {
                 e.teams.push(self.team(id, observed_at)?);
             }
+        }
+        // GitLab's push events say neither whether a push was forced nor whether a merge request
+        // landed it, and this collector does not read its deployments yet: both are recorded as
+        // unreadable, so ACC012 and ACC013 are unknown rather than passing on silence.
+        if let Some((names, _)) = sources.branches {
+            let names: Vec<String> = if names.is_empty() {
+                self.readable(&format!("/projects/{encoded}"))?
+                    .and_then(|p| p["default_branch"].as_str().map(String::from))
+                    .into_iter()
+                    .collect()
+            } else {
+                names.to_vec()
+            };
+            if names.is_empty() {
+                incomplete(&mut e, "Default branch unavailable");
+            }
+            for name in names {
+                e.branches.push(Branch {
+                    id: format!("gitlab:{project}:branch:{name}"),
+                    name,
+                    events: Vec::new(),
+                    complete: false,
+                    provenance: Vec::new(),
+                });
+            }
+        }
+        if let Some(query) = sources.deployments {
+            e.deployments = Some(Deployments {
+                environments: query.environments.to_vec(),
+                from: query.from,
+                to: query.to,
+                deployments: Vec::new(),
+                complete: false,
+                provenance: Vec::new(),
+            });
         }
         crate::normalize::events(e)
     }

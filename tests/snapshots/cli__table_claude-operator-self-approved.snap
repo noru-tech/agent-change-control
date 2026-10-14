@@ -23,3 +23,5 @@ ACC008  same_vendor_write_and_review            0
 ACC009  agent_approval_not_independent          0
 ACC010  agent_approval_unsigned                 0
 ACC011  missing_required_reviewer_team          0
+ACC012  unaccounted_branch_update               off
+ACC013  deployed_without_passing_change         off

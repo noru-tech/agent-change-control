@@ -5,7 +5,7 @@ use anyhow::Result;
 use std::collections::BTreeMap;
 
 /// Every rule this release evaluates, in identifier order.
-pub const RULES: [RuleId; 11] = [
+pub const RULES: [RuleId; 13] = [
     RuleId::Acc001,
     RuleId::Acc002,
     RuleId::Acc003,
@@ -17,6 +17,8 @@ pub const RULES: [RuleId; 11] = [
     RuleId::Acc009,
     RuleId::Acc010,
     RuleId::Acc011,
+    RuleId::Acc012,
+    RuleId::Acc013,
 ];
 
 /// The rules ACP 0.2 and 0.3 specified, for re-validating manifests written under them.
@@ -100,11 +102,14 @@ impl RuleId {
 }
 
 impl RuleId {
-    /// Whether a rule runs unless a policy turns it on or off. ACC004 and ACC005 need data the
-    /// collector gathers only when asked, under token permissions older workflows lack, so
-    /// they are opt-in.
+    /// Whether a rule runs unless a policy turns it on or off. ACC004, ACC005, ACC012 and
+    /// ACC013 need data the collector gathers only when asked, some under token permissions
+    /// older workflows lack, so they are opt-in.
     pub const fn enabled_by_default(self) -> bool {
-        !matches!(self, RuleId::Acc004 | RuleId::Acc005)
+        !matches!(
+            self,
+            RuleId::Acc004 | RuleId::Acc005 | RuleId::Acc012 | RuleId::Acc013
+        )
     }
 }
 
@@ -120,6 +125,8 @@ impl Default for Policy {
             tiers: None,
             missing_tier: None,
             minimum_risk_evidence: None,
+            branches: None,
+            deployments: None,
             rules: rule_defaults(&RULES),
         }
     }
@@ -159,6 +166,40 @@ pub fn resolve_for(p: Policy, revision: crate::manifest::Revision) -> Result<Pol
         anyhow::bail!("ACV010 ACP {} has no rule {name}", revision.version());
     }
     ensure_checks(&p, revision)?;
+    if (p.branches.is_some() || p.deployments.is_some()) && !revision.has_checks() {
+        anyhow::bail!(
+            "ACV010 ACP {} has no branches or deployments policy",
+            revision.version()
+        );
+    }
+    let normalized = |names: &[String], what: &str| -> Result<Vec<String>> {
+        anyhow::ensure!(
+            names.iter().all(|n| !n.trim().is_empty()),
+            "ACV010 {what} names must not be empty"
+        );
+        let mut names = names.to_vec();
+        names.sort();
+        names.dedup();
+        Ok(names)
+    };
+    let branches = p
+        .branches
+        .as_ref()
+        .map(|b| -> Result<BranchesPolicy> {
+            Ok(BranchesPolicy {
+                protected: normalized(&b.protected, "branches.protected")?,
+            })
+        })
+        .transpose()?;
+    let deployments = p
+        .deployments
+        .as_ref()
+        .map(|d| -> Result<DeploymentsPolicy> {
+            Ok(DeploymentsPolicy {
+                environments: normalized(&d.environments, "deployments.environments")?,
+            })
+        })
+        .transpose()?;
     let (tiers, missing_tier, minimum_risk_evidence) = resolve_tiers(&p, revision)?;
     let mut agent_review = p.agent_review;
     agent_review.require.sort();
@@ -181,6 +222,8 @@ pub fn resolve_for(p: Policy, revision: crate::manifest::Revision) -> Result<Pol
         tiers,
         missing_tier,
         minimum_risk_evidence,
+        branches,
+        deployments,
         rules: rule_defaults(rules),
     };
     full.rules.extend(p.rules);

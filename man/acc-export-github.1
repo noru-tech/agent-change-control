@@ -4,7 +4,7 @@
 .SH NAME
 acc\-export\-github \- A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
 .SH SYNOPSIS
-\fBacc export github\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-\-until\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-\-checks\fR] [\fB\-\-bypass\fR] [\fB\-\-team\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] 
+\fBacc export github\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-\-until\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-\-checks\fR] [\fB\-\-bypass\fR] [\fB\-\-team\fR] [\fB\-\-branches\fR] [\fB\-\-branch\fR] [\fB\-\-deployments\fR] [\fB\-\-environment\fR] [\fB\-\-deploy\-since\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] 
 .SH DESCRIPTION
 A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
 .SH OPTIONS
@@ -62,6 +62,21 @@ Also collect ruleset evaluations of merged changes (ACC005); the token needs rep
 .TP
 \fB\-\-team\fR \fI<ORG/SLUG>\fR
 Also record this reviewer team\*(Aqs members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy\*(Aqs tiers require
+.TP
+\fB\-\-branches\fR
+Also record every update of the repository\*(Aqs default branch in the window (ACC012). Implied when the policy enables ACC012
+.TP
+\fB\-\-branch\fR \fI<NAME>\fR
+Also record every update of this protected branch in the window (repeatable; ACC012)
+.TP
+\fB\-\-deployments\fR
+Also record successful deployments to production environments and the commits each shipped (ACC013): those the forge marks as production. Implied when the policy enables ACC013
+.TP
+\fB\-\-environment\fR \fI<NAME>\fR
+Also record deployments to this environment as production (repeatable; ACC013)
+.TP
+\fB\-\-deploy\-since\fR \fI<DATE>\fR
+Start of the deployment window (default: the start of the merge window). Keep it later than \-\-since, so the changes a deployment shipped were merged inside the merge window
 .TP
 \fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
 Output format; inferred from the \-\-output extension when omitted
