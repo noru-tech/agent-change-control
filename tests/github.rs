@@ -200,6 +200,16 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
         };
         return ("200 OK", "", body);
     }
+    if path.starts_with("/orgs/acme/teams/security/members") {
+        return match mode {
+            "teams-unreadable" => ("403 Forbidden", "", "{}".into()),
+            _ => (
+                "200 OK",
+                "",
+                r#"[{"login":"Bob"},{"login":"carol"}]"#.into(),
+            ),
+        };
+    }
     if path.starts_with("/users/") {
         return ("200 OK", "", USER.into());
     }
@@ -287,6 +297,9 @@ fn window() -> (
     )
 }
 
+static TEAMS: std::sync::LazyLock<Vec<String>> =
+    std::sync::LazyLock::new(|| vec!["acme/security".to_string()]);
+
 fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow::Result<Events> {
     let server = Server::start(mode);
     let pages = if mode == "capped" { 1 } else { 3 };
@@ -324,6 +337,9 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
         "attested-unverified" => {
             Some(Attestations::load(&[fixture("attestations/agree")], None).unwrap())
         }
+        "risk-high" => {
+            Some(Attestations::load(&[fixture("attestations/risk-high")], None).unwrap())
+        }
         "attested-conflict" => {
             Some(Attestations::load(&[fixture("attestations/conflict")], Some("x".into())).unwrap())
         }
@@ -345,6 +361,9 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: mode.starts_with("checks"),
+            teams: mode
+                .starts_with("teams")
+                .then(|| (TEAMS.as_slice(), timestamp("2026-08-31T00:00:00Z").unwrap())),
             bypass_as_of: mode.starts_with("bypass").then(|| {
                 timestamp(if mode == "bypass-old" {
                     "2026-10-14T00:00:00Z"
@@ -1211,4 +1230,31 @@ fn unreadable_or_out_of_reach_evaluations_are_incomplete_only_where_acc005_is_en
             assert_eq!(acc005(&on).0, Status::Unknown, "{mode}");
         }
     }
+}
+
+#[test]
+fn a_change_risk_assessment_on_the_head_is_recorded_as_the_change_s_risk() {
+    let e = collect("risk-high").unwrap();
+    let risk = e.changes[0].risk.as_ref().unwrap();
+    assert_eq!(risk.tier, agent_change_control::model::Tier::High);
+    assert!(risk.emergency.is_none());
+    assert_eq!(risk.provenance[0].kind, EvidenceKind::Declared);
+    assert!(e.attestations.contains_key(&risk.provenance[0].r#ref));
+    assert!(collect("plain").unwrap().changes[0].risk.is_none());
+}
+
+#[test]
+fn reviewer_teams_are_recorded_as_observed_and_never_empty_when_unreadable() {
+    let e = collect("teams").unwrap();
+    assert_eq!(e.teams.len(), 1);
+    assert_eq!(e.teams[0].id, "acme/security");
+    assert_eq!(e.teams[0].members, ["github:bob", "github:carol"]);
+    assert!(e.teams[0].complete);
+    assert_eq!(
+        e.teams[0].observed_at,
+        timestamp("2026-08-31T00:00:00Z").unwrap()
+    );
+    let e = collect("teams-unreadable").unwrap();
+    assert!(!e.teams[0].complete);
+    assert!(e.teams[0].members.is_empty());
 }

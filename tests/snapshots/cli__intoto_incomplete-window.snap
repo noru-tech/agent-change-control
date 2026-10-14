@@ -37,6 +37,10 @@ predicate:
       reason: Agent approvals do not satisfy independence under this policy.
       rule_id: ACC010
       status: not_applicable
+    - change_id: "github:acme/api:pr:421"
+      reason: "No reviewer team is required for this change's tier."
+      rule_id: ACC011
+      status: not_applicable
   events:
     actors:
       "agent:claude-code":
@@ -155,6 +159,9 @@ predicate:
         severity: high
       merged_without_required_checks:
         enabled: false
+        severity: high
+      missing_required_reviewer_team:
+        enabled: true
         severity: high
       same_vendor_write_and_review:
         enabled: true

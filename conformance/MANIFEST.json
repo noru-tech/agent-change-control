@@ -1,16 +1,580 @@
 {
   "contract": "README.md#contract",
   "counts": {
-    "accept": 49,
-    "incomplete": 10,
-    "reject": 24
+    "accept": 56,
+    "incomplete": 12,
+    "reject": 27
   },
-  "specDigest": "sha256:638cce20bae2614ce10b62c1b761be0328bf4ac00a694d6362b21d4c3f1244ba",
+  "specDigest": "sha256:0c8d222af67ec4b54e3804a2438542ca0066d36b3d0432ca2bdfde9094e3a110",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.4",
   "suite": "acp-evaluator-conformance",
-  "suiteRevision": 1,
+  "suiteRevision": 2,
   "vectors": [
+    {
+      "conditions": [
+        "#67-risk-tiers",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:be5766f6e4417131b7a2b5258969511c4f01f7a5f910a60cc0042338eb25db6f",
+        "verdict": "evaluated"
+      },
+      "id": "tier-missing-assessment",
+      "kind": "accept",
+      "path": "accept/tier-missing-assessment.json"
+    },
+    {
+      "conditions": [
+        "#38-risk-assessment",
+        "#67-risk-tiers"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:7c5fd9ddb3c7ff2cba3902344df40c772f35ebe87e2be06dfd6bac6059d6623e",
+        "verdict": "evaluated"
+      },
+      "id": "tier-below-minimum",
+      "kind": "accept",
+      "path": "accept/tier-below-minimum.json"
+    },
+    {
+      "conditions": [
+        "#43-reviewer-teams",
+        "#67-risk-tiers",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:ebc7ac6bf460d5a5cac23c679efc69a6f86bb84c142396368f969975f3dd11af",
+        "verdict": "evaluated"
+      },
+      "id": "tier-team-approved",
+      "kind": "accept",
+      "path": "accept/tier-team-approved.json"
+    },
+    {
+      "conditions": [
+        "#43-reviewer-teams",
+        "#67-risk-tiers",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC011"
+        ],
+        "manifestDigest": "sha256:e3428b54c7132fe8bb3942ca35cf2d7006670714d6244729f0d96158a529caa0",
+        "verdict": "evaluated"
+      },
+      "id": "tier-team-missing",
+      "kind": "accept",
+      "path": "accept/tier-team-missing.json"
+    },
+    {
+      "conditions": [
+        "#38-risk-assessment",
+        "#67-risk-tiers",
+        "#64-dispositions"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:1fa69aac59836ab942417dd7c70ae06cad8af66523144986d6f8c7cf5a0a6e01",
+        "verdict": "evaluated"
+      },
+      "id": "tier-emergency-unreviewed",
+      "kind": "accept",
+      "path": "accept/tier-emergency-unreviewed.json"
+    },
+    {
+      "conditions": [
+        "#38-risk-assessment",
+        "#67-risk-tiers"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC003"
+        ],
+        "manifestDigest": "sha256:d40e49ac2b749874c0507182be3ef3bce5387bcfb58e76aee51b3edc771e591e",
+        "verdict": "evaluated"
+      },
+      "id": "tier-emergency-declared",
+      "kind": "accept",
+      "path": "accept/tier-emergency-declared.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#43-reviewer-teams"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:d227975f4259205d19ab818e4846d191af23b3cd08608f04c26918ba6c20231f",
+        "verdict": "incomplete"
+      },
+      "id": "tier-team-approved--membership-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/tier-team-approved--membership-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#43-reviewer-teams"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:bbc945b0971f4d2a7ed37570ee0918b37b0df11f2ae4637e819459ad3503c236",
+        "verdict": "incomplete"
+      },
+      "id": "tier-team-approved--reviews-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/tier-team-approved--reviews-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#43-reviewer-teams",
+        "#67-risk-tiers"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC011"
+          }
+        ],
+        "codes": [
+          "ACC006"
+        ],
+        "manifestDigest": "sha256:825d81894ecdacac64be979b7d79738354e9de6b872d1110d1c2facfaf55c831",
+        "verdict": "evaluated"
+      },
+      "id": "tier-team-approved--author-unknown",
+      "kind": "accept",
+      "path": "accept/tier-team-approved--author-unknown.json"
+    },
     {
       "conditions": [
         "#61-independence",
@@ -57,10 +621,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:a6933c3a5594585553c7c4305f33d412e54e9853ed39cc020e6bc5b6a9cc5a33",
+        "manifestDigest": "sha256:e96ae067956ebf685548590cac63eddd8ad69f9a3baeea3868e741ea1a06af8a",
         "verdict": "evaluated"
       },
       "id": "human-clean",
@@ -112,13 +681,18 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:c6068b35310ac2f7e6398e0935874eda519b20d867fededdf0da2d808550568c",
+        "manifestDigest": "sha256:4d514e483c55ac092c2f9b0f9a71a107330ced273870c7b6fce7d8943970ee50",
         "verdict": "evaluated"
       },
       "id": "human-self-approved",
@@ -171,12 +745,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:26d45034cbce6e1ed2b2a3870e361962fc0d7eaea0a453149f0364a993371d2d",
+        "manifestDigest": "sha256:f4c122963ee4e784d1716137d11fe47da44fa9a193152c13b2725bce1ea195d5",
         "verdict": "evaluated"
       },
       "id": "self-and-independent",
@@ -229,10 +808,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:2eda516e69a93b7e739e12960e20e052a36c094db4ed32908b3a91b604edd005",
+        "manifestDigest": "sha256:aad581adcdc77c3aa66858799500a6f2933fa8e8bfd934f9e7dead3df7a9578f",
         "verdict": "evaluated"
       },
       "id": "claude-clean",
@@ -285,6 +869,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -292,7 +881,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:b43aa70878df5c1eea713c419a9f7b122696be6662b263cfd8016c19cff3ad43",
+        "manifestDigest": "sha256:b580140573c661fc94be599156aa556c7028971cbaea36978b208e508d019333",
         "verdict": "evaluated"
       },
       "id": "claude-operator-self-approved",
@@ -345,10 +934,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:f3704dd5bf536202e57bc5ea99e754f6b3fd862655bc6184c23fe70cf1884ec6",
+        "manifestDigest": "sha256:808a13b59833748f516c87113608bd19fda05febd7bf50d0fb8e1fb0aa2b277f",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived",
@@ -401,6 +995,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -408,7 +1007,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:e9e80e122bfdc1aa16c913a2a405e8499448be67453d4d57280a7b22fc8fc4c6",
+        "manifestDigest": "sha256:0d561178b542569e553fb67abc58e5c6edce3ca361f674a4f4740f2b8c96c009",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-self-approved",
@@ -461,10 +1060,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:58d4c57a220af8fd4bee1a5d34cf5b864e17924f0eba50e95d58097debe816d3",
+        "manifestDigest": "sha256:65c03b13772db46dbaeafa268285773fa6238be9a034846a1fdc0566e3559d62",
         "verdict": "evaluated"
       },
       "id": "codex-clean",
@@ -517,12 +1121,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:c0203dc8a7ca633ab5c40184141267c258557769bde0e49fef63700de02c50e2",
+        "manifestDigest": "sha256:d25ea4d60a4d14e295be2fe7ac55135dd346c9e1906934b93d68d56194cbec21",
         "verdict": "evaluated"
       },
       "id": "agent-operator-unknown",
@@ -575,12 +1184,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:3888eaf129f438b0a5132ad659f742856b535245230fb50b9efe820af9c26526",
+        "manifestDigest": "sha256:8c6c3023c2d35ce5bdac896155f3a95f9f9ca6b089823febee613117af6b4e7f",
         "verdict": "evaluated"
       },
       "id": "unknown-without-review",
@@ -633,12 +1247,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:2a47f8d7bbe4386daef05c6ef6a5215e0418fc61ac79942f5fbc569b7391427b",
+        "manifestDigest": "sha256:3700ec2d3ea1279bdd3085b78cce2485741d70889917e61269b5601a925b2d7d",
         "verdict": "evaluated"
       },
       "id": "bot-approval",
@@ -690,12 +1309,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:7148c498a78c5cf4cf228de0b16db81b549b9309bfb48d850ca00f1a29d91a4e",
+        "manifestDigest": "sha256:92f858e1f3131e58fec1ccdb5d774555b77194aeca636fbfc7a7f39936e4944f",
         "verdict": "evaluated"
       },
       "id": "changes-requested",
@@ -747,12 +1371,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:9e8bcb077c7728bc2867f9dbd21e6d1127a3a39569ca56e930ed4dcaf1dc47fb",
+        "manifestDigest": "sha256:c5a22ec3eeb8c18376d760f57548331fab8f43141e8f785ee09524532565e1e9",
         "verdict": "evaluated"
       },
       "id": "dismissed-approval",
@@ -804,10 +1433,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e8c7cfd712138960eeb62f977f50d574be48783b2834552d9819cb0cc7c6d22c",
+        "manifestDigest": "sha256:1bce6056bc191f529c91f8508d94d6bd5eb4398d2a55ab061e2ac05e329b5bf9",
         "verdict": "evaluated"
       },
       "id": "comment-after-approval",
@@ -859,12 +1493,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:c21fea45d74eafaa149507bf507ab27743b9dd35e634b0ed08cc842070e4a918",
+        "manifestDigest": "sha256:81a3836b9adce7eaa34ee1a029370ec491cef8714248ca06f8488cdac6160952",
         "verdict": "evaluated"
       },
       "id": "stale-approval",
@@ -916,10 +1555,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:a4ab5a718d6a7b0685309f2705621d2ef36c2cf17e26578ec39ae6533b6f7219",
+        "manifestDigest": "sha256:6d0e0e554be206d9b502f6a10718192f91a5139b46343007c544828b45e8036e",
         "verdict": "evaluated"
       },
       "id": "approval-at-merge",
@@ -972,10 +1616,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:8b6db18b1dd361d1c6dadcac1f265b7692a83c8a509ebc5ef4bba6d67791c8bc",
+        "manifestDigest": "sha256:0bebc93a68cb4795541f1d5bc1822fedc0b3881954e96f8ee5b2db0c22238e7a",
         "verdict": "evaluated"
       },
       "id": "open-pr",
@@ -1028,10 +1677,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:a6933c3a5594585553c7c4305f33d412e54e9853ed39cc020e6bc5b6a9cc5a33",
+        "manifestDigest": "sha256:e96ae067956ebf685548590cac63eddd8ad69f9a3baeea3868e741ea1a06af8a",
         "verdict": "evaluated"
       },
       "id": "timezone-equivalent",
@@ -1084,6 +1738,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1091,7 +1750,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:a1d5447f6c565365859e3f08b029c154429078606bbfe9fd30067f5bc4a40751",
+        "manifestDigest": "sha256:3ebf9186e8bd9048f4f74a866a1f2bc9abb8de034db67bca71e6c673e6c85c28",
         "verdict": "evaluated"
       },
       "id": "agent-review-declared",
@@ -1144,6 +1803,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1152,7 +1816,7 @@
           "ACC007",
           "ACC008"
         ],
-        "manifestDigest": "sha256:531c2bdfd2d9eecf6566cbd37a0d648628a26d426ab0cd9646b723e85b523382",
+        "manifestDigest": "sha256:83d9ef05f69eea60fd22e4b1097ccc6dfe344bce124555c04fe02710b73bbf1c",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-vendor",
@@ -1206,12 +1870,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:5caa913ff4b3fdc48af025dc609a3c9866826ed88c62e89427dba68d34223024",
+        "manifestDigest": "sha256:82fee0380a96df61fa624ad107bb8cbdc277d84660e0caf7111b0010f76faaed",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent",
@@ -1264,6 +1933,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1272,7 +1946,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:37585479a8bbb4612e769c50311f596ae8da4d76fbf97254a9c3b1a9d3d993f0",
+        "manifestDigest": "sha256:e817d9579ac6bf8b9c96b80e1502fd2d00c970601bc8373c23531693ab2799f2",
         "verdict": "evaluated"
       },
       "id": "agent-review-dependent-operator",
@@ -1325,6 +1999,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1333,7 +2012,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:9c19ad6b97b1d29f38cc1c16aef0f63a2d507332656abf5f128ffca29615ff3c",
+        "manifestDigest": "sha256:7cf3447c0d46d43657e08e1fe8b25206b407f48c3336dfc7628bcab184017e1f",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-identity",
@@ -1387,12 +2066,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:f87fd51001f9facc33d817fa225732c71d31e91597af6e710e3d7d9a4a11e4b7",
+        "manifestDigest": "sha256:544cb380d66fb1e1da5974d9f0d1a5dc7b95b6c18445f25684b8e27e1e163735",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-operator",
@@ -1446,12 +2130,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:0fbba632f02f04fc526d8d89e16670ee392cbeb46d6901f02ebd75b988aafa80",
+        "manifestDigest": "sha256:af780b058185626c9e6fe75b6be8273233dbfc706e140caaa20d24d150e975a2",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-vendor",
@@ -1505,6 +2194,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "fail",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1513,7 +2207,7 @@
           "ACC007",
           "ACC010"
         ],
-        "manifestDigest": "sha256:c9d39a70089231f3404cd173f44253674d4945e69d2c95e689bd07b19cf6d08e",
+        "manifestDigest": "sha256:77d7b0642842d0dc52f1093408658010face8102cb0e8c0b7f047d07e2c540e6",
         "verdict": "evaluated"
       },
       "id": "agent-review-unsigned",
@@ -1565,6 +2259,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1572,7 +2271,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:f9b142d3ffd5ce384313ab2b5d593cffe4b0ff0b94958f5c033b616e87fb079b",
+        "manifestDigest": "sha256:38a1e692ff6b9c72bbd66168a57f9883dc81242b83a4eaaab6e093d2054957ec",
         "verdict": "evaluated"
       },
       "id": "agent-review-out-of-scope",
@@ -1626,12 +2325,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:bc5d2a82a2ffc5ae2340139dabf028642d40882be3ff0f18db3e32857e6bc832",
+        "manifestDigest": "sha256:db4efa935eee53649d6e988f9a0ccde1a9d3ac1581f0e9eeba31c758461e4fbf",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived--minimum-authorship-declared",
@@ -1685,12 +2389,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:5126aa683f3e2fc1940cea8fa162d805195172503e1ac7a1190d00ba1ba4c74d",
+        "manifestDigest": "sha256:8e2efc3cd7af8cef53ca0141b498d18b7c3a3555bfdd5f3b8bafdbc653feb3b0",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-authorship-observed",
@@ -1744,13 +2453,18 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC001",
           "ACC003"
         ],
-        "manifestDigest": "sha256:2ec3f7451700bfb45e2000a87768fb288bc6c7aea4c160a656bf810f251e8917",
+        "manifestDigest": "sha256:fbe8cdfae3765f264647d130ec478c8e1ab05cd56efb56579ee128d44db08564",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-review-signed",
@@ -1803,10 +2517,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:aff3f1b4d335a62076807ab1f14ae0f3c9647e66e9ed2edeec83fe14da45fb72",
+        "manifestDigest": "sha256:954467e61f9eb79975deafa286d3b2384d5c7eed3c797a3fb04081c3359b0eb3",
         "verdict": "evaluated"
       },
       "id": "claude-clean--signed-authorship",
@@ -1853,12 +2572,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:a83bf97267dce925aa459594d37fce87f90bdd753633f069ed05832dbcd4ea2c",
+        "manifestDigest": "sha256:443812035a9789a50ed0e73aab35d789ea3383f46f6460183ab840ef4cab30cc",
         "verdict": "evaluated"
       },
       "id": "human-self-approved--rule-disabled",
@@ -1911,12 +2635,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:19ab4d03eda69a11718b1144cbc0bdfa9ff84a95a32677198f09c07926403ea2",
+        "manifestDigest": "sha256:b926e348187bb506ae9d4c483670cfb9fa870a446f857f5168d0a0b7fe1ab7ab",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent--instructions-required",
@@ -1969,6 +2698,11 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
@@ -1977,7 +2711,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:fe6646a3ea4fc8a432682e0f232f5df6a241537130c78b13368a63e1fed5a20c",
+        "manifestDigest": "sha256:077219715c44d8a1680cbdb358c823c06e216dccd124775c4d0938c0117d3d68",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-dependent",
@@ -2031,12 +2765,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "pass",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:491f87e343f57e6c39a532c99a15c661824a7412c85ae8d4aa6700e087a9af3d",
+        "manifestDigest": "sha256:9392f948ec1d507737d9d0e52f85528599a31d062766ed6396b28470ab0ca2a9",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-unknown",
@@ -2089,10 +2828,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:0e2f37a28c602fa0e568805f22366caf6688af16d6c11dc5cb8e96ea39209c1d",
+        "manifestDigest": "sha256:fc0a893f1e5cb7df6b6d875966671ea89aa6a1aef8aafa741cb2fb0615c8738c",
         "verdict": "incomplete"
       },
       "id": "incomplete-window",
@@ -2145,10 +2889,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:7015d4e61ea1919ed704108dd6747a1a203aca24d0ab822c504795b2c8d703c7",
+        "manifestDigest": "sha256:433c0b4fd21b22ed7de2edc4a1b1685e2127312c595f0f11eed9e1d6a91835c8",
         "verdict": "incomplete"
       },
       "id": "partial-with-approval",
@@ -2206,10 +2955,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:90df98b359acb7c3fe3fcad8742066392b2b0e36c3bf73e7002b2d72afc5258f",
+        "manifestDigest": "sha256:331bcaa00e33fc7529244587d9f9efc80b65588c0197fd1e3c48e1faf4b6aa4c",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed",
@@ -2267,12 +3021,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:b3c09ce492f1d6f7b6535d522ac50e6bacd7c40b2641eb5ca1625bf608e32e24",
+        "manifestDigest": "sha256:d261bee4eeda7b06c078a09b0c3d97e40c94067e122c9225d230caef3dfba31f",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-failed",
@@ -2330,12 +3089,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:6b5d959807bbf23681420446d313c37756226aee805a6e37280efffb7a1ac0bd",
+        "manifestDigest": "sha256:08a02a365ecee89a19938304882d94923d9f03345cd2630b9aa2005166248dee",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-no-run",
@@ -2393,12 +3157,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:13a8e95eed1cdaf7c8dd99ba831d455f0284f535fd2f9b28ef82effff77bd261",
+        "manifestDigest": "sha256:be5b59187b9106d7cd096135378f0533b00c3b1752130eae62a37fde368f6627",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-after-merge",
@@ -2456,10 +3225,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:33495bec2bff0b6a248dcf87125abf7fc97f9f198c2e26ba5091a4487e4affee",
+        "manifestDigest": "sha256:c18068edd44baae30ab9eefc5c92fbae03fbc2d1a34ee358a4ee80eeb369c7dd",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-on-merge-commit",
@@ -2517,12 +3291,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:1084ca1aa5bdd5f7f80d5b46be9bd756a2426381ac547722f792d94e45506842",
+        "manifestDigest": "sha256:8efa327dfca31f06ae690d5f10264186271f1b81fdc453870cb044dd16863ff6",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-simultaneous-disagree",
@@ -2580,12 +3359,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:d90cb78eec8353b5c5098f96057322439b5873a0067ff1b698debf74d0d10b87",
+        "manifestDigest": "sha256:49e55d9b989418d085f2976ae87d9c714fa266be2b4c4bbc7b0bc02973e691b4",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-policy-required",
@@ -2643,10 +3427,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e333984b242d72f9af574b10b8a7666ad122e35fbffaafad04b93d47806915f4",
+        "manifestDigest": "sha256:6a02815bc971b402f6c7cb6b6f81e8e41310a626b59e1bfa8e4410020e7671b7",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-nothing-required",
@@ -2704,10 +3493,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:d6dfe2f3abd02ac00f2042b28c6ba9a7cf748c6b1206eb915fad9e0d7a20e711",
+        "manifestDigest": "sha256:fdb1b1c2113ff6386bb6592526205a363341b961b4118829b5e46b15d7d69beb",
         "verdict": "evaluated"
       },
       "id": "open-pr--checks-enabled",
@@ -2765,10 +3559,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:6d1665ba269e21d9892e3e124e1a44c50a3d527f0bfac721976f0641cbe4c1ba",
+        "manifestDigest": "sha256:992b7beb00c978fd9ae05e76db9d647f7cd6efaf78b4b9ab1108a9b9399215ba",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-passed",
@@ -2826,12 +3625,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC005"
         ],
-        "manifestDigest": "sha256:8d0137e09cd6f6cc963bd1e65fc305913e945412658375a94339fc16ab6c0173",
+        "manifestDigest": "sha256:3e7befffcb4f026def4aa9583da27c2512498ad503a22d6123df90abfab82aa9",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-recorded",
@@ -2889,10 +3693,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:016315e91678ff341d0937825bf85e6a38580b402f7e815d25eeaf7b6bc256c9",
+        "manifestDigest": "sha256:fc9de077d9e383ca96f5c9478ae892be00d2d180b340528b811ddf105054ab77",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-suite-failed",
@@ -2950,10 +3759,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:7dd78e5b9f708157d756ad3d5d3176930b1f2491444dbd193b95a73c469d8baf",
+        "manifestDigest": "sha256:b0aec4398a2deb7a3df812b43a173a7a316b414b515e16a3dbd4a950cc14a01d",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-none-recorded",
@@ -3011,10 +3825,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:a72e1e1696704696c49e4a8cf197a820b5172f8d98206e77cab08c37f2fd0859",
+        "manifestDigest": "sha256:d8f675e4b5f5cebf9c7622de2fc6d7379fd27977da7b332fefeff520846bf8c8",
         "verdict": "evaluated"
       },
       "id": "open-pr--bypass-enabled",
@@ -3072,10 +3891,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:0d4a00e70550d830e8b24e891dc7e5233cc09f455d1f0a5c9415f92637515d97",
+        "manifestDigest": "sha256:fda9719511ad5c4210daac1b049da5af692eb53d57c614f4857a84d26eb70629",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-not-collected",
@@ -3133,10 +3957,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:2ac2a666afb6b9664a9bd6450fe435d6c2e60d27640809b1d1734071d9c473dd",
+        "manifestDigest": "sha256:866ee17230a52cd4080fdb0fdd6f04a33862fc057536e5153cc5754aed891820",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-incomplete",
@@ -3194,12 +4023,17 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC005"
         ],
-        "manifestDigest": "sha256:d0ac112a3a5b30b3ceef6963fa2324c1848a4a40077313051f3e1bd46d54088e",
+        "manifestDigest": "sha256:0207358ab46db88e526a7df0c7fc587a86b1404b1b0dc802f74723b597ff6e6c",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-recorded-incomplete",
@@ -3257,10 +4091,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:098a61cb690cc4ebb50ba12ee98ee728acb2dc85e37b726f31754e0b7d28aa42",
+        "manifestDigest": "sha256:939beb73d5ea0f9ad63388ab58f66098b03027924d513994df2225cb8b521bf0",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-not-collected",
@@ -3318,10 +4157,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:0f5dbc47ba691144f207b59d05697db3f39a1ea7b9137e4a1958dfd15979e511",
+        "manifestDigest": "sha256:d60e891e278b3dda7ec99a20fbf2be4eaf43032d702bc91378fd509a39598132",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-incomplete",
@@ -3379,10 +4223,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:f46ea07e68ad97f4e6d3404cfcf8d2d0fe5dd75acad23c742c0f2a1be8bb663e",
+        "manifestDigest": "sha256:eb573fc938a65eed64af1169ed6bf92bdc50da31e95649bdfc671ca9fcd42736",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-required-unreadable",
@@ -3435,10 +4284,15 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:50544a0140bae83e1c83b09f8b3ae4b2a2b5f4166314425462b8f4a5f7f9163c",
+        "manifestDigest": "sha256:2ec0b0b55dc161dd9a30903c2cccb87a9593344107d8d39e57d0e56818f0987d",
         "verdict": "incomplete"
       },
       "id": "claude-clean--reviews-incomplete",
@@ -3491,17 +4345,71 @@
             "change": "github:acme/api:pr:421",
             "outcome": "not_applicable",
             "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
           }
         ],
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:79a1abaa89b93c9ab4eb99d50103ab46c514689fa7118ca6d36c4bfba067b571",
+        "manifestDigest": "sha256:21e7e147220b6cd0b459afe977170077dbd14f53c3b4adaa470453e45d6b10d7",
         "verdict": "incomplete"
       },
       "id": "human-self-approved--reviews-incomplete",
       "kind": "incomplete",
       "path": "incomplete/human-self-approved--reviews-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#38-risk-assessment"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "tier-emergency-unreviewed--emergency-without-declarer",
+      "kind": "reject",
+      "parent": "tier-emergency-unreviewed",
+      "path": "reject/tier-emergency-unreviewed--emergency-without-declarer.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#43-reviewer-teams"
+      ],
+      "expected": {
+        "codes": [
+          "ACV003",
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "tier-team-approved--malformed-team",
+      "kind": "reject",
+      "parent": "tier-team-approved",
+      "path": "reject/tier-team-approved--malformed-team.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#67-risk-tiers"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "tier-team-approved--review-window-outside-emergency",
+      "kind": "reject",
+      "parent": "tier-team-approved",
+      "path": "reject/tier-team-approved--review-window-outside-emergency.json"
     },
     {
       "conditions": [

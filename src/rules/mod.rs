@@ -77,6 +77,81 @@ const BYPASS_FAILED: &str = "A ruleset evaluation of the merge failed but the pu
 const BYPASS_NONE_RECORDED: &str = "No ruleset evaluation of the merge is recorded; a push by an exempt actor or an override of classic branch protection leaves none, so a bypass cannot be ruled out.";
 const BYPASS_PASSED: &str = "Every ruleset evaluation of the merge passed.";
 
+// ACC011
+const NO_TEAM_REQUIRED: &str = "No reviewer team is required for this change's tier.";
+const TEAMS_REVIEWS_INCOMPLETE: &str =
+    "Review collection is incomplete; required team approvals cannot be established.";
+const TEAMS_APPROVED: &str =
+    "A member of every required reviewer team approved the current head before merge.";
+
+/// Whether an assessment's tier would lower what a change must meet below `missing`: an
+/// emergency, or a lower level.
+fn lowers(tier: Tier, missing: Tier) -> bool {
+    tier == Tier::Emergency || tier < missing
+}
+
+/// The tier applied to `c` under `p`, and why; None when the policy has no tiers. An assessment
+/// that would lower the requirements counts only on evidence at `minimum_risk_evidence`.
+pub fn applied_tier(c: &Change, p: &Policy) -> Option<(Tier, TierSource)> {
+    p.tiers.as_ref()?;
+    let missing = p
+        .missing_tier
+        .unwrap_or_else(crate::policy::default_missing_tier);
+    let minimum = p
+        .minimum_risk_evidence
+        .unwrap_or_else(crate::policy::default_risk_minimum);
+    Some(match &c.risk {
+        None => (missing, TierSource::Missing),
+        Some(r) if lowers(r.tier, missing) && !reaches(&r.provenance, minimum) => {
+            (missing, TierSource::BelowMinimum)
+        }
+        Some(r) => (r.tier, TierSource::Assessment),
+    })
+}
+
+/// The applied tier of every change, when the policy has tiers.
+pub fn applied_tiers(e: &Events, p: &Policy) -> Vec<AppliedTier> {
+    e.changes
+        .iter()
+        .filter_map(|c| {
+            applied_tier(c, p).map(|(tier, source)| AppliedTier {
+                change_id: c.id.clone(),
+                tier,
+                source,
+            })
+        })
+        .collect()
+}
+
+/// The effective human of `c` under `p` (spec §2), when known.
+pub fn effective_human(e: &Events, c: &Change, p: &Policy) -> Option<String> {
+    Facts::new(e, c, p).effective.map(String::from)
+}
+
+/// What the policy requires of `c`'s applied tier.
+pub fn tier_policy<'p>(c: &Change, p: &'p Policy) -> Option<&'p TierPolicy> {
+    let (tier, _) = applied_tier(c, p)?;
+    p.tiers.as_ref()?.get(&tier)
+}
+
+/// The retroactive review an emergency change owes: due its window's days after the merge date.
+pub fn obligation(c: &Change, p: &Policy) -> Option<Obligation> {
+    let (tier, _) = applied_tier(c, p)?;
+    if tier != Tier::Emergency {
+        return None;
+    }
+    let days = p
+        .tiers
+        .as_ref()?
+        .get(&Tier::Emergency)?
+        .retroactive_review_within_days?;
+    let merged = c.merged_at?.date_naive();
+    Some(Obligation {
+        kind: ObligationKind::RetroactiveReview,
+        due: merged + chrono::Days::new(u64::from(days)),
+    })
+}
+
 /// ACC005 for one change. Exact conditions are in `docs/policy.md`.
 fn protection_bypass(c: &Change) -> (Status, &'static str) {
     use Status::*;
@@ -219,6 +294,14 @@ struct Facts<'a> {
     author_vendor: Option<&'a str>,
     /// Vendors of the approving agents, `None` for an unregistered one.
     approving_vendors: Vec<Option<&'a str>>,
+    /// Distinct humans other than the effective human whose latest decision approves the current
+    /// head, with evidence at the review minimum.
+    independent_humans: usize,
+    /// Qualifying independent approvals ACC003 requires: the tier's, and never fewer than one.
+    required_approvals: u32,
+    /// Per required reviewer team: whether a qualifying member approved, and whether its
+    /// membership is known in full.
+    teams: Vec<(&'a str, bool, bool)>,
 }
 
 /// Whether `evidence` reaches `minimum` on the trust ordering.
@@ -246,7 +329,7 @@ fn compare(a: Option<&str>, b: Option<&str>) -> Verdict {
 }
 
 impl<'a> Facts<'a> {
-    fn new(e: &'a Events, c: &'a Change, p: &Policy) -> Self {
+    fn new(e: &'a Events, c: &'a Change, p: &'a Policy) -> Self {
         let kind = e.actors[&c.author.actor_id].kind;
         let operator = c.agent_operator.as_ref().filter(|o| o.actor_id.is_some());
         let weak_operator = kind == ActorKind::Agent
@@ -341,19 +424,50 @@ impl<'a> Facts<'a> {
             });
         let in_scope = p.agent_review.labels.is_empty()
             || c.labels.iter().any(|l| p.agent_review.labels.contains(l));
+        let tier = tier_policy(c, p);
+        let switched = tier
+            .and_then(|t| t.agent_review)
+            .map_or(p.agent_review.satisfies_independence, |a| {
+                a == TierAgentReview::Allowed
+            });
+        let qualifying_human = |r: &&&Review| {
+            effective.is_some_and(|author| r.actor_id != author)
+                && e.actors[&r.actor_id].kind == ActorKind::Human
+                && reaches(&r.provenance, p.minimum_review_evidence)
+        };
+        let independent_humans = approvals().filter(qualifying_human).count();
+        let teams = tier
+            .map(|t| {
+                t.required_reviewer_teams
+                    .iter()
+                    .map(|id| {
+                        let fact = e.teams.iter().find(|f| f.id == *id);
+                        let approved = fact.is_some_and(|f| {
+                            approvals()
+                                .filter(qualifying_human)
+                                .any(|r| f.members.binary_search(&r.actor_id).is_ok())
+                        });
+                        (id.as_str(), approved, fact.is_some_and(|f| f.complete))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
         Self {
             kind,
             effective,
             human_independent,
             self_approved,
             weak_operator,
-            agent_mode: p.agent_review.satisfies_independence && in_scope,
-            out_of_scope: p.agent_review.satisfies_independence && !in_scope,
+            agent_mode: switched && in_scope,
+            out_of_scope: switched && !in_scope,
             human_approvals,
             agent_approvals,
             agent_reviewed_only,
             author_vendor,
             approving_vendors,
+            independent_humans,
+            required_approvals: tier.and_then(|t| t.min_human_approvals).unwrap_or(1).max(1),
+            teams,
         }
     }
 
@@ -382,9 +496,107 @@ impl<'a> Facts<'a> {
             })
     }
 
+    /// An agent approval might make up a missing approval: it is unknown on a required dimension
+    /// and dependent on none, whatever the human approvals.
+    fn agent_maybe(&self, p: &Policy) -> bool {
+        self.agent_mode
+            && !self.agent_qualifying(p)
+            && self.candidates().any(|a| {
+                !a.on(&p.agent_review.require, Verdict::Dependent)
+                    && a.on(&p.agent_review.require, Verdict::Unknown)
+            })
+    }
+
+    /// ACC003 when the tier requires more than one approval.
+    fn assess_count(&self, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {
+        use Status::*;
+        let (status, reason) = self.assess_independence(RuleId::Acc003, c, p);
+        if status == NotApplicable
+            || [
+                HUMAN_BELOW_MINIMUM,
+                HUMAN_UNKNOWN,
+                REVIEWS_INCOMPLETE_FOR_INDEPENDENCE,
+            ]
+            .contains(&reason)
+        {
+            return (status, reason.into());
+        }
+        let required = self.required_approvals as usize;
+        let have = self.independent_humans + usize::from(self.agent_qualifying(p));
+        let line = format!(
+            "The tier requires {required} qualifying independent approvals of the current head before merge; {have} exist."
+        );
+        if have >= required {
+            (Pass, line.into())
+        } else if have + 1 >= required && self.agent_maybe(p) {
+            (Unknown, AGENT_INDEPENDENCE_UNKNOWN.into())
+        } else {
+            (Fail, line.into())
+        }
+    }
+
+    /// ACC011: every reviewer team the tier requires approved the head.
+    fn assess_teams(&self, c: &Change) -> (Status, Cow<'static, str>) {
+        use Status::*;
+        if c.merged_at.is_none() {
+            return (NotApplicable, NOT_MERGED.into());
+        }
+        if self.teams.is_empty() {
+            return (NotApplicable, NO_TEAM_REQUIRED.into());
+        }
+        if self.weak_operator {
+            return (Unknown, HUMAN_BELOW_MINIMUM.into());
+        }
+        if self.effective.is_none() {
+            return (Unknown, HUMAN_UNKNOWN.into());
+        }
+        if !c.reviews_complete {
+            return (Unknown, TEAMS_REVIEWS_INCOMPLETE.into());
+        }
+        let missing: Vec<&str> = self
+            .teams
+            .iter()
+            .filter(|(_, approved, _)| !approved)
+            .map(|(id, _, _)| *id)
+            .collect();
+        if missing.is_empty() {
+            return (Pass, TEAMS_APPROVED.into());
+        }
+        let unknown: Vec<&str> = self
+            .teams
+            .iter()
+            .filter(|(_, approved, known)| !approved && !known)
+            .map(|(id, _, _)| *id)
+            .collect();
+        if !unknown.is_empty() {
+            return (
+                Unknown,
+                format!(
+                    "The membership of {} could not be read in full; whether a member approved cannot be established.",
+                    unknown.join(", ")
+                )
+                .into(),
+            );
+        }
+        (
+            Fail,
+            format!(
+                "No qualifying approval of the current head before merge by a member of {}.",
+                missing.join(", ")
+            )
+            .into(),
+        )
+    }
+
     fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {
         if rule == RuleId::Acc004 {
             return required_checks(c, p);
+        }
+        if rule == RuleId::Acc011 {
+            return self.assess_teams(c);
+        }
+        if rule == RuleId::Acc003 && self.required_approvals > 1 {
+            return self.assess_count(c, p);
         }
         if rule == RuleId::Acc005 {
             let (status, reason) = protection_bypass(c);
@@ -510,6 +722,14 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             if rule == RuleId::Acc004 {
                 provenance.extend(c.checks.iter().flat_map(|k| k.provenance.clone()));
             }
+            if rule == RuleId::Acc011 {
+                provenance.extend(
+                    e.teams
+                        .iter()
+                        .filter(|t| facts.teams.iter().any(|(id, _, _)| *id == t.id))
+                        .flat_map(|t| t.provenance.clone()),
+                );
+            }
             if rule == RuleId::Acc005 {
                 provenance.extend(c.protection.iter().flat_map(|b| {
                     b.suites
@@ -535,6 +755,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
                 explanation: reason.to_string(),
                 provenance,
                 disposition: Disposition::default(),
+                obligation: (rule == RuleId::Acc003).then(|| obligation(c, p)).flatten(),
             });
         }
     }

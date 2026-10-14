@@ -40,6 +40,10 @@ runs:
           reason: Agent approvals do not satisfy independence under this policy.
           rule_id: ACC010
           status: not_applicable
+        - change_id: "github:acme/api:pr:421"
+          reason: "No reviewer team is required for this change's tier."
+          rule_id: ACC011
+          status: not_applicable
     results:
       - level: error
         locations:
@@ -182,5 +186,10 @@ runs:
             name: agent_approval_unsigned
             shortDescription:
               text: agent approval unsigned
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC011.md"
+            id: ACC011
+            name: missing_required_reviewer_team
+            shortDescription:
+              text: missing required reviewer team
         version: 0.6.0
 version: 2.1.0

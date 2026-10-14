@@ -120,8 +120,48 @@ pub fn events(mut e: Events) -> Result<Events> {
         );
     }
     let attestations = e.attestations.clone();
+    let well_formed = |id: &str| {
+        id.split_once(':')
+            .is_some_and(|(namespace, name)| !namespace.is_empty() && !name.is_empty())
+            && !id.chars().any(|c| c.is_whitespace() || c.is_control())
+    };
+    let mut team_ids = BTreeSet::new();
+    for team in &mut e.teams {
+        ensure!(
+            team.id.split('/').count() == 2
+                && team.id.split('/').all(|s| !s.is_empty())
+                && team.id == team.id.to_ascii_lowercase(),
+            "ACV003 malformed team ID"
+        );
+        ensure!(team_ids.insert(team.id.clone()), "ACV004 duplicate team");
+        ensure!(
+            team.members.iter().all(|m| well_formed(m)),
+            "ACV003 malformed team member ID"
+        );
+        team.members.sort();
+        team.members.dedup();
+        evidence(&mut team.provenance, &attestations)?;
+    }
+    e.teams.sort_by(|a, b| a.id.cmp(&b.id));
     let mut ids = BTreeSet::new();
     for c in &mut e.changes {
+        if let Some(r) = &mut c.risk {
+            ensure!(
+                (r.tier == Tier::Emergency) == r.emergency.is_some(),
+                "ACV004 emergency details disagree with the risk tier"
+            );
+            ensure!(
+                r.emergency
+                    .as_ref()
+                    .is_none_or(|x| well_formed(&x.declared_by)),
+                "ACV003 malformed emergency declarer ID"
+            );
+            ensure!(
+                !r.provenance.is_empty(),
+                "ACV003 risk tier without evidence"
+            );
+            evidence(&mut r.provenance, &attestations)?;
+        }
         ensure!(ids.insert(c.id.clone()), "ACV004 duplicate change ID");
         ensure!(c.repository == e.repository, "ACV004 repository mismatch");
         ensure!(

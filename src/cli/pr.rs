@@ -64,6 +64,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         io::policy_source(args.policy.as_deref())
     ));
     let policy = io::load_policy(args.policy.as_deref())?;
+    let teams = manifest::teams_required_by(&policy);
     ctx.debug(format!("collecting {repo} pull request {}", args.number));
     forge::debug_auth(ctx);
     let events = forge::client(args.max_pages)?.collect(
@@ -79,10 +80,13 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             vendors: &vendors,
             checks: manifest::checks_required(&policy),
             bypass_as_of: manifest::bypass_required(&policy).then(chrono::Utc::now),
+            teams: (!teams.is_empty()).then(|| (teams.as_slice(), chrono::Utc::now())),
         },
     )?;
     let m = manifest::evaluate(events, policy)?;
-    let (_, exit) = manifest::check(&m, None, None)?;
+    // A fresh collection has no dispositions, so the date only places an emergency's
+    // retroactive review inside or past its window.
+    let (_, exit) = manifest::check(&m, None, Some(chrono::Utc::now().date_naive()))?;
     args.output.render(ctx, &m, Format::Table)?;
     if exit == Exit::Incomplete {
         super::warn_incomplete(

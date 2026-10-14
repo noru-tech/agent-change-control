@@ -54,6 +54,18 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     }
     let (checked, exit) = manifest::check(&m, policy, as_of)?;
     args.output.render(ctx, &checked, Format::Table)?;
+    for f in &checked.findings {
+        if let (Some(o), Some(standing)) = (&f.obligation, manifest::standing(&checked, f, as_of)) {
+            ctx.note(format!(
+                "{} {} on {}: retroactive review due {}: {}",
+                f.rule_id.code(),
+                f.id,
+                f.change_id,
+                o.due,
+                standing.as_str()
+            ));
+        }
+    }
     if exit == Exit::Incomplete {
         super::warn_incomplete(
             ctx,

@@ -22,3 +22,4 @@ ACC007  agent_approval_recorded                 0
 ACC008  same_vendor_write_and_review            0
 ACC009  agent_approval_not_independent          0
 ACC010  agent_approval_unsigned                 0
+ACC011  missing_required_reviewer_team          0

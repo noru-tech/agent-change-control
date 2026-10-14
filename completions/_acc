@@ -46,6 +46,7 @@ _arguments "${_arguments_options[@]}" : \
 '*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'*--team=[Also record this reviewer team'\''s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -96,6 +97,7 @@ _arguments "${_arguments_options[@]}" : \
 '*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'*--team=[Also record this reviewer team'\''s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -166,6 +168,7 @@ _arguments "${_arguments_options[@]}" : \
 '*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'*--team=[Also record this reviewer team'\''s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -216,6 +219,7 @@ _arguments "${_arguments_options[@]}" : \
 '*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`)\: its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)]:PATH:_files' \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
+'*--team=[Also record this reviewer team'\''s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"

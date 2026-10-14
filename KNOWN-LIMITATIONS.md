@@ -69,6 +69,12 @@ document that describes it in detail. Planned work is on the [roadmap](ROADMAP.m
 - **Required checks (ACC004) are judged against today's rules**, not the rules in force at the
   merge, which GitHub does not record; and a check posted only to the test merge commit, whose
   SHA GitHub discards after the merge, reads as never run ([ACC004](docs/rules/ACC004.md#limits)).
+- **Reviewer team membership (ACC011) is read at collection**, not at review time: GitHub exposes
+  current membership only. Someone who left the team after approving does not count, and someone
+  who joined afterwards does; the manifest records when membership was observed.
+- **acc reads a risk tier, it does not derive one.** The tier comes from a change-risk assessment;
+  `acc` checks its evidence against `minimum_risk_evidence` only when the tier would lower the
+  requirements ([policy](docs/policy.md#risk-tiers)).
 
 ## Privacy
 

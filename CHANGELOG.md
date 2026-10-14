@@ -7,6 +7,31 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Risk tiers** (ACP 0.4). A policy's `tiers` vary what a change must meet by the tier a
+  [change-risk](https://github.com/noru-tech/change-risk) assessment gives it (`low`, `standard`,
+  `high`, `emergency`), read from an attestation bound to the head commit like the provenance and
+  review documents. `min_human_approvals` sets how many qualifying approvals ACC003 needs (never
+  fewer than one); a tier's `agent_review: allowed|forbidden` overrides
+  `agent_review.satisfies_independence`; `missing_tier` (default `standard`) applies when no usable
+  assessment exists, and `minimum_risk_evidence` (default `signed`) is the evidence a tier needs
+  to lower the requirements. The manifest records every change's applied tier and why
+  (`applied_tiers`).
+- **ACC011** (`missing_required_reviewer_team`, `high`): a merged change whose tier's
+  `required_reviewer_teams` were not all represented among the approvals of its head. Team
+  membership is collected as observed at collection (`events.teams`), by `scan` and `pr` for the
+  teams the policy requires and by `export --team ORG/SLUG`, and needs organization members read
+  access. Enabled by default, and inert until a tier names a team; missing or incomplete membership
+  for a team a merged change needs makes the collection incomplete.
+- **Emergency changes**: an emergency change's ACC003 finding carries a retroactive-review
+  `obligation`, due `tiers.emergency.retroactive_review_within_days` after the merge. `acc check`
+  treats it as pending until then and as met only by a `remediated` disposition within the window
+  whose owner is a human actor other than the effective author; otherwise it is overdue and fails.
+  `acc check` prints each obligation's standing, and needs `--as-of` once one exists.
+- The GitHub Action's `policy-ref` input (default: the pull request's base commit) reads the policy
+  file at that revision, so a pull request that edits the policy is evaluated under the one it would
+  replace.
+- Conformance suite revision 2 for ACP 0.4: risk tier, reviewer team and emergency vectors, and
+  ACC011 in every vector's expected assessments.
 - **`acc verify`**, a deploy gate. Given `--range BASE..HEAD`, it reads the first-parent commits
   from the local clone and requires each to be the merge commit of a change that a signed acc
   attestation shows passing, judged as `acc check` judges a manifest (`--policy`, `--as-of`).

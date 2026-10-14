@@ -606,6 +606,9 @@
         },
         "protection": {
           "$ref": "#/$defs/protection"
+        },
+        "risk": {
+          "$ref": "#/$defs/risk"
         }
       },
       "required": [
@@ -744,6 +747,12 @@
           "items": {
             "$ref": "#/$defs/change"
           }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/team"
+          }
         }
       },
       "required": [
@@ -752,6 +761,93 @@
         "window",
         "actors",
         "changes"
+      ],
+      "additionalProperties": false
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "low",
+        "standard",
+        "high",
+        "emergency"
+      ]
+    },
+    "risk": {
+      "description": "The change's risk tier, from a change-risk assessment bound to its head commit (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/tier"
+        },
+        "emergency": {
+          "type": "object",
+          "properties": {
+            "declared_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "declared_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "declared_by",
+            "declared_at"
+          ],
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "tier",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "team": {
+      "description": "A reviewer team and its members as observed at collection, not at review time (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+/[a-z0-9_.-]+$"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "members",
+        "complete",
+        "observed_at",
+        "provenance"
       ],
       "additionalProperties": false
     }

@@ -1,0 +1,24 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "github:acme/api:pr:421",
+      "digest": {
+        "gitCommit": "head"
+      }
+    }
+  ],
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/change-risk/v0.1",
+  "predicate": {
+    "version": "0.1",
+    "change": {
+      "id": "github:acme/api:pr:421",
+      "head": "head"
+    },
+    "level": "high",
+    "change_type": "normal",
+    "tier": "high",
+    "complete": true,
+    "emergency": null
+  }
+}

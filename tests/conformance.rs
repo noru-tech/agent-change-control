@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 const SUITE: &str = "acp-evaluator-conformance";
-const SUITE_REVISION: u64 = 1;
+const SUITE_REVISION: u64 = 2;
 const SPEC_VERSION: &str = "0.4";
 const SPEC_PATH: &str = "spec/ai-change-provenance.md";
 
@@ -83,6 +83,10 @@ const BYPASS: &str = "#42-protection-bypass";
 const ACTORS: &str = "#5-actor-classification";
 const NORMALIZATION: &str = "#81-normalization";
 const SERIALIZATION: &str = "#82-serialization";
+const RISK: &str = "#38-risk-assessment";
+const TEAMS: &str = "#43-reviewer-teams";
+const DISPOSITIONS: &str = "#64-dispositions";
+const TIERS: &str = "#67-risk-tiers";
 
 /// A required check's facts on `human-clean`, which merged at 2026-08-03T12:00:00Z with head
 /// `head` and merge commit `merge`, with ACC004 enabled.
@@ -162,6 +166,43 @@ const fn fixture(
 
 fn evaluated() -> Vec<Evaluated> {
     vec![
+        fixture("tier-missing-assessment", &["ACC003"], &[TIERS, RULES]),
+        fixture("tier-below-minimum", &["ACC003"], &[RISK, TIERS]),
+        fixture("tier-team-approved", &[], &[TEAMS, TIERS, RULES]),
+        fixture("tier-team-missing", &["ACC011"], &[TEAMS, TIERS, RULES]),
+        fixture(
+            "tier-emergency-unreviewed",
+            &["ACC003"],
+            &[RISK, TIERS, DISPOSITIONS],
+        ),
+        fixture("tier-emergency-declared", &["ACC003"], &[RISK, TIERS]),
+        Evaluated {
+            id: "tier-team-approved--membership-incomplete",
+            kind: Kind::Incomplete,
+            fixture: "tier-team-approved",
+            edit: Some(|v| {
+                v["events"]["teams"][0]["complete"] = false.into();
+                v["events"]["teams"][0]["members"] = json!(["github:dave"]);
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, TEAMS],
+        },
+        Evaluated {
+            id: "tier-team-approved--reviews-incomplete",
+            kind: Kind::Incomplete,
+            fixture: "tier-team-approved",
+            edit: Some(|v| change(v)["reviews_complete"] = false.into()),
+            fails: &[],
+            conditions: &[COLLECTION, TEAMS],
+        },
+        Evaluated {
+            id: "tier-team-approved--author-unknown",
+            kind: Kind::Accept,
+            fixture: "tier-team-approved",
+            edit: Some(|v| change(v)["author"]["actor_id"] = "agent:claude-code".into()),
+            fails: &["ACC006"],
+            conditions: &[TEAMS, TIERS],
+        },
         fixture("human-clean", &[], &[INDEPENDENCE, RULES]),
         fixture("human-self-approved", &["ACC002", "ACC003"], &[RULES]),
         fixture("self-and-independent", &["ACC002"], &[INDEPENDENCE, RULES]),
@@ -609,6 +650,34 @@ const BOB: &str = "\"display_name\": \"Bob\"";
 fn rejects() -> Vec<Reject> {
     vec![
         Reject {
+            id: "tier-emergency-unreviewed--emergency-without-declarer",
+            parent: "tier-emergency-unreviewed",
+            mutation: Mutation::Json(|v| {
+                change(v)["risk"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("emergency");
+            }),
+            codes: &["ACV004"],
+            conditions: &[VALIDATION, RISK],
+        },
+        Reject {
+            id: "tier-team-approved--malformed-team",
+            parent: "tier-team-approved",
+            mutation: Mutation::Json(|v| v["events"]["teams"][0]["id"] = "acme".into()),
+            codes: &["ACV003", "ACV010"],
+            conditions: &[VALIDATION, TEAMS],
+        },
+        Reject {
+            id: "tier-team-approved--review-window-outside-emergency",
+            parent: "tier-team-approved",
+            mutation: Mutation::Json(|v| {
+                policy(v)["tiers"]["high"]["retroactive_review_within_days"] = 3.into()
+            }),
+            codes: &["ACV010"],
+            conditions: &[VALIDATION, TIERS],
+        },
+        Reject {
             id: "open-pr--checks-on-unmerged",
             parent: "open-pr--checks-enabled",
             mutation: Mutation::Json(|v| {
@@ -867,6 +936,15 @@ const UNKNOWN_PATHS: &[(&str, &str)] = &[
     (
         "ACC005",
         "No ruleset evaluation of the merge is recorded; a push by an exempt actor or an override of classic branch protection leaves none, so a bypass cannot be ruled out.",
+    ),
+    ("ACC011", HUMAN_UNKNOWN),
+    (
+        "ACC011",
+        "Review collection is incomplete; required team approvals cannot be established.",
+    ),
+    (
+        "ACC011",
+        "The membership of acme/security could not be read in full; whether a member approved cannot be established.",
     ),
     ("ACC004", "Check data was not collected for this change."),
     ("ACC004", "Check collection is incomplete."),
@@ -1133,7 +1211,7 @@ fn coverage_requirements_hold() {
     // Every rule fails somewhere and does not fail somewhere.
     for rule in [
         "ACC001", "ACC002", "ACC003", "ACC004", "ACC005", "ACC006", "ACC007", "ACC008", "ACC009",
-        "ACC010",
+        "ACC010", "ACC011",
     ] {
         assert!(
             outcomes.contains(&(rule.into(), "fail".into(), String::new())),

@@ -9,7 +9,7 @@ acc \- acc — change control for software written with coding agents
 acc — change control for software written with coding agents.
 .PP
 Records the agent, human operator, reviewers and merger of each pull request, then evaluates
-explicit separation\-of\-duty rules (ACC001 to ACC010) deterministically and offline.
+explicit separation\-of\-duty rules (ACC001 to ACC011) deterministically and offline.
 Only `scan`, `export`, `pr` and `doctor \-\-online` contact GitHub (and only the collecting commands
 read the clock, for the default window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
 network or the clock, and `verify` reads only `git`, for the range it gates. No LLM is involved, and agent authorship alone is never a finding.

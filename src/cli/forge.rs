@@ -70,6 +70,10 @@ pub struct Collect {
     /// administration read access. Implied when the policy enables ACC005.
     #[arg(long)]
     pub bypass: bool,
+    /// Also record this reviewer team's members (ORG/SLUG, repeatable; ACC011). The token needs
+    /// organization members read access. Implied for the teams the policy's tiers require.
+    #[arg(long, value_name = "ORG/SLUG")]
+    pub team: Vec<String>,
     #[command(flatten)]
     pub output: OutputArgs,
 }
@@ -102,7 +106,13 @@ pub fn client(max_pages: usize) -> Result<Github> {
 /// Collect the pull requests merged in the window.
 /// `checks` and `bypass` ask for ACC004's and ACC005's facts whatever `--checks` and `--bypass`
 /// say: the caller's policy needs them.
-pub fn collect(ctx: &Ctx, c: &Collect, checks: bool, bypass: bool) -> Result<Events> {
+pub fn collect(
+    ctx: &Ctx,
+    c: &Collect,
+    checks: bool,
+    bypass: bool,
+    teams: &[String],
+) -> Result<Events> {
     let repository = detect::resolve_repository(c.repository.as_deref(), |m| ctx.note(m))?;
     let since = c
         .since
@@ -147,6 +157,13 @@ pub fn collect(ctx: &Ctx, c: &Collect, checks: bool, bypass: bool) -> Result<Eve
         c.max_pages
     ));
     debug_auth(ctx);
+    let mut team_ids: Vec<String> = teams
+        .iter()
+        .chain(&c.team)
+        .map(|t| t.to_ascii_lowercase())
+        .collect();
+    team_ids.sort();
+    team_ids.dedup();
     client(c.max_pages)?.collect(
         &repository,
         from,
@@ -160,6 +177,7 @@ pub fn collect(ctx: &Ctx, c: &Collect, checks: bool, bypass: bool) -> Result<Eve
             vendors: &vendors,
             checks: checks || c.checks,
             bypass_as_of: (bypass || c.bypass).then(chrono::Utc::now),
+            teams: (!team_ids.is_empty()).then(|| (team_ids.as_slice(), chrono::Utc::now())),
         },
     )
 }

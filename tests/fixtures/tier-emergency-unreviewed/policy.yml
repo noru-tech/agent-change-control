@@ -1,0 +1,15 @@
+version: "0.4"
+tiers:
+  low:
+    min_human_approvals: 1
+    agent_review: "allowed"
+  standard:
+    min_human_approvals: 1
+  high:
+    min_human_approvals: 2
+    required_reviewer_teams: ["acme/security"]
+  emergency:
+    min_human_approvals: 0
+    retroactive_review_within_days: 3
+missing_tier: standard
+rules: {}

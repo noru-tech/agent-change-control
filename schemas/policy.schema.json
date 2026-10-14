@@ -124,6 +124,37 @@
         "checks": {
           "$ref": "#/$defs/checks_policy"
         },
+        "tiers": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "low",
+              "standard",
+              "high",
+              "emergency"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/tier_policy"
+          }
+        },
+        "missing_tier": {
+          "type": "string",
+          "enum": [
+            "low",
+            "standard",
+            "high"
+          ]
+        },
+        "minimum_risk_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
+          ]
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -156,6 +187,9 @@
             },
             "agent_approval_unsigned": {
               "$ref": "#/$defs/rule_policy"
+            },
+            "missing_required_reviewer_team": {
+              "$ref": "#/$defs/rule_policy"
             }
           },
           "required": [],
@@ -166,6 +200,43 @@
         "version",
         "rules"
       ],
+      "additionalProperties": false
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "low",
+        "standard",
+        "high",
+        "emergency"
+      ]
+    },
+    "tier_policy": {
+      "type": "object",
+      "properties": {
+        "min_human_approvals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agent_review": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "forbidden"
+          ]
+        },
+        "required_reviewer_teams": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+          }
+        },
+        "retroactive_review_within_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
       "additionalProperties": false
     }
   }

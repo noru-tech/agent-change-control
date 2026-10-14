@@ -199,6 +199,10 @@
         "enabled": false,
         "severity": "high"
       },
+      "missing_required_reviewer_team": {
+        "enabled": true,
+        "severity": "high"
+      },
       "same_vendor_write_and_review": {
         "enabled": true,
         "severity": "high"

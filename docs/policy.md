@@ -84,6 +84,52 @@ repository administration read access, and the record reaches back one month. Wi
 enabled, an unreadable or out-of-reach record makes the collection incomplete (exit 4). See
 [ACC005](rules/ACC005.md).
 
+## Risk tiers
+
+A policy can vary what a change must meet by its risk tier, as a
+[change-risk](https://github.com/noru-tech/change-risk) assessment states it (`low`, `standard`,
+`high` or `emergency`). `crisk compile --to acc` writes this section from the change-risk policy, so
+the two do not drift:
+
+```yaml
+tiers:
+  low:       { min_human_approvals: 1, agent_review: allowed }
+  standard:  { min_human_approvals: 1 }
+  high:      { min_human_approvals: 2, agent_review: forbidden, required_reviewer_teams: [acme/security] }
+  emergency: { min_human_approvals: 0, retroactive_review_within_days: 3 }
+missing_tier: standard          # a change with no usable assessment; never emergency
+minimum_risk_evidence: signed   # the evidence an assessment needs to lower requirements
+```
+
+Hand the assessment to `acc` like any attestation (`--attestations`, or `--verification` with
+`--verified-by`); `acc` reads the assessment bound to each change's head commit and records its
+tier. It does not re-derive the tier.
+
+- **The applied tier** is the assessment's, except that one that would lower the requirements (an
+  emergency, or a level below `missing_tier`) counts only on evidence at `minimum_risk_evidence`.
+  Without a usable assessment the change is held to `missing_tier`. The manifest lists every
+  change's applied tier and why under `applied_tiers` (`assessment`, `missing`, `below_minimum`).
+  A tier that raises the requirements is always applied, whatever its evidence.
+- **`min_human_approvals`**: ACC003 needs that many qualifying approvals, and never fewer than one.
+  `0` is for the forge's pre-merge rules (an emergency); acc still holds the change to account.
+- **`agent_review`**: `allowed` or `forbidden` replaces `agent_review.satisfies_independence` for
+  changes of the tier.
+- **`required_reviewer_teams`**: [ACC011](rules/ACC011.md) requires an approval from a member of each.
+  Membership is read at collection and needs organization members read access.
+- **`retroactive_review_within_days`** (emergency only): see below.
+
+Without `tiers`, nothing here changes any result.
+
+### Emergency changes
+
+An emergency change that merged without its approvals fails ACC003, and its finding carries an
+`obligation`: a retroactive review due `retroactive_review_within_days` after the merge date. `acc
+check --as-of DATE` treats it as **pending** (not failing) until the due date, **met** when the
+finding has a `remediated` disposition with `remediated_at` on or before the due date and an
+`owner` that is a human actor in the export other than the change's effective author, and
+**overdue** (failing) otherwise. No other disposition discharges it, and `acc check` prints each
+obligation's standing. `--as-of` is required once any finding carries one.
+
 ## Exact deterministic conditions
 
 A known effective human is the effective author when actor.kind is human, or the recorded operator when actor.kind is agent. Other cases remain unknown. A qualifying independent approval is the latest non-comment decision per reviewer at or before merge (all decisions for an open PR), has state approved and the current head SHA, belongs to a human and differs from the known effective human. Any later changes-requested/dismissed decision withdraws that reviewer's approval. Approval at exactly merge time qualifies.
@@ -92,7 +138,7 @@ A known effective human is the effective author when actor.kind is human, or the
 | --- | --- | --- | --- |
 | ACC001 | Effective author is agent, operator known, reviews complete and no qualifying independent human approval. Partial collection cannot establish whether an approval was later withdrawn. Unknown operator or missing reviews yields unknown. | claude-clean | claude-operator-self-approved |
 | ACC002 | Any recorded approved review is by the known effective human. A self-approval still counts if stale; latest effective review state determines independence separately. Without self-approval, complete reviews pass; partial reviews or unknown human yield unknown. | human-clean | human-self-approved |
-| ACC003 | Change is merged, effective human known, reviews complete and no qualifying independent human approval. Open changes are not applicable; missing evidence yields unknown. | human-clean | dismissed-approval |
+| ACC003 | Change is merged, effective human known, reviews complete and fewer qualifying independent approvals than its applied tier requires (one without tiers). Open changes are not applicable; missing evidence yields unknown. | human-clean, tier-team-approved | dismissed-approval, tier-missing-assessment |
 | ACC004 | Change is merged, check collection complete, and some required check has no passing latest result completed at or before merge on the head or merge commit (no result fails). Open changes and changes with nothing required are not applicable; missing or partial check facts, or an unreadable required set under `from_forge` with every known check passing, yield unknown. Off unless a policy enables it. | checks-passed | checks-failed |
 | ACC005 | Change is merged and a recorded ruleset evaluation of its merge commit is `bypass` (fails even when the record is otherwise incomplete). Passes only when every recorded evaluation passed. Open changes are not applicable; missing or incomplete protection facts, a `fail` evaluation that landed, or no recorded evaluation yield unknown. Off unless a policy enables it. | bypass-passed | bypass-recorded |
 | ACC006 | Effective author is agent and no known human operator exists. Non-agent authors are not applicable. | codex-clean | agent-operator-unknown |
@@ -100,6 +146,7 @@ A known effective human is the effective author when actor.kind is human, or the
 | ACC008 | Effective author is an agent, at least one approval of the head exists, no human approved it, and every approving agent has the author agent's vendor. Unknown when a vendor is null. | agent-review-independent | agent-review-same-vendor |
 | ACC009 | `agent_review` applies, no human independent approval exists, and every agent approval carrying the required evidence is dependent on a required dimension. Unknown when one is unknown on a required dimension and dependent on none. Not applicable when the mode is off, out of label scope, a human independent approval exists, or no agent approval carries the evidence. | agent-review-independent | agent-review-dependent-operator |
 | ACC010 | `agent_review` applies and an agent approval of the head has evidence below `agent_review.minimum_evidence`. Not applicable when the mode is off or no agent approved the head. | agent-review-independent | agent-review-unsigned |
+| ACC011 | Change is merged, effective human known, reviews complete, and for a team its applied tier requires, no member (as observed at collection) independent of the effective human approved the head before merge. Not applicable when unmerged or no team is required; unknown when a team that did not approve has incomplete membership. | tier-team-approved | tier-team-missing |
 
 ## Recording exceptions
 

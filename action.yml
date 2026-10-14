@@ -38,6 +38,14 @@ inputs:
     description: Path to a policy file. Defaults to .agent-change-control/policy.yml when present.
     required: false
     default: ""
+  policy-ref:
+    description: >-
+      Read the policy file as it stands at this revision of the checkout, so a pull request that
+      edits the policy is evaluated under the one it would replace. Defaults to the pull request's
+      base commit. Empty reads the policy from the working tree. Without a git checkout it is
+      ignored.
+    required: false
+    default: ${{ github.event.pull_request.base.sha }}
   agent-account:
     description: >-
       Accounts your organization has verified as agents, one LOGIN=AGENT per line
@@ -169,6 +177,7 @@ runs:
         ACC_PR: ${{ inputs.pr }}
         ACC_REPOSITORY: ${{ inputs.repository }}
         ACC_POLICY: ${{ inputs.policy }}
+        ACC_POLICY_REF: ${{ inputs.policy-ref }}
         ACC_AGENT_ACCOUNTS: ${{ inputs.agent-account }}
         ACC_AGENT_TRAILERS: ${{ inputs.agent-trailer }}
         ACC_IGNORE_TRAILERS: ${{ inputs.ignore-trailers }}
@@ -190,7 +199,28 @@ runs:
         fi
         manifest="${RUNNER_TEMP}/acc-manifest.json"
         args=(pr "$ACC_PR" --repo "$ACC_REPOSITORY" --max-pages "$ACC_MAX_PAGES" --format json --output "$manifest")
-        if [ -n "$ACC_POLICY" ]; then args+=(--policy "$ACC_POLICY"); fi
+        policy_path="${ACC_POLICY:-.agent-change-control/policy.yml}"
+        if [ -n "$ACC_POLICY_REF" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+          # The policy decides which requirements apply, so a pull request must not choose its own:
+          # read it from the base revision, fetching that commit when the checkout lacks it.
+          if ! git cat-file -e "${ACC_POLICY_REF}^{commit}" 2>/dev/null; then
+            git fetch --no-tags --depth=1 origin "$ACC_POLICY_REF" >/dev/null 2>&1
+          fi
+          if ! git cat-file -e "${ACC_POLICY_REF}^{commit}" 2>/dev/null; then
+            echo "::error::cannot read the policy at $ACC_POLICY_REF: the commit is not in the checkout" >&2
+            exit 1
+          fi
+          base_policy="${RUNNER_TEMP}/acc-policy-at-base.yml"
+          if git cat-file -e "${ACC_POLICY_REF}:${policy_path#./}" 2>/dev/null; then
+            git show "${ACC_POLICY_REF}:${policy_path#./}" > "$base_policy"
+          else
+            # No policy at the base: the built-in defaults, even when the pull request adds one.
+            printf 'version: "0.4"\nrules: {}\n' > "$base_policy"
+          fi
+          args+=(--policy "$base_policy")
+        elif [ -n "$ACC_POLICY" ]; then
+          args+=(--policy "$ACC_POLICY")
+        fi
         while IFS= read -r mapping; do
           mapping="${mapping//[$'\r']}"
           if [ -n "$mapping" ]; then args+=(--agent-account "$mapping"); fi
