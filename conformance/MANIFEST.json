@@ -5,7 +5,7 @@
     "incomplete": 15,
     "reject": 29
   },
-  "specDigest": "sha256:052d54c011a3b0a2f2ef5ed0b07031d23652de34485ca9d27694415943925cdd",
+  "specDigest": "sha256:70f5a3bc3abd093b52330eae3abf206e398e248baf30daff5759808fb71a01cf",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.4",
   "suite": "acp-evaluator-conformance",
@@ -72,7 +72,7 @@
         "codes": [
           "ACC012"
         ],
-        "manifestDigest": "sha256:be1ba29647b5bfa8528ed38d057852ee099a35a49a45f3a174c585464b91211d",
+        "manifestDigest": "sha256:440d2c70cd3dd583a03adf3b5873d2e3960eeb7babaa2492309e5e2990a964e9",
         "verdict": "evaluated"
       },
       "id": "branch-updated-directly",
@@ -411,7 +411,7 @@
         "codes": [
           "ACC012"
         ],
-        "manifestDigest": "sha256:d90b0dde8bb2accee132438079f81a44ce8e598f8509e06f00e90b9a7a5ad907",
+        "manifestDigest": "sha256:e400641160d1d64ddff7bfb1bcb532b714cdc810de7fb1d1d49d90b9b3a6d6a4",
         "verdict": "evaluated"
       },
       "id": "branch-accounted--deleted",

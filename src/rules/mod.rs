@@ -821,14 +821,14 @@ fn deployment_cover(
     (Status::Pass, DEPLOY_COVERED.into())
 }
 
-/// A finding on a subject that is not a change: a branch (ACC012) or a deployment (ACC013).
-#[allow(clippy::too_many_arguments)]
+/// A finding on a subject that is not a change: an update of a branch (ACC012), named
+/// `BRANCH#UPDATE`, or a deployment (ACC013). The subject is the finding's `change_id`, so its
+/// identifier is computed exactly as every other finding's is.
 fn subject_finding(
     e: &Events,
     rule: RuleId,
     policy: &RulePolicy,
     subject: &str,
-    occurrence: &str,
     actor: Option<&str>,
     explanation: String,
     mut provenance: Vec<Evidence>,
@@ -836,7 +836,7 @@ fn subject_finding(
     let actors: Vec<String> = actor.map(String::from).into_iter().collect();
     provenance.sort();
     provenance.dedup();
-    let preimage = (&e.repository, occurrence, rule.code(), &actors);
+    let preimage = (&e.repository, subject, rule.code(), &actors);
     let id = finding_id(&crate::canonical::digest(&preimage)?);
     let legacy = finding_id(&crate::canonical::legacy::digest(&preimage)?);
     Ok(Finding {
@@ -908,7 +908,6 @@ fn evaluate_subjects(
                     e,
                     RuleId::Acc012,
                     policy,
-                    &b.id,
                     &format!("{}#{}", b.id, ev.id),
                     ev.actor_id.as_deref(),
                     explanation,
@@ -936,7 +935,6 @@ fn evaluate_subjects(
                     e,
                     RuleId::Acc013,
                     policy,
-                    &d.id,
                     &d.id,
                     d.creator.as_deref(),
                     reason.to_string(),

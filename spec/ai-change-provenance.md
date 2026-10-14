@@ -483,7 +483,7 @@ merged change whose protection facts are missing or incomplete makes collection 
 
 ACC012 and ACC013 judge subjects that are not changes: a branch and a deployment. Their assessments
 and findings name the subject's identifier where the others name a change (§7.1). ACC012 has one
-assessment per branch and a finding per offending update; ACC013 an assessment and, when it
+assessment per branch and a finding per offending update, named `BRANCH#UPDATE`; ACC013 an assessment and, when it
 fails, a finding per deployment. ACC013 reads the change assessments of the same evaluation, so
 dispositions, which `check` applies later, do not clear it: a deployment of a change whose finding
 was accepted needs its own disposition. Both rules are disabled unless a policy enables them, and
@@ -666,8 +666,9 @@ the events.
 Finding identifiers are `acc-` followed by the first 16 hexadecimal characters of SHA-256 over the
 §8.2 serialization of the array `[repository, change_id, rule_id, sorted_unique_actor_ids]`. They
 are stable across severities, policies and dispositions. For ACC012 and ACC013, `change_id` names
-the branch or deployment (§6.2); in the preimage, an ACC012 finding's second element is the
-branch identifier, `#`, and the update's identifier, so each update has its own finding. The `source_digest` is SHA-256 over the
+the subject (§6.2): an ACC013 assessment and finding name the deployment, an ACC012 assessment
+names the branch, and an ACC012 finding names the update, as the branch identifier, `#`, and the
+update's identifier, so each update has its own finding and identifier. The `source_digest` is SHA-256 over the
 §8.2 serialization of the normalized events.
 
 Because 0.2 hashed these preimages with a trailing newline (§8.2), every finding identifier
