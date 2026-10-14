@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Dependencies updated: `serde-saphyr` 1.3 → 2.0, `serde_json_canonicalizer` 0.3 → 0.4 (it now
+  rejects an object with a duplicate key instead of keeping one), `jsonschema` 0.58.6,
+  `insta` 1.49, and the pinned `dtolnay/rust-toolchain`, `crate-ci/typos` v1.51.1,
+  `actions/upload-artifact` v7.0.2, `actions/download-artifact` v8.0.2,
+  `github/codeql-action` v4.38.3 and `ossf/scorecard-action` v2.5.0 actions. Output is unchanged.
+
 ## [0.6.0] - 2026-10-01
 
 ### Added
