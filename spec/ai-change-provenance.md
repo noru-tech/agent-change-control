@@ -1,6 +1,6 @@
 # AI Change Provenance
 
-**Version 0.3** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
+**Version 0.4** · Status: draft for public comment · Editors: [Noru](https://noru.tech) ·
 Reference implementation: [`acc`](../README.md)
 
 AI Change Provenance (ACP) is a small, machine-readable convention for answering one question
@@ -263,6 +263,25 @@ Collectors MUST:
 4. **Use read-only access** against a fixed origin. Collection MUST NOT execute repository
    contents.
 
+### 4.1 Checks
+
+When asked for the facts ACC004 reads (§6.2), a collector records `checks` for each merged
+change:
+
+- the branch the change merged into;
+- every completed check run and commit status on the head commit and, when distinct, the merge
+  commit: its name (a status's context), kind, commit, conclusion and completion time (a status's
+  creation time), with evidence. Results completed after the merge are recorded; the evaluator
+  ignores them;
+- the check names the forge's rules for that branch require, and which sources were read
+  (`rules`, `branch_protection`). Forges expose these rules as they are now, not as they were at
+  the merge; they are recorded as observed at collection, never as a fact about the merge;
+- `runs_complete: false` when a listing was truncated or could not be read, or held a conclusion
+  outside the vocabulary, and `required_complete: false` when a source of required checks could
+  not be read.
+
+A collector that was not asked omits `checks`. Absence never reads as a pass (§6.2).
+
 ## 5. Actor classification
 
 An actor is `human` only when the forge asserts a user account. Apps, installations and accounts
@@ -312,15 +331,24 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | **ACC001** Agent change without independent human | Effective author is an agent, *H* is known, reviews complete, and no qualifying approval exists. | Effective author is not an agent. | *H* unknown, or reviews incomplete. |
 | **ACC002** Approver is author | Any `approved` review, at any point, is by *H*. A stale self-approval still counts: the act, not its current effect, is the finding. | never | *H* unknown; or reviews incomplete with no self-approval seen. |
 | **ACC003** Merged without independent approval | The change is merged, *H* is known, reviews complete, and no qualifying approval exists. | The change is not merged. | *H* unknown, or reviews incomplete. |
+| **ACC004** Merged without required checks | The change is merged, check collection is complete, and for some required check neither the head commit nor the merge commit has a passing latest result completed at or before the merge. | The change is not merged, or no check is required. | Check facts were not collected or are incomplete; or, under `from_forge`, the forge's required checks could not all be read and every known required check passed. |
 | **ACC006** Unknown agent operator | Effective author is an agent and no human operator is recorded. | Effective author is not an agent. | never |
 | **ACC007** Agent approval recorded (`info`) | An agent's latest decision at or before merge is `approved` on the current head. Not a violation: it makes the population of agent-approved changes visible. | No agent reviewed the current head. | never |
 | **ACC008** Same-vendor write and review | Effective author is an agent, at least one approval of the current head exists, no human approved it, and every approving agent has the author agent's vendor. | Effective author is not an agent, a human approved the head, or nothing approved it. | The author's or an approving agent's vendor is null. |
 | **ACC009** Agent approval lacks required independence | `agent_review` applies, no human independent approval exists, at least one agent approval carries the required evidence, and every such approval is `dependent` on a required dimension. | `agent_review` is off or out of scope, a human independent approval exists, or no agent approval carries the required evidence. | Some such approval is `unknown` on a required dimension and `dependent` on none. |
 | **ACC010** Agent approval without signed identity (`warning`) | `agent_review` applies and an agent approval of the current head has evidence below `agent_review.minimum_evidence`. | `agent_review` is off or out of scope, or no agent approved the head. | never |
 
-ACC004 and ACC005 are reserved (deployment and bypass rules). Retired identifiers are never
-reused. ACC007 and ACC008 evaluate under every policy, as observations; ACC009 and ACC010 only
-under `agent_review`.
+For ACC004, the required checks are the policy's `checks.required` and, when `checks.from_forge`
+is true (the default), the forge's required checks recorded under §4.1. A required check passes
+when, on the head commit or on the merge commit, its latest result completed at or before the
+merge is `success`, `neutral` or `skipped`; when several results share that instant, every one
+must pass. The merge commit counts because a merge queue runs checks on the commit it merges,
+not on the head. A check with no result at all fails. ACC004 is disabled unless a policy enables
+it, and when it is enabled, a merged change whose check facts are missing or incomplete makes
+collection incomplete (§6.3), so it can never pass on data that was not read.
+
+ACC005 is reserved (protection bypass). Retired identifiers are never reused. ACC007 and ACC008
+evaluate under every policy, as observations; ACC009 and ACC010 only under `agent_review`.
 
 Note the design choices these encode:
 
@@ -362,6 +390,22 @@ wrote the reviewer's instructions. `minimum_evidence` MUST be `signed`: a declar
 is never enough. `labels` scopes the mode to changes carrying one of the listed forge labels;
 risk classification itself stays outside this specification.
 
+The `checks` block names what ACC004 requires:
+
+```yaml
+checks:
+  required: []                         # check names always required
+  from_forge: true                     # also require what the forge's rules required (§4.1)
+rules:
+  merged_without_required_checks:
+    enabled: false                     # default: off
+    severity: high
+```
+
+A policy that enables ACC004 also widens incompleteness: a merged change without complete check
+facts, or, under `from_forge`, without a complete set of the forge's required checks, makes the
+collection incomplete, which takes precedence over a policy verdict (§6.2).
+
 ### 6.5 Independence dimensions
 
 For an agent's approval of the current head, each dimension is `independent`, `dependent` or
@@ -399,8 +443,8 @@ reporting any one of them is enough, and a consumer compares codes as a set.
 | --- | --- |
 | ACV001 | An `approved` review is later than the change's merge. |
 | ACV002 | Reserved (deployment validation). |
-| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
-| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit on an unmerged change; a review before opening; duplicate change, review or commit identifiers; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
+| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; a check result on a commit that is neither the change's head nor its merge commit; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
+| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit or check facts on an unmerged change; a review before opening; duplicate change, review or commit identifiers, or duplicate check results; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
 | ACV005 to ACV009 | The input is not I-JSON as §8.2 constrains it. |
 | ACV010 | The input does not conform to its schema: an unknown member, a missing required member, a wrong type, or a value outside a closed vocabulary. |
 
@@ -422,10 +466,14 @@ are stable across severities, policies and dispositions. The `source_digest` is 
 §8.2 serialization of the normalized events.
 
 Because 0.2 hashed these preimages with a trailing newline (§8.2), every finding identifier
-changed in 0.3. For one minor version a 0.3 finding carries `legacy_ids`, the identifier the same
-finding had under 0.2, and a consumer that carries dispositions from an earlier manifest to a
-re-evaluation (the reference implementation's `check`) MUST match a recorded disposition by
-either identifier. `legacy_ids` is removed in 0.4.
+changed in 0.3, and for that one minor version a 0.3 finding carried `legacy_ids`, the identifier
+the same finding had under 0.2. 0.4 removes `legacy_ids`; a consumer that carries dispositions
+from an earlier manifest to a re-evaluation MAY still match a 0.2 identifier, and the reference
+implementation's `check` does.
+
+`generated.tool` and `generated.version` name the implementation that wrote a manifest, not its
+result. Re-evaluation excludes them from the comparison, so a manifest written by any conforming
+evaluator of its version validates.
 
 ### 7.2 SARIF
 
@@ -444,7 +492,7 @@ with:
   plus `:merge` and `digest` `{"gitCommit": <merge commit>}`. The head commit is the commit the
   approvals are bound to; the merge commit is the one reachable from the target branch after a
   squash or rebase merge. A merge commit the forge did not report is not invented;
-- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.3`;
+- `predicateType`: `https://noru.tech/spec/ai-change-provenance/v0.4`;
 - `predicate`: the manifest of §7.1.
 
 Two forms are emitted, both unsigned and serialized as §8.2 requires: one Statement whose subjects cover
@@ -464,8 +512,8 @@ attest-blob`) MAY instead produce a Statement whose single subject carries a `sh
 the §8.2 serialization of the predicate. The reference implementation's JSON output is exactly
 those bytes, so the digest of the manifest file is the subject digest. The commits are then found inside the predicate (`head_sha`,
 `merge_commit_sha`), and a verifier MUST recompute that digest from the predicate before trusting
-the subject. `acc validate` accepts both subject forms. A `v0.2` Statement is verified with the
-canonicalization it was produced with (§12). The Statement shape is published as
+the subject. `acc validate` accepts both subject forms. A `v0.3` or `v0.2` Statement is verified
+as the version that produced it (§12). The Statement shape is published as
 [`schemas/statement.schema.json`](../schemas/statement.schema.json), and the predicate is
 documented in the in-toto predicate template in [`docs/in-toto.md`](../docs/in-toto.md).
 
@@ -531,8 +579,9 @@ way (§12); it MUST NOT produce new 0.2 documents.
 - An **evaluator** conforms when it passes a named `suiteRevision` of the ACP evaluator
   conformance corpus (`acp-evaluator-conformance`) at a named release, and it satisfies §8. The
   corpus is published under [`conformance/`](../conformance/README.md) with a digest list signed
-  at the release tag. Revision 1 was published at `v0.5.0`; later revisions add vectors or
-  correct expected results, never change a released one. A claim names all three, for
+  at the release tag. Each specification version has its own suite revisions: for 0.3, revision 1
+  was published at `v0.5.0`; for 0.4, revision 1 is published with the release that implements
+  it. Later revisions add vectors or correct expected results, never change a released one. A claim names all three, for
   example "`acp-evaluator-conformance` revision 1 at `v0.5.0`", and is backed by the report the
   corpus harness writes.
 
@@ -593,13 +642,32 @@ optional fields, new rules with new identifiers) increment the minor version. Ch
 meaning of an existing rule, identifier or format increment the major version; before 1.0 they
 increment the minor version instead, name the documents they invalidate, and define how the
 previous version's documents are still validated. Rule identifiers are never reused. Exports
-and policies written under earlier versions remain valid input (`version` accepts `0.1`, `0.2`
-and `0.3`). Manifests and attestations are validated by the release that produced them, except
-that 0.3 consumers validate 0.2 manifests and `v0.2` Statements with the legacy serialization
-of §8.2, since the rules did not change between the two. The provenance (§3.2) and review (§3.7) documents are versioned on
-their own and stay at 0.1.
+and policies written under earlier versions remain valid input (`version` accepts `0.1` to
+`0.4`). A 0.4 consumer validates 0.3 and 0.2 manifests, and `v0.3` and `v0.2` Statements, as the
+version that wrote them: its rule catalogue, its policy shape and, for 0.2, the legacy
+serialization of §8.2. The provenance (§3.2) and review (§3.7) documents are versioned on their
+own and stay at 0.1.
+
+The schemas are published at version-pinned identifiers,
+`https://noru.tech/spec/ai-change-provenance/v0.4/<name>.schema.json`, and the provenance and
+review schemas under `provenance/v0.1/` and `review/v0.1/`. A consumer that reads manifests
+across versions can rely on these keeping their name and meaning in every later version unless
+the changelog names the change as breaking: a finding's `id`, `rule_id`, `change_id`, `severity`
+and `disposition`; an assessment's `change_id`, `rule_id` and `status`; the `summary` counts; and
+`generated.source_digest`. A later version adds members, rules and vocabulary values; a consumer
+that validates against a version's schema validates against that version's, never a later one's.
 
 ## Changelog
+
+- **0.4 (2026-10-14)** — required checks: the collection of check runs, commit statuses and the
+  forge's required checks for merged changes (§4.1), rule ACC004 (§6.2), the `checks` policy block
+  (§6.3), and validation of check facts (§6.6). ACC004 is disabled by default; when enabled,
+  missing or incomplete check facts make collection incomplete. ACC005 stays reserved for
+  protection bypass. `legacy_ids` is removed (§7.1), as 0.3 scheduled. Re-validation ignores
+  `generated.tool` and `generated.version` (§7.1). Predicate type `v0.4` (§7.3). Schemas move to
+  version-pinned identifiers, and §12 names the members a consumer can rely on across versions.
+  Every document written under 0.3 stays valid input and validates as 0.3; 0.3 manifests and
+  Statements are not rewritten.
 
 - **0.3, revision 3 (2026-09-29)** — §9 no longer names a single suite revision for this
   version: revision 1 was published at `v0.5.0`, and later revisions (revision 2 adds vectors

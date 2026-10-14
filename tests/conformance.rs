@@ -21,8 +21,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 const SUITE: &str = "acp-evaluator-conformance";
-const SUITE_REVISION: u64 = 2;
-const SPEC_VERSION: &str = "0.3";
+const SUITE_REVISION: u64 = 1;
+const SPEC_VERSION: &str = "0.4";
 const SPEC_PATH: &str = "spec/ai-change-provenance.md";
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -78,9 +78,40 @@ const INLINE: &str = "#31-inline-declaration";
 const DERIVED: &str = "#34-derived-evidence-records-written-at-authoring-time";
 const STRENGTH: &str = "#36-evidence-strength";
 const COLLECTION: &str = "#4-collection";
+const CHECKS: &str = "#41-checks";
 const ACTORS: &str = "#5-actor-classification";
 const NORMALIZATION: &str = "#81-normalization";
 const SERIALIZATION: &str = "#82-serialization";
+
+/// A required check's facts on `human-clean`, which merged at 2026-08-03T12:00:00Z with head
+/// `head` and merge commit `merge`, with ACC004 enabled.
+fn checks(v: &mut Value, runs: Value, required: &[&str]) {
+    v["events"]["version"] = "0.4".into();
+    policy(v)["rules"]["merged_without_required_checks"]["enabled"] = true.into();
+    change(v)["checks"] = json!({
+        "branch": "main",
+        "runs": runs,
+        "runs_complete": true,
+        "required": required,
+        "required_sources": ["branch_protection", "rules"],
+        "required_complete": true,
+        "provenance": [{"source": "github", "ref": "https://api.github.com/repos/acme/api/rules/branches/main", "kind": "observed"}]
+    });
+}
+
+fn run_on(commit: &str, conclusion: &str, completed_at: &str) -> Value {
+    json!({
+        "name": "ci / test",
+        "kind": "check_run",
+        "commit_sha": commit,
+        "conclusion": conclusion,
+        "completed_at": completed_at,
+        "provenance": [{"source": "github", "ref": format!("https://api.github.com/repos/acme/api/check-runs/{commit}-{conclusion}-{completed_at}"), "kind": "observed"}]
+    })
+}
+
+const BEFORE_MERGE: &str = "2026-08-03T11:00:00Z";
+const AFTER_MERGE: &str = "2026-08-03T13:00:00Z";
 
 fn policy(v: &mut Value) -> &mut Value {
     &mut v["policy"]
@@ -279,6 +310,162 @@ fn evaluated() -> Vec<Evaluated> {
             conditions: &[COLLECTION, INDEPENDENCE],
         },
         Evaluated {
+            id: "human-clean--checks-passed",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([run_on("head", "success", BEFORE_MERGE)]),
+                    &["ci / test"],
+                )
+            }),
+            fails: &[],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-failed",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([run_on("head", "failure", BEFORE_MERGE)]),
+                    &["ci / test"],
+                )
+            }),
+            fails: &["ACC004"],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-no-run",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| checks(v, json!([]), &["ci / test"])),
+            fails: &["ACC004"],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-passed-after-merge",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([
+                        run_on("head", "failure", BEFORE_MERGE),
+                        run_on("head", "success", AFTER_MERGE)
+                    ]),
+                    &["ci / test"],
+                )
+            }),
+            fails: &["ACC004"],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-passed-on-merge-commit",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([
+                        run_on("head", "failure", BEFORE_MERGE),
+                        run_on("merge", "success", BEFORE_MERGE)
+                    ]),
+                    &["ci / test"],
+                )
+            }),
+            fails: &[],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-simultaneous-disagree",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([
+                        run_on("head", "success", BEFORE_MERGE),
+                        run_on("head", "failure", BEFORE_MERGE)
+                    ]),
+                    &["ci / test"],
+                )
+            }),
+            fails: &["ACC004"],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-policy-required",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(v, json!([run_on("head", "success", BEFORE_MERGE)]), &[]);
+                policy(v)["checks"] = json!({"required": ["lint"], "from_forge": false});
+            }),
+            fails: &["ACC004"],
+            conditions: &[CHECKS, POLICY],
+        },
+        Evaluated {
+            id: "human-clean--checks-nothing-required",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| checks(v, json!([run_on("head", "failure", BEFORE_MERGE)]), &[])),
+            fails: &[],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "open-pr--checks-enabled",
+            kind: Kind::Accept,
+            fixture: "open-pr",
+            edit: Some(|v| {
+                policy(v)["rules"]["merged_without_required_checks"]["enabled"] = true.into()
+            }),
+            fails: &[],
+            conditions: &[CHECKS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--checks-not-collected",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                policy(v)["rules"]["merged_without_required_checks"]["enabled"] = true.into()
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, CHECKS],
+        },
+        Evaluated {
+            id: "human-clean--checks-incomplete",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([run_on("head", "success", BEFORE_MERGE)]),
+                    &["ci / test"],
+                );
+                change(v)["checks"]["runs_complete"] = false.into();
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, CHECKS],
+        },
+        Evaluated {
+            id: "human-clean--checks-required-unreadable",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                checks(
+                    v,
+                    json!([run_on("head", "success", BEFORE_MERGE)]),
+                    &["ci / test"],
+                );
+                change(v)["checks"]["required_complete"] = false.into();
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, CHECKS],
+        },
+        Evaluated {
             id: "claude-clean--reviews-incomplete",
             kind: Kind::Incomplete,
             fixture: "claude-clean",
@@ -329,6 +516,36 @@ const BOB: &str = "\"display_name\": \"Bob\"";
 
 fn rejects() -> Vec<Reject> {
     vec![
+        Reject {
+            id: "open-pr--checks-on-unmerged",
+            parent: "open-pr--checks-enabled",
+            mutation: Mutation::Json(|v| {
+                change(v)["checks"] = json!({
+                    "branch": "main", "runs": [], "runs_complete": true, "required": [],
+                    "required_sources": [], "required_complete": true, "provenance": []
+                })
+            }),
+            codes: &["ACV004"],
+            conditions: &[VALIDATION, CHECKS],
+        },
+        Reject {
+            id: "human-clean--check-on-unrelated-commit",
+            parent: "human-clean--checks-passed",
+            mutation: Mutation::Json(|v| {
+                change(v)["checks"]["runs"][0]["commit_sha"] = "elsewhere".into()
+            }),
+            codes: &["ACV003"],
+            conditions: &[VALIDATION, CHECKS],
+        },
+        Reject {
+            id: "human-clean--unknown-check-conclusion",
+            parent: "human-clean--checks-passed",
+            mutation: Mutation::Json(|v| {
+                change(v)["checks"]["runs"][0]["conclusion"] = "green".into()
+            }),
+            codes: &["ACV010"],
+            conditions: &[VALIDATION, CHECKS],
+        },
         Reject {
             id: "approval-after-merge",
             parent: "approval-at-merge",
@@ -514,6 +731,12 @@ const UNKNOWN_PATHS: &[(&str, &str)] = &[
     (
         "ACC009",
         "An agent approval of the current head is unknown on a required dimension and dependent on none.",
+    ),
+    ("ACC004", "Check data was not collected for this change."),
+    ("ACC004", "Check collection is incomplete."),
+    (
+        "ACC004",
+        "The forge's required checks could not all be read; required checks cannot be established.",
     ),
 ];
 const HUMAN_UNKNOWN: &str =
@@ -773,7 +996,7 @@ fn coverage_requirements_hold() {
         .collect();
     // Every rule fails somewhere and does not fail somewhere.
     for rule in [
-        "ACC001", "ACC002", "ACC003", "ACC006", "ACC007", "ACC008", "ACC009", "ACC010",
+        "ACC001", "ACC002", "ACC003", "ACC004", "ACC006", "ACC007", "ACC008", "ACC009", "ACC010",
     ] {
         assert!(
             outcomes.contains(&(rule.into(), "fail".into(), String::new())),

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/provenance.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/provenance/v0.1/provenance.schema.json",
   "$ref": "#/$defs/provenance",
   "$defs": {
     "provenance": {

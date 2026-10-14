@@ -35,6 +35,9 @@ Pin the action to a commit SHA in production, and pin the `version` input so the
 release evaluates every run. The default `version` tracks the release the action was published
 with.
 
+A policy that enables [ACC004](rules/ACC004.md) (required checks) also needs `checks: read` and
+`statuses: read`. Without them the check data is incomplete and the step exits 4, never passes.
+
 ## Inputs
 
 | Input | Default | Meaning |

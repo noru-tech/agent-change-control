@@ -20,13 +20,13 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         io::policy_source(c.policy.as_deref())
     ));
     let policy = io::load_policy(c.policy.as_deref())?;
-    let events = forge::collect(ctx, &c)?;
-    let exit = if io::incomplete(&events) {
+    let events = forge::collect(ctx, &c, manifest::checks_required(&policy))?;
+    let m = manifest::evaluate(events, policy)?;
+    let exit = if manifest::incomplete(&m.events, &m.policy) {
         Exit::Incomplete
     } else {
         Exit::Ok
     };
-    let m = manifest::evaluate(events, policy)?;
     if c.output.output.is_none() && c.output.format.is_none() {
         c.output.output = Some(DEFAULT_MANIFEST.into());
     }

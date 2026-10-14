@@ -347,12 +347,12 @@ fn exports_written_under_0_1_still_evaluate() {
         serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
     assert_eq!(e.version, "0.1");
     let m = manifest::evaluate(e, Policy::default()).unwrap();
-    assert_eq!(m.version, "0.3");
+    assert_eq!(m.version, "0.4");
     assert_eq!(m.events.version, "0.1");
     manifest::validate(&m).unwrap();
     let mut v: Value =
         serde_json::from_str(include_str!("fixtures/human-clean/events-0.1.json")).unwrap();
-    v["version"] = "0.4".into();
+    v["version"] = "0.5".into();
     assert!(normalize::schema(&v, "events").is_err());
 }
 
@@ -375,7 +375,7 @@ fn legacy_0_2_manifests_validate_and_keep_their_dispositions() {
     assert_eq!(legacy.version, "0.2");
     assert_eq!(
         manifest::validate(&legacy).unwrap(),
-        canonical::Canonicalization::Legacy
+        manifest::Revision::V02
     );
     // Its digests are over the legacy bytes, which are the file as acc 0.4.0 wrote it.
     assert_eq!(canonical::legacy::bytes(&legacy).unwrap(), text);
@@ -393,12 +393,13 @@ fn legacy_0_2_manifests_validate_and_keep_their_dispositions() {
     let mut mixed = legacy.clone();
     mixed.findings[0].legacy_ids = vec![mixed.findings[0].id.clone()];
     assert!(manifest::validate(&mixed).is_err());
-    // The same facts evaluated today: same findings under new identifiers that name the old.
+    // The same facts evaluated today: same findings under new identifiers. 0.4 no longer
+    // writes the old identifier.
     let current = manifest::evaluate(legacy.events.clone(), legacy.policy.clone()).unwrap();
-    assert_eq!(current.version, "0.3");
+    assert_eq!(current.version, "0.4");
     for (old, new) in legacy.findings.iter().zip(&current.findings) {
         assert_ne!(old.id, new.id);
-        assert_eq!(new.legacy_ids, vec![old.id.clone()]);
+        assert!(new.legacy_ids.is_empty());
         assert_eq!(
             (old.rule_id, &old.explanation),
             (new.rule_id, &new.explanation)
@@ -416,11 +417,14 @@ fn legacy_0_2_manifests_validate_and_keep_their_dispositions() {
     };
     manifest::validate(&decided).unwrap();
     let (checked, _) = manifest::check(&decided, None, "2026-09-18".parse().ok()).unwrap();
-    assert_eq!(checked.version, "0.3");
+    assert_eq!(checked.version, "0.4");
+    assert!(checked.findings.iter().all(|f| f.legacy_ids.is_empty()));
     let carried = checked
         .findings
         .iter()
-        .find(|f| f.legacy_ids.contains(&legacy.findings[0].id))
+        .find(|f| {
+            f.rule_id == legacy.findings[0].rule_id && f.change_id == legacy.findings[0].change_id
+        })
         .unwrap();
     assert_eq!(carried.disposition.status, DispositionStatus::Accepted);
     // Legacy Statements validate too, in both forms.

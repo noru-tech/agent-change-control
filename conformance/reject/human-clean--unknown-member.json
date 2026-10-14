@@ -133,6 +133,10 @@
       ],
       "satisfies_independence": false
     },
+    "checks": {
+      "from_forge": true,
+      "required": []
+    },
     "fail_on": "medium",
     "minimum_authorship_evidence": "derived",
     "minimum_review_evidence": "observed",
@@ -161,6 +165,10 @@
         "enabled": true,
         "severity": "high"
       },
+      "merged_without_required_checks": {
+        "enabled": false,
+        "severity": "high"
+      },
       "same_vendor_write_and_review": {
         "enabled": true,
         "severity": "high"
@@ -170,6 +178,6 @@
         "severity": "warning"
       }
     },
-    "version": "0.3"
+    "version": "0.4"
   }
 }

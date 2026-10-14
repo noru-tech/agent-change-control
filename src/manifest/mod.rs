@@ -6,28 +6,86 @@ use crate::{Exit, failure_with_hint};
 use anyhow::{Result, anyhow, bail, ensure};
 use chrono::NaiveDate;
 
-/// The manifest version `acc` writes: ACP 0.3, digests over RFC 8785 bytes.
-pub const VERSION: &str = "0.3";
+/// The manifest version `acc` writes: ACP 0.4, digests over RFC 8785 bytes.
+pub const VERSION: &str = "0.4";
 /// The last manifest version with the legacy canonicalization, read for validation only.
 pub const LEGACY_VERSION: &str = "0.2";
-/// The only release that wrote [`LEGACY_VERSION`] manifests.
-pub const LEGACY_GENERATOR: &str = "0.4.0";
+
+/// An ACP version `acc` reads. Each is evaluated exactly as it was specified, so a manifest
+/// written under it re-validates byte for byte: its rule catalogue, whether findings carry
+/// `legacy_ids`, whether the policy has a `checks` block, and how digests are serialized.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Revision {
+    /// ACP 0.2: the legacy canonicalization.
+    V02,
+    /// ACP 0.3: RFC 8785, findings carry the 0.2 identifier as `legacy_ids`.
+    V03,
+    /// ACP 0.4: ACC004 and the `checks` policy; `legacy_ids` removed.
+    V04,
+}
+
+impl Revision {
+    /// The revision `acc` writes.
+    pub const CURRENT: Revision = Revision::V04;
+
+    pub fn parse(version: &str) -> Result<Self> {
+        match version {
+            "0.2" => Ok(Self::V02),
+            "0.3" => Ok(Self::V03),
+            "0.4" => Ok(Self::V04),
+            _ => bail!("unsupported manifest version"),
+        }
+    }
+
+    pub const fn version(self) -> &'static str {
+        match self {
+            Self::V02 => "0.2",
+            Self::V03 => "0.3",
+            Self::V04 => "0.4",
+        }
+    }
+
+    pub const fn canonicalization(self) -> Canonicalization {
+        match self {
+            Self::V02 => Canonicalization::Legacy,
+            Self::V03 | Self::V04 => Canonicalization::Jcs,
+        }
+    }
+
+    /// The rules this revision specifies, in identifier order.
+    pub fn rules(self) -> &'static [RuleId] {
+        match self {
+            Self::V02 | Self::V03 => &crate::policy::RULES_0_3,
+            Self::V04 => &crate::policy::RULES,
+        }
+    }
+
+    /// Whether resolved policies carry the `checks` block.
+    pub const fn has_checks(self) -> bool {
+        matches!(self, Self::V04)
+    }
+}
 
 /// Normalize `e`, resolve `p` and evaluate every rule into a manifest.
 pub fn evaluate(e: Events, p: Policy) -> Result<Manifest> {
-    evaluate_as(e, p, Canonicalization::Jcs)
+    evaluate_as(e, p, Revision::CURRENT, false)
 }
 
-/// [`evaluate`], with the digests, identifiers and version marks of the given canonicalization.
-/// Rule semantics are the same for both; only the bytes that are hashed differ.
-fn evaluate_as(e: Events, p: Policy, canon: Canonicalization) -> Result<Manifest> {
+/// [`evaluate`] as the given revision specified it. Rule semantics shared between revisions are
+/// identical; what differs is the catalogue, the version marks and the bytes that are hashed.
+/// `keep_legacy` keeps each finding's 0.2 identifier in `legacy_ids` whatever the revision, for
+/// [`check`] to match dispositions by before it drops them.
+fn evaluate_as(e: Events, p: Policy, revision: Revision, keep_legacy: bool) -> Result<Manifest> {
+    let canon = revision.canonicalization();
     let e = crate::normalize::events(e)?;
-    let mut p = crate::policy::resolve(p)?;
+    let p = crate::policy::resolve_for(p, revision)?;
     let (mut findings, assessments) = crate::rules::evaluate(&e, &p)?;
-    if canon == Canonicalization::Legacy {
-        p.version = LEGACY_VERSION.into();
-        for f in &mut findings {
-            f.id = std::mem::take(&mut f.legacy_ids).remove(0);
+    for f in &mut findings {
+        match revision {
+            Revision::V02 => f.id = std::mem::take(&mut f.legacy_ids).remove(0),
+            Revision::V03 => {}
+            Revision::V04 if keep_legacy => {}
+            Revision::V04 => f.legacy_ids.clear(),
         }
     }
     let mut summary = Summary {
@@ -59,17 +117,13 @@ fn evaluate_as(e: Events, p: Policy, canon: Canonicalization) -> Result<Manifest
             summary.clean += 1;
         }
     }
-    let (version, generator) = match canon {
-        Canonicalization::Jcs => (VERSION, crate::version()),
-        Canonicalization::Legacy => (LEGACY_VERSION, LEGACY_GENERATOR),
-    };
     let generated = Generated {
         tool: "agent-change-control".into(),
-        version: generator.into(),
+        version: crate::version().into(),
         source_digest: canon.digest(&e)?,
     };
     Ok(Manifest {
-        version: version.into(),
+        version: revision.version().into(),
         events: e,
         policy: p,
         summary,
@@ -80,13 +134,16 @@ fn evaluate_as(e: Events, p: Policy, canon: Canonicalization) -> Result<Manifest
 }
 
 /// Check the schema, then re-evaluate the embedded facts and policy and require byte-identical
-/// canonical output. Only structurally valid disposition edits are allowed to differ. A 0.2
-/// manifest is re-evaluated with the legacy canonicalization it was written with; the result
-/// says which one applied.
-pub fn validate(m: &Manifest) -> Result<Canonicalization> {
-    let canon = canonicalization(&m.version)?;
+/// canonical output. Only structurally valid disposition edits, and `generated.tool` and
+/// `generated.version`, are allowed to differ: those name the implementation that wrote the
+/// manifest, not the result, so a manifest from any conforming evaluator of its ACP version
+/// validates. Each version is re-evaluated as it was specified; the result says which applied.
+pub fn validate(m: &Manifest) -> Result<Revision> {
+    let revision = Revision::parse(&m.version)?;
     crate::normalize::schema(&serde_json::to_value(m)?, "manifest")?;
-    let mut expected = evaluate_as(m.events.clone(), m.policy.clone(), canon)?;
+    let mut expected = evaluate_as(m.events.clone(), m.policy.clone(), revision, false)?;
+    expected.generated.tool = m.generated.tool.clone();
+    expected.generated.version = m.generated.version.clone();
     ensure!(
         expected.findings.len() == m.findings.len(),
         "manifest findings do not match recorded facts"
@@ -99,16 +156,35 @@ pub fn validate(m: &Manifest) -> Result<Canonicalization> {
         crate::canonical::jcs_bytes(m)? == crate::canonical::jcs_bytes(&expected)?,
         "manifest differs from deterministic evaluation (facts, digest, summary or findings)"
     );
-    Ok(canon)
+    Ok(revision)
 }
 
 /// The canonicalization a manifest version was written with.
 pub fn canonicalization(version: &str) -> Result<Canonicalization> {
-    match version {
-        VERSION => Ok(Canonicalization::Jcs),
-        LEGACY_VERSION => Ok(Canonicalization::Legacy),
-        _ => bail!("unsupported manifest version"),
-    }
+    Ok(Revision::parse(version)?.canonicalization())
+}
+
+/// Whether the policy enables ACC004, which makes missing check data a collection gap.
+pub fn checks_required(p: &Policy) -> bool {
+    p.rules
+        .get(&RuleName::MergedWithoutRequiredChecks)
+        .is_some_and(|r| r.enabled)
+}
+
+/// Whether collection is incomplete for the decision `p` asks for: the window or a review history
+/// is incomplete, or ACC004 is enabled and a merged change's check data is missing or partial.
+/// Incomplete collection takes exit-code precedence and can never produce a clean result.
+pub fn incomplete(e: &Events, p: &Policy) -> bool {
+    let from_forge = p.checks.as_ref().is_none_or(|c| c.from_forge);
+    !e.window.complete
+        || e.changes.iter().any(|c| !c.reviews_complete)
+        || (checks_required(p)
+            && e.changes.iter().any(|c| {
+                c.merged_at.is_some()
+                    && c.checks
+                        .as_ref()
+                        .is_none_or(|k| !k.runs_complete || (from_forge && !k.required_complete))
+            }))
 }
 
 fn validate_disposition(d: &Disposition) -> Result<()> {
@@ -155,15 +231,21 @@ pub fn check(
     as_of: Option<NaiveDate>,
 ) -> Result<(Manifest, Exit)> {
     validate(m)?;
-    let mut checked = evaluate(m.events.clone(), p.unwrap_or_else(|| m.policy.clone()))?;
+    let mut checked = evaluate_as(
+        m.events.clone(),
+        p.unwrap_or_else(|| m.policy.clone()),
+        Revision::CURRENT,
+        true,
+    )?;
+    // A disposition recorded under a 0.2 identifier still applies: `legacy_ids` left the output
+    // in 0.4, but matching by it costs nothing and loses no decision on an upgrade.
     for f in &mut checked.findings {
-        if let Some(old) = m
-            .findings
-            .iter()
-            .find(|old| old.id == f.id || f.legacy_ids.contains(&old.id))
-        {
+        if let Some(old) = m.findings.iter().find(|old| {
+            old.id == f.id || f.legacy_ids.contains(&old.id) || old.legacy_ids.contains(&f.id)
+        }) {
             f.disposition = old.disposition.clone();
         }
+        f.legacy_ids.clear();
     }
     let mut failed = false;
     for f in &checked.findings {
@@ -182,9 +264,7 @@ pub fn check(
         };
         failed |= !suppressed && f.severity >= checked.policy.fail_on;
     }
-    let incomplete = !checked.events.window.complete
-        || checked.events.changes.iter().any(|c| !c.reviews_complete);
-    let exit = if incomplete {
+    let exit = if incomplete(&checked.events, &checked.policy) {
         Exit::Incomplete
     } else if failed {
         Exit::PolicyFailed

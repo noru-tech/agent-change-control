@@ -62,6 +62,10 @@ pub struct Collect {
     /// Maximum pages per list endpoint (100 items each).
     #[arg(long, default_value_t = 100, value_name = "N")]
     pub max_pages: usize,
+    /// Also collect check runs, commit statuses and the target branch's required checks for
+    /// merged changes (ACC004). Implied when the policy enables ACC004.
+    #[arg(long)]
+    pub checks: bool,
     #[command(flatten)]
     pub output: OutputArgs,
 }
@@ -92,7 +96,8 @@ pub fn client(max_pages: usize) -> Result<Github> {
 }
 
 /// Collect the pull requests merged in the window.
-pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
+/// `checks` asks for ACC004's facts whatever `--checks` says: the caller's policy needs them.
+pub fn collect(ctx: &Ctx, c: &Collect, checks: bool) -> Result<Events> {
     let repository = detect::resolve_repository(c.repository.as_deref(), |m| ctx.note(m))?;
     let since = c
         .since
@@ -148,6 +153,7 @@ pub fn collect(ctx: &Ctx, c: &Collect) -> Result<Events> {
             traces: traces.as_ref(),
             attestations: attestations.as_ref(),
             vendors: &vendors,
+            checks: checks || c.checks,
         },
     )
 }

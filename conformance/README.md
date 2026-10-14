@@ -1,7 +1,8 @@
 # ACP evaluator conformance corpus
 
-`acp-evaluator-conformance`, suite revision 2, for
-[AI Change Provenance](../spec/ai-change-provenance.md) 0.3.
+`acp-evaluator-conformance`, suite revision 1, for
+[AI Change Provenance](../spec/ai-change-provenance.md) 0.4. Revisions are numbered per
+specification version; the 0.3 suite (revision 2, at `v0.5.2`) stays at its release tags.
 
 An evaluator conforms to ACP when it passes a named suite revision of this corpus at a named
 release (spec §9). The corpus runs any implementation as an external program, so it tests what

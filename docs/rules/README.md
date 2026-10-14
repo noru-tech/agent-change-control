@@ -17,8 +17,8 @@ that exercise each are listed in [policy](../policy.md#exact-deterministic-condi
 | [ACC001](ACC001.md) | Agent change without independent human approval | high | every policy |
 | [ACC002](ACC002.md) | Effective human author/operator approved own change | high | every policy |
 | [ACC003](ACC003.md) | Merged change without independent human approval | high | every policy |
-| ACC004 | Reserved (deployment rule) | — | not implemented |
-| ACC005 | Reserved (bypass rule) | — | not implemented |
+| [ACC004](ACC004.md) | Merged without required checks | high | a policy that enables it |
+| ACC005 | Reserved (protection bypass) | — | not implemented |
 | [ACC006](ACC006.md) | Agent operator unknown | warning | every policy |
 | [ACC007](ACC007.md) | Agent approval recorded (observation) | info | every policy |
 | [ACC008](ACC008.md) | Same-vendor write and review | high | every policy |

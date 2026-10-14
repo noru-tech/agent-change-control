@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/change-events.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/v0.4/change-events.schema.json",
   "$ref": "#/$defs/events",
   "$defs": {
     "evidence": {
@@ -301,6 +301,114 @@
       ],
       "additionalProperties": false
     },
+    "check_run": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "check_run",
+            "status"
+          ]
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "action_required",
+            "cancelled",
+            "error",
+            "failure",
+            "neutral",
+            "skipped",
+            "stale",
+            "success",
+            "timed_out"
+          ]
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "commit_sha",
+        "conclusion",
+        "completed_at",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "checks": {
+      "description": "Check and status results and the forge's required checks for a merged change (ACP 0.4, ACC004). `required` is what the forge's rules said at collection time.",
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check_run"
+          }
+        },
+        "runs_complete": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "branch_protection",
+              "rules"
+            ]
+          }
+        },
+        "required_complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "branch",
+        "runs",
+        "runs_complete",
+        "required",
+        "required_sources",
+        "required_complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
     "change": {
       "type": "object",
       "properties": {
@@ -409,6 +517,9 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "checks": {
+          "$ref": "#/$defs/checks"
         }
       },
       "required": [
@@ -516,7 +627,8 @@
           "enum": [
             "0.1",
             "0.2",
-            "0.3"
+            "0.3",
+            "0.4"
           ]
         },
         "repository": {

@@ -161,7 +161,22 @@ pub fn warn_incomplete(ctx: &Ctx, events: &crate::model::Events, hint: &str) {
             .iter()
             .filter(|c| !c.reviews_complete)
             .count();
-        format!("review history incomplete for {n} change(s)")
+        if n > 0 {
+            return format!("review history incomplete for {n} change(s)");
+        }
+        // The only other source of incompleteness: ACC004 is enabled and check facts are
+        // missing or partial for a merged change.
+        let n = events
+            .changes
+            .iter()
+            .filter(|c| {
+                c.merged_at.is_some()
+                    && c.checks
+                        .as_ref()
+                        .is_none_or(|k| !k.runs_complete || !k.required_complete)
+            })
+            .count();
+        format!("check data missing or incomplete for {n} merged change(s), and the policy enables ACC004")
     });
     ctx.note(format!("warning: collection incomplete: {reason}"));
     ctx.note(format!("help: {hint}"));

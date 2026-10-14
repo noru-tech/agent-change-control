@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/manifest.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/v0.4/manifest.schema.json",
   "$ref": "#/$defs/manifest",
   "$defs": {
     "evidence": {
@@ -301,6 +301,114 @@
       ],
       "additionalProperties": false
     },
+    "check_run": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "check_run",
+            "status"
+          ]
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "action_required",
+            "cancelled",
+            "error",
+            "failure",
+            "neutral",
+            "skipped",
+            "stale",
+            "success",
+            "timed_out"
+          ]
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "commit_sha",
+        "conclusion",
+        "completed_at",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "checks": {
+      "description": "Check and status results and the forge's required checks for a merged change (ACP 0.4, ACC004). `required` is what the forge's rules said at collection time.",
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check_run"
+          }
+        },
+        "runs_complete": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "branch_protection",
+              "rules"
+            ]
+          }
+        },
+        "required_complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "branch",
+        "runs",
+        "runs_complete",
+        "required",
+        "required_sources",
+        "required_complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
     "change": {
       "type": "object",
       "properties": {
@@ -409,6 +517,9 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "checks": {
+          "$ref": "#/$defs/checks"
         }
       },
       "required": [
@@ -516,7 +627,8 @@
           "enum": [
             "0.1",
             "0.2",
-            "0.3"
+            "0.3",
+            "0.4"
           ]
         },
         "repository": {
@@ -616,6 +728,23 @@
       "required": [],
       "additionalProperties": false
     },
+    "checks_policy": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "from_forge": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
     "policy": {
       "type": "object",
       "properties": {
@@ -624,7 +753,8 @@
           "enum": [
             "0.1",
             "0.2",
-            "0.3"
+            "0.3",
+            "0.4"
           ]
         },
         "fail_on": {
@@ -657,6 +787,9 @@
         "agent_review": {
           "$ref": "#/$defs/agent_review"
         },
+        "checks": {
+          "$ref": "#/$defs/checks_policy"
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -667,6 +800,9 @@
               "$ref": "#/$defs/rule_policy"
             },
             "merged_without_independent_approval": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "merged_without_required_checks": {
               "$ref": "#/$defs/rule_policy"
             },
             "unknown_agent_operator": {
@@ -786,6 +922,7 @@
             "ACC001",
             "ACC002",
             "ACC003",
+            "ACC004",
             "ACC006",
             "ACC007",
             "ACC008",
@@ -799,6 +936,7 @@
             "agent_change_without_independent_human",
             "approver_is_author",
             "merged_without_independent_approval",
+            "merged_without_required_checks",
             "unknown_agent_operator",
             "agent_approval_recorded",
             "same_vendor_write_and_review",
@@ -841,7 +979,7 @@
           "$ref": "#/$defs/disposition"
         },
         "legacy_ids": {
-          "description": "The identifiers this finding had under ACP 0.2 (preimage with a trailing newline). Written by ACP 0.3 only, for one minor version.",
+          "description": "The identifiers this finding had under ACP 0.2 (preimage with a trailing newline). Written by ACP 0.3 only; removed in 0.4.",
           "type": "array",
           "items": {
             "type": "string",
@@ -876,6 +1014,7 @@
             "ACC001",
             "ACC002",
             "ACC003",
+            "ACC004",
             "ACC006",
             "ACC007",
             "ACC008",
@@ -959,7 +1098,8 @@
         "version": {
           "enum": [
             "0.2",
-            "0.3"
+            "0.3",
+            "0.4"
           ]
         },
         "events": {
@@ -987,10 +1127,12 @@
           "type": "object",
           "properties": {
             "tool": {
-              "const": "agent-change-control"
+              "type": "string",
+              "minLength": 1
             },
             "version": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "source_digest": {
               "type": "string",
@@ -1020,26 +1162,6 @@
           "if": {
             "properties": {
               "version": {
-                "const": "0.3"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "generated": {
-                "properties": {
-                  "version": {
-                    "const": "0.6.0"
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "version": {
                 "const": "0.2"
               }
             }
@@ -1053,6 +1175,28 @@
                   }
                 }
               },
+              "findings": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "legacy_ids"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "version": {
+                "const": "0.4"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "findings": {
                 "items": {
                   "not": {

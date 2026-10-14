@@ -172,7 +172,7 @@ fn attestations_validate_and_are_inferred_from_their_suffix() {
             "name": "acc-manifest.json",
             "digest": {"sha256": digest.trim_start_matches("sha256:")}
         }],
-        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.3",
+        "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.4",
         "predicate": m,
     });
     let path = dir.path().join("attested.intoto.json");

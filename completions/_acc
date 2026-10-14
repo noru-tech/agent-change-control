@@ -61,6 +61,7 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '-o+[Write to FILE instead of stdout]:FILE:_files' \
 '--output=[Write to FILE instead of stdout]:FILE:_files' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'--checks[Also collect check runs, commit statuses and the target branch'\''s required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -109,6 +110,7 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '-o+[Write to FILE instead of stdout]:FILE:_files' \
 '--output=[Write to FILE instead of stdout]:FILE:_files' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'--checks[Also collect check runs, commit statuses and the target branch'\''s required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -177,6 +179,7 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '-o+[Write to FILE instead of stdout]:FILE:_files' \
 '--output=[Write to FILE instead of stdout]:FILE:_files' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'--checks[Also collect check runs, commit statuses and the target branch'\''s required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -225,6 +228,7 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '-o+[Write to FILE instead of stdout]:FILE:_files' \
 '--output=[Write to FILE instead of stdout]:FILE:_files' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
+'--checks[Also collect check runs, commit statuses and the target branch'\''s required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \

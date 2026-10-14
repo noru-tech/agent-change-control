@@ -83,7 +83,8 @@ error: ACV001 approval_after_merge (see https://github.com/noru-tech/agent-chang
 ## 4: Collection incomplete
 
 Part of the population or a review history could not be retrieved (page limit reached, a
-dismissed review whose time GitHub does not expose, an export marked incomplete). The output is
+dismissed review whose time GitHub does not expose, an export marked incomplete), or the policy
+enables [ACC004](rules/ACC004.md) and a merged change's check data is missing or partial. The output is
 still written, with the gap recorded, but a clean result cannot be claimed. Exit 4 takes precedence
 over exit 1: an incomplete window is never reported as a plain policy failure or pass.
 

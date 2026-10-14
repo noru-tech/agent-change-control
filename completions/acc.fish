@@ -58,6 +58,7 @@ in-toto\t'An unsigned in-toto Statement v1 whose predicate is the manifest'
 in-toto-jsonl\t'JSON Lines of unsigned in-toto Statements, one per change'"
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -s o -l output -d 'Write to FILE instead of stdout' -r -F
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l ignore-trailers -d 'Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship'
+complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l checks -d 'Also collect check runs, commit statuses and the target branch\'s required checks for merged changes (ACC004). Implied when the policy enables ACC004'
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -s q -l quiet -d 'Suppress status lines on stderr'
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -s v -l verbose -d 'Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout'
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
@@ -84,6 +85,7 @@ in-toto\t'An unsigned in-toto Statement v1 whose predicate is the manifest'
 in-toto-jsonl\t'JSON Lines of unsigned in-toto Statements, one per change'"
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -s o -l output -d 'Write to FILE instead of stdout' -r -F
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l ignore-trailers -d 'Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship'
+complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l checks -d 'Also collect check runs, commit statuses and the target branch\'s required checks for merged changes (ACC004). Implied when the policy enables ACC004'
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -s q -l quiet -d 'Suppress status lines on stderr'
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -s v -l verbose -d 'Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout'
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
@@ -110,6 +112,7 @@ in-toto\t'An unsigned in-toto Statement v1 whose predicate is the manifest'
 in-toto-jsonl\t'JSON Lines of unsigned in-toto Statements, one per change'"
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -s o -l output -d 'Write to FILE instead of stdout' -r -F
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l ignore-trailers -d 'Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship'
+complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l checks -d 'Also collect check runs, commit statuses and the target branch\'s required checks for merged changes (ACC004). Implied when the policy enables ACC004'
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -s q -l quiet -d 'Suppress status lines on stderr'
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -s v -l verbose -d 'Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout'
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
@@ -136,6 +139,7 @@ in-toto\t'An unsigned in-toto Statement v1 whose predicate is the manifest'
 in-toto-jsonl\t'JSON Lines of unsigned in-toto Statements, one per change'"
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -s o -l output -d 'Write to FILE instead of stdout' -r -F
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l ignore-trailers -d 'Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship'
+complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l checks -d 'Also collect check runs, commit statuses and the target branch\'s required checks for merged changes (ACC004). Implied when the policy enables ACC004'
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -s q -l quiet -d 'Suppress status lines on stderr'
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -s v -l verbose -d 'Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout'
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'

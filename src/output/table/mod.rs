@@ -88,14 +88,19 @@ pub fn render(m: &Manifest) -> String {
     let counts: Vec<Vec<String>> = RULES
         .iter()
         .map(|rule| {
+            let enabled = m.policy.rules.get(&rule.name()).is_some_and(|r| r.enabled);
             vec![
                 rule.code().into(),
                 rule.name().to_string(),
-                m.findings
-                    .iter()
-                    .filter(|f| f.rule_id == *rule)
-                    .count()
-                    .to_string(),
+                if enabled {
+                    m.findings
+                        .iter()
+                        .filter(|f| f.rule_id == *rule)
+                        .count()
+                        .to_string()
+                } else {
+                    "off".into()
+                },
             ]
         })
         .collect();
@@ -105,6 +110,10 @@ pub fn render(m: &Manifest) -> String {
             "INCOMPLETE: {}\n",
             plain(m.events.window.reason.as_deref().unwrap_or("unspecified"))
         ));
+    } else if crate::manifest::incomplete(&m.events, &m.policy) {
+        out.push_str(
+            "INCOMPLETE: check data is missing or partial for a merged change, and the policy enables ACC004\n",
+        );
     }
     out
 }

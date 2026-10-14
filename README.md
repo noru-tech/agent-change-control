@@ -151,13 +151,13 @@ what is the evidence?** Agent authorship alone is never a finding. An unknown op
 as unknown, never rounded to pass or fail. Incomplete collection can never produce a clean result.
 
 Read the argument in [Enforcing the four-eyes principle for coding agents](docs/four-eyes.md).
-The convention it implements is published as [AI Change Provenance 0.3](spec/ai-change-provenance.md).
+The convention it implements is published as [AI Change Provenance 0.4](spec/ai-change-provenance.md).
 
 ### What is in this repository
 
 | Piece | Where |
 | --- | --- |
-| **Specification** — AI Change Provenance 0.3: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
+| **Specification** — AI Change Provenance 0.4: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
 | **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
@@ -237,7 +237,7 @@ operator) approved the current head before merge, with no later withdrawal, in f
 <a id="rules"></a>
 ## Which rules does acc check?
 
-Eight rules, each with a page that explains it, maps it to controls, shows a failing and a passing
+Nine rules, each with a page that explains it, maps it to controls, shows a failing and a passing
 example and says how to fix it or record a disposition ([all rules and validation
 codes](docs/rules/README.md)):
 
@@ -246,6 +246,7 @@ codes](docs/rules/README.md)):
 | [ACC001](docs/rules/ACC001.md) | Agent change without independent human approval | high |
 | [ACC002](docs/rules/ACC002.md) | Effective human author/operator approved own change | high |
 | [ACC003](docs/rules/ACC003.md) | Merged change without independent human approval | high |
+| [ACC004](docs/rules/ACC004.md) | Merged without required checks (opt-in) | high |
 | [ACC006](docs/rules/ACC006.md) | Agent operator unknown | warning |
 | [ACC007](docs/rules/ACC007.md) | Agent approval recorded (observation) | info |
 | [ACC008](docs/rules/ACC008.md) | Same-vendor write and review | high |
@@ -324,7 +325,7 @@ acc validate august.intoto.jsonl                            # subjects match, fi
 Sign them with the DSSE signer you already use for build provenance. A verifier checks that the
 subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
 that the subjects are exactly the predicate's changes and that the findings follow from the
-embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.3`; the
+embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.4`; the
 predicate is documented in [docs/in-toto.md](docs/in-toto.md). Every digest is SHA-256 over
 [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) bytes, and `acc` writes JSON as exactly those
 bytes, so any JCS implementation reproduces them.
@@ -436,7 +437,7 @@ Every release is archived on Zenodo. Cite the concept DOI
 release, or the version DOI of the release you used, listed on that record, when the exact bytes
 matter (an audit report, or a conformance claim). `CITATION.cff` has the citation metadata.
 
-The specification is [AI Change Provenance 0.3](spec/ai-change-provenance.md); its predicate type
+The specification is [AI Change Provenance 0.4](spec/ai-change-provenance.md); its predicate type
 URIs are listed in [Attestations](#attestations).
 
 ## Trust

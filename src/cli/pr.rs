@@ -59,6 +59,11 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let traces = args.evidence.traces()?;
     let attestations = args.evidence.attestations()?;
     let vendors = args.evidence.vendors()?;
+    ctx.debug(format!(
+        "policy: {}",
+        io::policy_source(args.policy.as_deref())
+    ));
+    let policy = io::load_policy(args.policy.as_deref())?;
     ctx.debug(format!("collecting {repo} pull request {}", args.number));
     forge::debug_auth(ctx);
     let events = forge::client(args.max_pages)?.collect(
@@ -72,13 +77,10 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             traces: traces.as_ref(),
             attestations: attestations.as_ref(),
             vendors: &vendors,
+            checks: manifest::checks_required(&policy),
         },
     )?;
-    ctx.debug(format!(
-        "policy: {}",
-        io::policy_source(args.policy.as_deref())
-    ));
-    let m = manifest::evaluate(events, io::load_policy(args.policy.as_deref())?)?;
+    let m = manifest::evaluate(events, policy)?;
     let (_, exit) = manifest::check(&m, None, None)?;
     args.output.render(ctx, &m, Format::Table)?;
     if exit == Exit::Incomplete {

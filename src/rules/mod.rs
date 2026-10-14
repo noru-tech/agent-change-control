@@ -11,6 +11,7 @@
 use crate::model::*;
 use crate::policy::RULES;
 use anyhow::Result;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 const NOT_AGENT: &str = "Effective author is not an agent.";
@@ -60,6 +61,78 @@ const NO_AGENT_APPROVAL: &str = "No agent approved the current head.";
 const AGENT_UNSIGNED: &str =
     "An agent approval of the current head lacks the signed evidence the policy requires.";
 const AGENT_SIGNED: &str = "Every agent approval of the current head carries signed evidence.";
+// ACC004
+const CHECKS_NOT_COLLECTED: &str = "Check data was not collected for this change.";
+const CHECKS_INCOMPLETE: &str = "Check collection is incomplete.";
+const REQUIRED_INCOMPLETE: &str =
+    "The forge's required checks could not all be read; required checks cannot be established.";
+const NOTHING_REQUIRED: &str = "No checks are required for this change.";
+const CHECKS_PASSED: &str = "Every required check passed on the head or merge commit before merge.";
+
+/// ACC004 for one change. Exact conditions are in `docs/policy.md`.
+fn required_checks(c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {
+    use Status::*;
+    let Some(merged) = c.merged_at else {
+        return (NotApplicable, NOT_MERGED.into());
+    };
+    let Some(k) = &c.checks else {
+        return (Unknown, CHECKS_NOT_COLLECTED.into());
+    };
+    if !k.runs_complete {
+        return (Unknown, CHECKS_INCOMPLETE.into());
+    }
+    let policy = p.checks.clone().unwrap_or_default();
+    let mut required: BTreeSet<&str> = policy.required.iter().map(String::as_str).collect();
+    if policy.from_forge {
+        required.extend(k.required.iter().map(String::as_str));
+    }
+    let commits: Vec<&str> = std::iter::once(c.head_sha.as_str())
+        .chain(c.merge_commit_sha.as_deref())
+        .collect();
+    let mut failing = Vec::new();
+    for name in &required {
+        // On each commit, the latest result completed by the merge. A tie at the latest instant
+        // passes only if every result at that instant passes.
+        let mut seen = false;
+        let passed = commits.iter().any(|sha| {
+            let runs: Vec<&CheckRun> = k
+                .runs
+                .iter()
+                .filter(|r| r.name == *name && r.commit_sha == *sha && r.completed_at <= merged)
+                .collect();
+            let Some(latest) = runs.iter().map(|r| r.completed_at).max() else {
+                return false;
+            };
+            seen = true;
+            runs.iter()
+                .filter(|r| r.completed_at == latest)
+                .all(|r| r.conclusion.passing())
+        });
+        if !passed {
+            failing.push(format!(
+                "{name} ({})",
+                if seen { "did not pass" } else { "no run" }
+            ));
+        }
+    }
+    if !failing.is_empty() {
+        return (
+            Fail,
+            format!(
+                "Required checks did not pass on the head or merge commit before merge: {}.",
+                failing.join(", ")
+            )
+            .into(),
+        );
+    }
+    if policy.from_forge && !k.required_complete {
+        return (Unknown, REQUIRED_INCOMPLETE.into());
+    }
+    if required.is_empty() {
+        return (NotApplicable, NOTHING_REQUIRED.into());
+    }
+    (Pass, CHECKS_PASSED.into())
+}
 
 /// One dimension's verdict for one agent approval.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -278,7 +351,15 @@ impl<'a> Facts<'a> {
             })
     }
 
-    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, &'static str) {
+    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {
+        if rule == RuleId::Acc004 {
+            return required_checks(c, p);
+        }
+        let (status, reason) = self.assess_independence(rule, c, p);
+        (status, reason.into())
+    }
+
+    fn assess_independence(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, &'static str) {
         use Status::*;
         let agent = self.kind == ActorKind::Agent;
         match rule {
@@ -360,7 +441,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
                 change_id: c.id.clone(),
                 rule_id: rule,
                 status,
-                reason: reason.into(),
+                reason: reason.to_string(),
             });
             if status != Status::Fail {
                 continue;
@@ -375,6 +456,9 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             ) {
                 actors.extend(facts.agent_approvals.iter().map(|a| a.reviewer.to_string()));
             }
+            if rule == RuleId::Acc004 {
+                actors.extend(c.merger.as_ref().map(|m| m.actor_id.clone()));
+            }
             actors.sort();
             actors.dedup();
             let mut provenance = c.provenance.clone();
@@ -387,6 +471,9 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             }
             for r in &c.reviews {
                 provenance.extend(r.provenance.clone());
+            }
+            if rule == RuleId::Acc004 {
+                provenance.extend(c.checks.iter().flat_map(|k| k.provenance.clone()));
             }
             provenance.sort();
             provenance.dedup();
@@ -402,7 +489,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
                 severity: policy.severity,
                 change_id: c.id.clone(),
                 actor_ids: actors,
-                explanation: reason.into(),
+                explanation: reason.to_string(),
                 provenance,
                 disposition: Disposition::default(),
             });

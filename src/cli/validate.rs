@@ -56,7 +56,7 @@ fn legacy_note(canon: Canonicalization) -> &'static str {
     match canon {
         Canonicalization::Jcs => "",
         Canonicalization::Legacy => {
-            " (ACP 0.2, legacy canonicalization; acc now writes 0.3 with RFC 8785 digests)"
+            " (ACP 0.2, legacy canonicalization; acc now writes 0.4 with RFC 8785 digests)"
         }
     }
 }
@@ -84,7 +84,7 @@ fn validate(ctx: &Ctx, path: &Path) -> Result<String> {
     ctx.debug("document: manifest");
     crate::normalize::schema(&value, "manifest")?;
     let m: Manifest = serde_json::from_value(value)?;
-    let canon = manifest::validate(&m)?;
+    let canon = manifest::validate(&m)?.canonicalization();
     Ok(format!("Valid manifest{}", legacy_note(canon)))
 }
 

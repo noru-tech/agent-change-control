@@ -5,7 +5,20 @@ use anyhow::Result;
 use std::collections::BTreeMap;
 
 /// Every rule this release evaluates, in identifier order.
-pub const RULES: [RuleId; 8] = [
+pub const RULES: [RuleId; 9] = [
+    RuleId::Acc001,
+    RuleId::Acc002,
+    RuleId::Acc003,
+    RuleId::Acc004,
+    RuleId::Acc006,
+    RuleId::Acc007,
+    RuleId::Acc008,
+    RuleId::Acc009,
+    RuleId::Acc010,
+];
+
+/// The rules ACP 0.2 and 0.3 specified, for re-validating manifests written under them.
+pub const RULES_0_3: [RuleId; 8] = [
     RuleId::Acc001,
     RuleId::Acc002,
     RuleId::Acc003,
@@ -47,6 +60,20 @@ pub fn default_agent_minimum() -> EvidenceKind {
     EvidenceKind::Signed
 }
 
+/// ACC004 requires what the forge's rules required unless a policy says otherwise.
+pub fn default_from_forge() -> bool {
+    true
+}
+
+impl Default for ChecksPolicy {
+    fn default() -> Self {
+        Self {
+            required: Vec::new(),
+            from_forge: default_from_forge(),
+        }
+    }
+}
+
 impl Default for AgentReview {
     fn default() -> Self {
         Self {
@@ -70,47 +97,98 @@ impl RuleId {
     }
 }
 
+impl RuleId {
+    /// Whether a rule runs unless a policy turns it on or off. ACC004 needs check data the
+    /// collector gathers only when asked, and a token permission older workflows lack, so it is
+    /// opt-in.
+    pub const fn enabled_by_default(self) -> bool {
+        !matches!(self, RuleId::Acc004)
+    }
+}
+
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            version: "0.3".into(),
+            version: crate::manifest::VERSION.into(),
             fail_on: default_threshold(),
             minimum_authorship_evidence: default_authorship_minimum(),
             minimum_review_evidence: default_review_minimum(),
             agent_review: AgentReview::default(),
-            rules: RULES
-                .iter()
-                .map(|rule| {
-                    (
-                        rule.name(),
-                        RulePolicy {
-                            enabled: true,
-                            severity: rule.default_severity(),
-                        },
-                    )
-                })
-                .collect::<BTreeMap<_, _>>(),
+            checks: Some(ChecksPolicy::default()),
+            rules: rule_defaults(&RULES),
         }
     }
 }
 
+fn rule_defaults(rules: &[RuleId]) -> BTreeMap<RuleName, RulePolicy> {
+    rules
+        .iter()
+        .map(|rule| {
+            (
+                rule.name(),
+                RulePolicy {
+                    enabled: rule.enabled_by_default(),
+                    severity: rule.default_severity(),
+                },
+            )
+        })
+        .collect()
+}
+
 /// Validate a policy against its schema and fill unspecified rules from the defaults.
 pub fn resolve(p: Policy) -> Result<Policy> {
+    resolve_for(p, crate::manifest::Revision::CURRENT)
+}
+
+/// [`resolve`] as the given ACP revision resolved it: its rule catalogue, its version mark, and
+/// the `checks` block only from 0.4 on. Re-validating an earlier manifest needs the policy it
+/// embedded, byte for byte.
+pub fn resolve_for(p: Policy, revision: crate::manifest::Revision) -> Result<Policy> {
     crate::normalize::schema(&serde_json::to_value(&p)?, "policy")?;
+    let rules = revision.rules();
+    if let Some(name) = p
+        .rules
+        .keys()
+        .find(|n| !rules.iter().any(|r| r.name() == **n))
+    {
+        anyhow::bail!("ACV010 ACP {} has no rule {name}", revision.version());
+    }
+    ensure_checks(&p, revision)?;
     let mut agent_review = p.agent_review;
     agent_review.require.sort();
     agent_review.require.dedup();
     agent_review.labels.sort();
     agent_review.labels.dedup();
+    let checks = revision.has_checks().then(|| {
+        let mut checks = p.checks.unwrap_or_default();
+        checks.required.sort();
+        checks.required.dedup();
+        checks
+    });
     let mut full = Policy {
+        version: revision.version().into(),
         fail_on: p.fail_on,
         minimum_authorship_evidence: p.minimum_authorship_evidence,
         minimum_review_evidence: p.minimum_review_evidence,
         agent_review,
-        ..Policy::default()
+        checks,
+        rules: rule_defaults(rules),
     };
     full.rules.extend(p.rules);
     Ok(full)
+}
+
+fn ensure_checks(p: &Policy, revision: crate::manifest::Revision) -> Result<()> {
+    if p.checks.is_some() && !revision.has_checks() {
+        anyhow::bail!("ACV010 ACP {} has no checks policy", revision.version());
+    }
+    if let Some(checks) = &p.checks {
+        anyhow::ensure!(
+            checks.required.iter().all(|n| !n.trim().is_empty()),
+            "ACV010 checks.required names must not be empty"
+        );
+    }
+    Ok(())
 }
 
 #[cfg(test)]

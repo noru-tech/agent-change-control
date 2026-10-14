@@ -1,8 +1,10 @@
 # Roadmap
 
 The goal is a small, boring, trustworthy standard for one question: did a human independent of
-the effective author approve this change? Everything below serves that question. Items are
-ordered by intent, not by date; see the [issues](https://github.com/noru-tech/agent-change-control/issues)
+the effective author approve this change? Since ACP 0.4 it also answers the narrower questions
+that make that approval worth something: whether the checks the repository requires passed on
+what merged (ACC004), and, planned, whether protection was bypassed (ACC005). Everything below
+serves those questions. Items are ordered by intent, not by date; see the [issues](https://github.com/noru-tech/agent-change-control/issues)
 for status.
 
 ## Released in 0.1
@@ -22,6 +24,10 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
 - **AI Change Provenance 0.3**: every digest is SHA-256 over RFC 8785 (JCS) bytes, so any JCS
   implementation reproduces them; ACP 0.2 documents still validate through a legacy path. A
   published evaluator conformance corpus (`conformance/`) defines evaluator conformance.
+- **AI Change Provenance 0.4**: required checks. Check runs, commit statuses and the target
+  branch's required checks are collected for merged changes, and the opt-in rule ACC004 fails a
+  change whose required checks did not pass before merge. Schemas at version-pinned identifiers,
+  and a stated set of manifest members consumers can rely on across versions.
 
 ## Next
 
@@ -56,8 +62,12 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   re-validates), and check the subjects against a commit range.
 - **Dismissal timing** via GitHub's GraphQL timeline, so dismissed reviews stop forcing
   `reviews_complete: false`.
-- **Deployment and bypass rules** (ACC004, ACC005 reserved): merged without required checks,
-  branch-protection bypass, deploy of an unapproved head.
+- **Protection bypass (ACC005, reserved)** from ruleset rule suites, which record a `bypass`
+  result but need a token with repository administration read access. An actor exempted from a
+  ruleset leaves no record, and an administrator's override of classic branch protection is
+  visible only in the Enterprise audit log; both will be documented as invisible rather than
+  inferred.
+- **Deploy of an unapproved head**: a production deployment of a commit no passing change covers.
 - **Pseudonymization mode** for sharing manifests outside the organization while keeping finding
   identifiers stable.
 - **More forges**: Bitbucket, Azure DevOps, Gerrit, via the collector proposal template.

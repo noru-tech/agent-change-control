@@ -33,6 +33,8 @@ pub struct Sources<'a> {
     pub attestations: Option<&'a Attestations>,
     /// The vendor registry, `agent -> vendor`.
     pub vendors: &'a BTreeMap<String, String>,
+    /// Collect check runs, commit statuses and required checks for merged changes (ACC004).
+    pub checks: bool,
 }
 
 /// The core rate limit, from `GET /rate_limit`.
@@ -54,6 +56,9 @@ pub struct Github {
 enum Response {
     Found(Value, bool),
     NotFound,
+    /// A 403 that is not rate limiting, returned only to a caller that tolerates it: the token
+    /// cannot read this resource.
+    Forbidden,
 }
 
 fn api(message: &'static str) -> anyhow::Error {
@@ -122,6 +127,12 @@ impl Github {
     }
 
     fn get(&self, path: &str) -> Result<Response> {
+        self.fetch(path, false)
+    }
+
+    /// [`Self::get`]; with `tolerate`, a permission 403 is [`Response::Forbidden`] rather than
+    /// an error, for data whose absence is recorded rather than fatal.
+    fn fetch(&self, path: &str, tolerate: bool) -> Result<Response> {
         ensure!(
             path.starts_with('/') && !path.starts_with("//"),
             "invalid API path"
@@ -152,6 +163,9 @@ impl Github {
                     || headers
                         .get("x-ratelimit-remaining")
                         .is_some_and(|v| v.as_bytes() == b"0");
+                if tolerate && !limited {
+                    return Ok(Response::Forbidden);
+                }
                 return Err(self.failed(
                     Exit::Api,
                     "GitHub request forbidden or rate limited",
@@ -207,8 +221,42 @@ impl Github {
     fn object(&self, path: &str) -> Result<Value> {
         match self.get(path)? {
             Response::Found(value, _) => Ok(value),
-            Response::NotFound => Err(self.not_found()),
+            Response::NotFound | Response::Forbidden => Err(self.not_found()),
         }
+    }
+
+    /// An object the token may not be able to read: `None` when it is forbidden or absent.
+    fn readable(&self, path: &str) -> Result<Option<Value>> {
+        match self.fetch(path, true)? {
+            Response::Found(value, _) => Ok(Some(value)),
+            Response::NotFound | Response::Forbidden => Ok(None),
+        }
+    }
+
+    /// Walk a list endpoint the token may not be able to read. `key` names the array inside an
+    /// object response (`check_runs`); `None` reads a bare array. Returns the items and whether
+    /// the listing is complete: an unreadable or truncated listing is incomplete, never empty.
+    fn readable_pages(&self, path: &str, key: Option<&str>) -> Result<(Vec<Value>, bool)> {
+        let mut all = Vec::new();
+        for page in 1..=self.max_pages {
+            let sep = if path.contains('?') { '&' } else { '?' };
+            let (value, next) =
+                match self.fetch(&format!("{path}{sep}per_page=100&page={page}"), true)? {
+                    Response::Found(value, next) => (value, next),
+                    Response::NotFound | Response::Forbidden => return Ok((all, false)),
+                };
+            let items = match key {
+                Some(k) => &value[k],
+                None => &value,
+            }
+            .as_array()
+            .ok_or_else(|| api("GitHub list response is not an array"))?;
+            all.extend(items.iter().cloned());
+            if !next {
+                return Ok((all, true));
+            }
+        }
+        Ok((all, false))
     }
 
     /// Walk a list endpoint. `done` inspects each page and may end the walk early; the walk is
@@ -232,6 +280,147 @@ impl Github {
             }
         }
         Ok((all, false))
+    }
+
+    /// The checks the forge requires on `branch`, as its rules say now. Rulesets come from
+    /// `GET /repos/{repository}/rules/branches/{branch}` (repository and organization rules in
+    /// active enforcement; readable with metadata access), classic protection from the branch's
+    /// `protection` summary. GitHub keeps no record of the rules in force at an earlier time.
+    fn required_checks(&self, repository: &str, branch: &str) -> Result<Required> {
+        let segment = path_segment(branch);
+        let mut required = Required {
+            names: BTreeSet::new(),
+            sources: Vec::new(),
+            complete: true,
+            provenance: Vec::new(),
+        };
+        let rules_path = format!("/repos/{repository}/rules/branches/{segment}");
+        let (rules, rules_complete) = self.readable_pages(&rules_path, None)?;
+        if rules_complete {
+            required.sources.push(RequiredSource::Rules);
+            required.provenance.push(evidence(
+                &format!("{ORIGIN}{rules_path}"),
+                EvidenceKind::Observed,
+            ));
+            for rule in rules
+                .iter()
+                .filter(|r| r["type"] == "required_status_checks")
+            {
+                for check in rule["parameters"]["required_status_checks"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                {
+                    required.names.insert(string(check, "context")?);
+                }
+            }
+        } else {
+            required.complete = false;
+        }
+        let branch_path = format!("/repos/{repository}/branches/{segment}");
+        match self.readable(&branch_path)? {
+            Some(b) if b["protected"] == false => {
+                required.sources.push(RequiredSource::BranchProtection);
+            }
+            Some(b) if b["protection"].is_object() => {
+                required.sources.push(RequiredSource::BranchProtection);
+                let checks = &b["protection"]["required_status_checks"];
+                for context in checks["contexts"].as_array().into_iter().flatten() {
+                    if let Some(name) = context.as_str() {
+                        required.names.insert(name.to_string());
+                    }
+                }
+                for check in checks["checks"].as_array().into_iter().flatten() {
+                    required.names.insert(string(check, "context")?);
+                }
+            }
+            // Protected, but the summary is not visible to this token.
+            _ => required.complete = false,
+        }
+        required.provenance.push(evidence(
+            &format!("{ORIGIN}{branch_path}"),
+            EvidenceKind::Observed,
+        ));
+        Ok(required)
+    }
+
+    /// Completed check runs and commit statuses on the head and the merge commit.
+    fn check_results(
+        &self,
+        repository: &str,
+        head: &str,
+        merge: Option<&str>,
+        branch: &str,
+        required: &Required,
+    ) -> Result<Checks> {
+        let mut runs = Vec::new();
+        let mut complete = true;
+        let mut provenance = required.provenance.clone();
+        let commits: Vec<&str> = std::iter::once(head)
+            .chain(merge.filter(|m| *m != head))
+            .collect();
+        for sha in commits {
+            let path = format!("/repos/{repository}/commits/{sha}/check-runs?filter=all");
+            let (items, listed) = self.readable_pages(&path, Some("check_runs"))?;
+            complete &= listed;
+            provenance.push(evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed));
+            for run in &items {
+                if run["status"] != "completed" {
+                    continue;
+                }
+                let Some(conclusion) = run["conclusion"].as_str().and_then(conclusion) else {
+                    // A completed run with a conclusion this version does not know: the
+                    // listing cannot be judged in full.
+                    complete = false;
+                    continue;
+                };
+                let id = number(run, "id")?;
+                runs.push(CheckRun {
+                    name: string(run, "name")?,
+                    kind: CheckKind::CheckRun,
+                    commit_sha: sha.to_string(),
+                    conclusion,
+                    completed_at: timestamp(&string(run, "completed_at")?)?,
+                    provenance: vec![evidence(
+                        &format!("{ORIGIN}/repos/{repository}/check-runs/{id}"),
+                        EvidenceKind::Observed,
+                    )],
+                });
+            }
+            let path = format!("/repos/{repository}/commits/{sha}/statuses");
+            let (items, listed) = self.readable_pages(&path, None)?;
+            complete &= listed;
+            provenance.push(evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed));
+            for status in &items {
+                let conclusion = match status["state"].as_str() {
+                    Some("success") => Conclusion::Success,
+                    Some("failure") => Conclusion::Failure,
+                    Some("error") => Conclusion::Error,
+                    _ => continue,
+                };
+                let id = number(status, "id")?;
+                runs.push(CheckRun {
+                    name: string(status, "context")?,
+                    kind: CheckKind::Status,
+                    commit_sha: sha.to_string(),
+                    conclusion,
+                    completed_at: timestamp(&string(status, "created_at")?)?,
+                    provenance: vec![evidence(
+                        &format!("{ORIGIN}/repos/{repository}/statuses/{sha}#{id}"),
+                        EvidenceKind::Observed,
+                    )],
+                });
+            }
+        }
+        Ok(Checks {
+            branch: branch.to_string(),
+            runs,
+            runs_complete: complete,
+            required: required.names.iter().cloned().collect(),
+            required_sources: required.sources.clone(),
+            required_complete: required.complete,
+            provenance,
+        })
     }
 
     /// `GET /rate_limit` (which does not count against the limit): the core resource's
@@ -279,13 +468,15 @@ impl Github {
             traces,
             attestations,
             vendors,
+            checks,
         } = sources;
+        let mut required_by_branch: BTreeMap<String, Required> = BTreeMap::new();
         validate_repo(repository)?;
         if from > to {
             return Err(failure(Exit::Usage, "window is reversed"));
         }
         let mut e = Events {
-            version: "0.3".into(),
+            version: "0.4".into(),
             repository: repository.into(),
             window: Window {
                 from,
@@ -507,6 +698,27 @@ impl Github {
                 }
                 normalized_commits.push(Commit { sha, author });
             }
+            let merge_commit_sha: Option<String> = p["merged_at"]
+                .as_str()
+                .and_then(|_| p["merge_commit_sha"].as_str())
+                .filter(|s| !s.is_empty())
+                .map(String::from);
+            let collected_checks = if checks && p["merged_at"].is_string() {
+                let branch = string(&p["base"], "ref")?;
+                if !required_by_branch.contains_key(&branch) {
+                    let required = self.required_checks(repository, &branch)?;
+                    required_by_branch.insert(branch.clone(), required);
+                }
+                Some(self.check_results(
+                    repository,
+                    &head,
+                    merge_commit_sha.as_deref(),
+                    &branch,
+                    &required_by_branch[&branch],
+                )?)
+            } else {
+                None
+            };
             let mut c = Change {
                 id: format!("github:{repository}:pr:{n}"),
                 repository: repository.into(),
@@ -518,11 +730,7 @@ impl Github {
                 head_sha: head.clone(),
                 // GitHub reports a merge commit for open pull requests too, but that is a test
                 // merge that is recreated on every push; only a merged change's is a fact.
-                merge_commit_sha: p["merged_at"]
-                    .as_str()
-                    .and_then(|_| p["merge_commit_sha"].as_str())
-                    .filter(|s| !s.is_empty())
-                    .map(String::from),
+                merge_commit_sha,
                 commits: normalized_commits,
                 forge_author: author.clone(),
                 author,
@@ -544,6 +752,7 @@ impl Github {
                             .collect()
                     })
                     .unwrap_or_default(),
+                checks: collected_checks,
             };
             if !history_complete {
                 incomplete(
@@ -690,6 +899,44 @@ impl Github {
         }
         crate::normalize::events(e)
     }
+}
+
+/// The forge's required checks for one branch, read once per collection.
+struct Required {
+    names: BTreeSet<String>,
+    sources: Vec<RequiredSource>,
+    complete: bool,
+    provenance: Vec<Evidence>,
+}
+
+/// A check run conclusion, or `None` for one this version does not know.
+fn conclusion(s: &str) -> Option<Conclusion> {
+    Some(match s {
+        "action_required" => Conclusion::ActionRequired,
+        "cancelled" => Conclusion::Cancelled,
+        "failure" => Conclusion::Failure,
+        "neutral" => Conclusion::Neutral,
+        "skipped" => Conclusion::Skipped,
+        "stale" => Conclusion::Stale,
+        "success" => Conclusion::Success,
+        "timed_out" => Conclusion::TimedOut,
+        _ => return None,
+    })
+}
+
+/// A branch name as one URL path segment: everything but RFC 3986 unreserved characters is
+/// percent-encoded, so a branch like `release/1.0` stays one segment.
+fn path_segment(s: &str) -> String {
+    use std::fmt::Write;
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
+            out.push(b as char);
+        } else {
+            write!(out, "%{b:02X}").expect("writing to a String cannot fail");
+        }
+    }
+    out
 }
 
 fn incomplete(e: &mut Events, reason: &str) {

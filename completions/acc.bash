@@ -243,7 +243,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --format --output --quiet --verbose --no-color --help --version github help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -317,7 +317,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export__subcmd__github)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --format --output --quiet --verbose --no-color --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -711,7 +711,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --format --output --quiet --verbose --no-color --help --version github help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -785,7 +785,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan__subcmd__github)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --format --output --quiet --verbose --no-color --help --version"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --format --output --quiet --verbose --no-color --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
