@@ -213,11 +213,13 @@ runs:
           base_policy="${RUNNER_TEMP}/acc-policy-at-base.yml"
           if git cat-file -e "${ACC_POLICY_REF}:${policy_path#./}" 2>/dev/null; then
             git show "${ACC_POLICY_REF}:${policy_path#./}" > "$base_policy"
-          else
-            # No policy at the base: the built-in defaults, even when the pull request adds one.
-            printf 'version: "0.4"\nrules: {}\n' > "$base_policy"
+            args+=(--policy "$base_policy")
+          elif [ -e "$policy_path" ]; then
+            # No policy at the base, but the pull request adds one: the built-in defaults, as a
+            # policy every acc release accepts, so the added file does not apply to itself.
+            printf 'version: "0.1"\nrules: {}\n' > "$base_policy"
+            args+=(--policy "$base_policy")
           fi
-          args+=(--policy "$base_policy")
         elif [ -n "$ACC_POLICY" ]; then
           args+=(--policy "$ACC_POLICY")
         fi
