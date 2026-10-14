@@ -16,6 +16,7 @@ ACC001  agent_change_without_independent_human  0
 ACC002  approver_is_author                      0
 ACC003  merged_without_independent_approval     0
 ACC004  merged_without_required_checks          off
+ACC005  merged_with_protection_bypass           off
 ACC006  unknown_agent_operator                  1
 ACC007  agent_approval_recorded                 0
 ACC008  same_vendor_write_and_review            0

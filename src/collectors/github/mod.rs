@@ -35,6 +35,9 @@ pub struct Sources<'a> {
     pub vendors: &'a BTreeMap<String, String>,
     /// Collect check runs, commit statuses and required checks for merged changes (ACC004).
     pub checks: bool,
+    /// Collect ruleset evaluations of merged changes (ACC005), as of this instant: the forge
+    /// lists them only for the past month, so an older merge is recorded as out of reach.
+    pub bypass_as_of: Option<Timestamp>,
 }
 
 /// The core rate limit, from `GET /rate_limit`.
@@ -344,6 +347,18 @@ impl Github {
         Ok(required)
     }
 
+    /// Ruleset evaluations of pushes to `branch` over the past month, from
+    /// `GET /repos/{repository}/rulesets/rule-suites`, which needs repository administration read
+    /// access. Returns the listing, whether it was read in full, and its path.
+    fn rule_suites(&self, repository: &str, branch: &str) -> Result<(Vec<Value>, bool, String)> {
+        let reference = path_segment(&format!("refs/heads/{branch}"));
+        let path = format!(
+            "/repos/{repository}/rulesets/rule-suites?ref={reference}&time_period=month&rule_suite_result=all"
+        );
+        let (items, listed) = self.readable_pages(&path, None)?;
+        Ok((items, listed, path))
+    }
+
     /// Completed check runs and commit statuses on the head and the merge commit.
     fn check_results(
         &self,
@@ -469,8 +484,10 @@ impl Github {
             attestations,
             vendors,
             checks,
+            bypass_as_of,
         } = sources;
         let mut required_by_branch: BTreeMap<String, Required> = BTreeMap::new();
+        let mut suites_by_branch: BTreeMap<String, (Vec<Value>, bool, String)> = BTreeMap::new();
         validate_repo(repository)?;
         if from > to {
             return Err(failure(Exit::Usage, "window is reversed"));
@@ -719,6 +736,27 @@ impl Github {
             } else {
                 None
             };
+            let collected_protection = match (bypass_as_of, p["merged_at"].as_str()) {
+                (Some(as_of), Some(merged)) => {
+                    let branch = string(&p["base"], "ref")?;
+                    if !suites_by_branch.contains_key(&branch) {
+                        let listed = self.rule_suites(repository, &branch)?;
+                        suites_by_branch.insert(branch.clone(), listed);
+                    }
+                    let (suites, listed, path) = &suites_by_branch[&branch];
+                    Some(protection(
+                        repository,
+                        &branch,
+                        merge_commit_sha.as_deref(),
+                        timestamp(merged)?,
+                        as_of,
+                        suites,
+                        *listed,
+                        path,
+                    )?)
+                }
+                _ => None,
+            };
             let mut c = Change {
                 id: format!("github:{repository}:pr:{n}"),
                 repository: repository.into(),
@@ -753,6 +791,7 @@ impl Github {
                     })
                     .unwrap_or_default(),
                 checks: collected_checks,
+                protection: collected_protection,
             };
             if !history_complete {
                 incomplete(
@@ -899,6 +938,59 @@ impl Github {
         }
         crate::normalize::events(e)
     }
+}
+
+/// How far back the rule-suite listing reaches: GitHub's widest `time_period` is a month, so
+/// anything merged more than 28 days before collection may have fallen out of it.
+const RULE_SUITE_REACH_DAYS: i64 = 28;
+
+/// The ruleset evaluations of one merged change: those whose push landed its merge commit.
+#[allow(clippy::too_many_arguments)]
+fn protection(
+    repository: &str,
+    branch: &str,
+    merge: Option<&str>,
+    merged_at: Timestamp,
+    as_of: Timestamp,
+    listing: &[Value],
+    listed: bool,
+    path: &str,
+) -> Result<Protection> {
+    let mut suites = Vec::new();
+    let mut understood = true;
+    if let Some(merge) = merge {
+        for suite in listing.iter().filter(|s| s["after_sha"] == merge) {
+            let id = number(suite, "id")?;
+            let result = match suite["result"].as_str() {
+                Some("bypass") => SuiteResult::Bypass,
+                Some("fail") => SuiteResult::Fail,
+                Some("pass") => SuiteResult::Pass,
+                // A result this version does not know: the evaluation cannot be judged.
+                _ => {
+                    understood = false;
+                    continue;
+                }
+            };
+            suites.push(RuleSuite {
+                id: id.to_string(),
+                after_sha: merge.to_string(),
+                result,
+                actor: suite["actor_name"].as_str().map(String::from),
+                pushed_at: timestamp(&string(suite, "pushed_at")?)?,
+                provenance: vec![evidence(
+                    &format!("{ORIGIN}/repos/{repository}/rulesets/rule-suites/{id}"),
+                    EvidenceKind::Observed,
+                )],
+            });
+        }
+    }
+    let in_reach = merged_at >= as_of - chrono::Duration::days(RULE_SUITE_REACH_DAYS);
+    Ok(Protection {
+        branch: branch.to_string(),
+        suites,
+        complete: listed && in_reach && understood && merge.is_some(),
+        provenance: vec![evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed)],
+    })
 }
 
 /// The forge's required checks for one branch, read once per collection.

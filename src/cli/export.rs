@@ -24,7 +24,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             "export does not accept a policy; use evaluate",
         ));
     }
-    let events = forge::collect(ctx, &c, false)?;
+    let events = forge::collect(ctx, &c, false, false)?;
     let exit = if io::incomplete(&events) {
         Exit::Incomplete
     } else {
@@ -40,7 +40,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         ctx.note(format!("wrote {}", path.display()));
     }
     if exit == Exit::Incomplete {
-        super::warn_incomplete(ctx, &events, super::forge::RECOLLECT);
+        super::warn_incomplete(ctx, &events, None, super::forge::RECOLLECT);
     }
     Ok(exit)
 }

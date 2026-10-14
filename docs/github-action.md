@@ -37,6 +37,9 @@ with.
 
 A policy that enables [ACC004](rules/ACC004.md) (required checks) also needs `checks: read` and
 `statuses: read`. Without them the check data is incomplete and the step exits 4, never passes.
+[ACC005](rules/ACC005.md) (protection bypass) needs repository administration read access, which
+the workflow token cannot be granted: pass a GitHub App installation token or a fine-grained token
+as `token`.
 
 ## Inputs
 

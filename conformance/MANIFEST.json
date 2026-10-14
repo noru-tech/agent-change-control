@@ -1,11 +1,11 @@
 {
   "contract": "README.md#contract",
   "counts": {
-    "accept": 44,
-    "incomplete": 7,
-    "reject": 21
+    "accept": 49,
+    "incomplete": 10,
+    "reject": 24
   },
-  "specDigest": "sha256:79fae4cdccd5177d7eec56681267e410f8188055f36ddf81fa22d4cc11f3c017",
+  "specDigest": "sha256:638cce20bae2614ce10b62c1b761be0328bf4ac00a694d6362b21d4c3f1244ba",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.4",
   "suite": "acp-evaluator-conformance",
@@ -60,7 +60,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:4c8f41bd8360d24ed384c4b6edf5ec897d0a396931da507a65459cfc57fb0c7b",
+        "manifestDigest": "sha256:a6933c3a5594585553c7c4305f33d412e54e9853ed39cc020e6bc5b6a9cc5a33",
         "verdict": "evaluated"
       },
       "id": "human-clean",
@@ -118,7 +118,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:60aa0ef3d087324f9d44ed4b047384f7e1f45b6dbc74cbc15ae01d405aff52fe",
+        "manifestDigest": "sha256:c6068b35310ac2f7e6398e0935874eda519b20d867fededdf0da2d808550568c",
         "verdict": "evaluated"
       },
       "id": "human-self-approved",
@@ -176,7 +176,7 @@
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:154f7b05a5d60854f548cd7933d62193dcd34635ecf126290e8acc09b3c9011e",
+        "manifestDigest": "sha256:26d45034cbce6e1ed2b2a3870e361962fc0d7eaea0a453149f0364a993371d2d",
         "verdict": "evaluated"
       },
       "id": "self-and-independent",
@@ -232,7 +232,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:d26e916c1de2d04b9a8eea52ec35fce137aa2bf068620e50b061d72936859679",
+        "manifestDigest": "sha256:2eda516e69a93b7e739e12960e20e052a36c094db4ed32908b3a91b604edd005",
         "verdict": "evaluated"
       },
       "id": "claude-clean",
@@ -292,7 +292,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:042495c952f39e93f178e0b9afc0c1b92dda6195aa8417aa35ee9f041a01d054",
+        "manifestDigest": "sha256:b43aa70878df5c1eea713c419a9f7b122696be6662b263cfd8016c19cff3ad43",
         "verdict": "evaluated"
       },
       "id": "claude-operator-self-approved",
@@ -348,7 +348,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e21dc5c77932e71da9772e36e93044a90c787574e83d3a12f53b0e3c855cb606",
+        "manifestDigest": "sha256:f3704dd5bf536202e57bc5ea99e754f6b3fd862655bc6184c23fe70cf1884ec6",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived",
@@ -408,7 +408,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:76ad512a53b941e44e1d674a13da1cfed76bc0ffe5f85a46ec1244a4fe435035",
+        "manifestDigest": "sha256:e9e80e122bfdc1aa16c913a2a405e8499448be67453d4d57280a7b22fc8fc4c6",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-self-approved",
@@ -464,7 +464,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:703525fe8545afbcf134af945378c7e2b2da81a31540195541772d2171ee3285",
+        "manifestDigest": "sha256:58d4c57a220af8fd4bee1a5d34cf5b864e17924f0eba50e95d58097debe816d3",
         "verdict": "evaluated"
       },
       "id": "codex-clean",
@@ -522,7 +522,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:d05ccf1156423a305c572865427c880c43322baf0cf68934def074560752efa9",
+        "manifestDigest": "sha256:c0203dc8a7ca633ab5c40184141267c258557769bde0e49fef63700de02c50e2",
         "verdict": "evaluated"
       },
       "id": "agent-operator-unknown",
@@ -580,7 +580,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:40f33ab4f0fed3e87479baddf3b0770cb56f09ef740292d2df50ad35a9f92d60",
+        "manifestDigest": "sha256:3888eaf129f438b0a5132ad659f742856b535245230fb50b9efe820af9c26526",
         "verdict": "evaluated"
       },
       "id": "unknown-without-review",
@@ -638,7 +638,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:50c1d55a8ce70872fd8653ca9eea8425f3a5d878eaedf78d583506a5bfabf3a5",
+        "manifestDigest": "sha256:2a47f8d7bbe4386daef05c6ef6a5215e0418fc61ac79942f5fbc569b7391427b",
         "verdict": "evaluated"
       },
       "id": "bot-approval",
@@ -695,7 +695,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:41bddbe2e1441e8715b35499df8fb24f8b24008be8b37dff2bd6d97164926c54",
+        "manifestDigest": "sha256:7148c498a78c5cf4cf228de0b16db81b549b9309bfb48d850ca00f1a29d91a4e",
         "verdict": "evaluated"
       },
       "id": "changes-requested",
@@ -752,7 +752,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:dba6a5c4db5412891d2141e0774326cb834b269017dbbe851fed810a36cbfd42",
+        "manifestDigest": "sha256:9e8bcb077c7728bc2867f9dbd21e6d1127a3a39569ca56e930ed4dcaf1dc47fb",
         "verdict": "evaluated"
       },
       "id": "dismissed-approval",
@@ -807,7 +807,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:1bff7b2cca01928a94702616980b3edcc95f591b60fca118b7a03f751fa9d5c4",
+        "manifestDigest": "sha256:e8c7cfd712138960eeb62f977f50d574be48783b2834552d9819cb0cc7c6d22c",
         "verdict": "evaluated"
       },
       "id": "comment-after-approval",
@@ -864,7 +864,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:0f8d923d47f279552dbed9ef5b7a3d5be12560c3c85d4abbb72e4c3570de1112",
+        "manifestDigest": "sha256:c21fea45d74eafaa149507bf507ab27743b9dd35e634b0ed08cc842070e4a918",
         "verdict": "evaluated"
       },
       "id": "stale-approval",
@@ -919,7 +919,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:c8ff4b304ee510a32a6212a7ea553495204f2928668d5fe359af97b0224766d0",
+        "manifestDigest": "sha256:a4ab5a718d6a7b0685309f2705621d2ef36c2cf17e26578ec39ae6533b6f7219",
         "verdict": "evaluated"
       },
       "id": "approval-at-merge",
@@ -975,7 +975,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:ec08d5af8d44f0c8456661e320f9e720568e933a12a6b76ab4f4d26f7cdac7a8",
+        "manifestDigest": "sha256:8b6db18b1dd361d1c6dadcac1f265b7692a83c8a509ebc5ef4bba6d67791c8bc",
         "verdict": "evaluated"
       },
       "id": "open-pr",
@@ -1031,7 +1031,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:4c8f41bd8360d24ed384c4b6edf5ec897d0a396931da507a65459cfc57fb0c7b",
+        "manifestDigest": "sha256:a6933c3a5594585553c7c4305f33d412e54e9853ed39cc020e6bc5b6a9cc5a33",
         "verdict": "evaluated"
       },
       "id": "timezone-equivalent",
@@ -1091,7 +1091,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:5c3f25ff6cfc87e63cc95f5538dc269c03b3a837dcdcda8ff6744b9da1dc5e18",
+        "manifestDigest": "sha256:a1d5447f6c565365859e3f08b029c154429078606bbfe9fd30067f5bc4a40751",
         "verdict": "evaluated"
       },
       "id": "agent-review-declared",
@@ -1152,7 +1152,7 @@
           "ACC007",
           "ACC008"
         ],
-        "manifestDigest": "sha256:d0eedce180dab963b846ae4c500ac5d5d8b69584678d84da9fb93ec179092f95",
+        "manifestDigest": "sha256:531c2bdfd2d9eecf6566cbd37a0d648628a26d426ab0cd9646b723e85b523382",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-vendor",
@@ -1211,7 +1211,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:5b7babbd32ab635ed221809eca69d987b60a6b90d4907a25fee5c2029143dae8",
+        "manifestDigest": "sha256:5caa913ff4b3fdc48af025dc609a3c9866826ed88c62e89427dba68d34223024",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent",
@@ -1272,7 +1272,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:16fc8e2016211aa752b017b32e5eda94e7698324a035d6886fb372cdf6d530d5",
+        "manifestDigest": "sha256:37585479a8bbb4612e769c50311f596ae8da4d76fbf97254a9c3b1a9d3d993f0",
         "verdict": "evaluated"
       },
       "id": "agent-review-dependent-operator",
@@ -1333,7 +1333,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:368156a6982826e0888d24c571095981c5eb4efcc2cd78b7878e6589fdb9b2f9",
+        "manifestDigest": "sha256:9c19ad6b97b1d29f38cc1c16aef0f63a2d507332656abf5f128ffca29615ff3c",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-identity",
@@ -1392,7 +1392,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:2e4596bace9cecd2b1e0294f8279583be56b633f84391f9afbf53a0ae3802fca",
+        "manifestDigest": "sha256:f87fd51001f9facc33d817fa225732c71d31e91597af6e710e3d7d9a4a11e4b7",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-operator",
@@ -1451,7 +1451,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:316f7d4087cb0edff0bb1228419c3f5625b55f16d080a98cea75fdc9af771a0f",
+        "manifestDigest": "sha256:0fbba632f02f04fc526d8d89e16670ee392cbeb46d6901f02ebd75b988aafa80",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-vendor",
@@ -1513,7 +1513,7 @@
           "ACC007",
           "ACC010"
         ],
-        "manifestDigest": "sha256:326576a583b92cecd326cc49eb7f82f268657a031270402046864344f6b2d326",
+        "manifestDigest": "sha256:c9d39a70089231f3404cd173f44253674d4945e69d2c95e689bd07b19cf6d08e",
         "verdict": "evaluated"
       },
       "id": "agent-review-unsigned",
@@ -1572,7 +1572,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:71f3b1f590c2c67b7fd5f7d6afdf6ec7d447db4491d74b0e12fd8c3fdaf7bcfe",
+        "manifestDigest": "sha256:f9b142d3ffd5ce384313ab2b5d593cffe4b0ff0b94958f5c033b616e87fb079b",
         "verdict": "evaluated"
       },
       "id": "agent-review-out-of-scope",
@@ -1631,7 +1631,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:0bc8b40f08bfc6a5042e54b0d1694b840a5c0598fed510d95eb10a781ffa6953",
+        "manifestDigest": "sha256:bc5d2a82a2ffc5ae2340139dabf028642d40882be3ff0f18db3e32857e6bc832",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived--minimum-authorship-declared",
@@ -1690,7 +1690,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:89fdd49abd142e79b9c71ad83ab5d308c0e1549379d523246b9e6390578da1a5",
+        "manifestDigest": "sha256:5126aa683f3e2fc1940cea8fa162d805195172503e1ac7a1190d00ba1ba4c74d",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-authorship-observed",
@@ -1750,7 +1750,7 @@
           "ACC001",
           "ACC003"
         ],
-        "manifestDigest": "sha256:1ac962fc2ac60811cb59adfcb5ef55619af72d6dbeb6850012c1a66d16cd6bc2",
+        "manifestDigest": "sha256:2ec3f7451700bfb45e2000a87768fb288bc6c7aea4c160a656bf810f251e8917",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-review-signed",
@@ -1806,7 +1806,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:aa49dc57e632534671b4442b391488b433cbca85042b10301dde36b81597233f",
+        "manifestDigest": "sha256:aff3f1b4d335a62076807ab1f14ae0f3c9647e66e9ed2edeec83fe14da45fb72",
         "verdict": "evaluated"
       },
       "id": "claude-clean--signed-authorship",
@@ -1858,7 +1858,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:2a7ed658388fac3eb9edd3330c6e4af2cd86d3919c3eeaf6af39d46913c903be",
+        "manifestDigest": "sha256:a83bf97267dce925aa459594d37fce87f90bdd753633f069ed05832dbcd4ea2c",
         "verdict": "evaluated"
       },
       "id": "human-self-approved--rule-disabled",
@@ -1916,7 +1916,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:ad44f1c17ec8555e4476d7dbc9610122d6283036d7024fba2716b4cfc17aecd1",
+        "manifestDigest": "sha256:19ab4d03eda69a11718b1144cbc0bdfa9ff84a95a32677198f09c07926403ea2",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent--instructions-required",
@@ -1977,7 +1977,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:98bba5400cc8f70db6dda92c4250b5b81325498225354a1ff4fdf95717554cdb",
+        "manifestDigest": "sha256:fe6646a3ea4fc8a432682e0f232f5df6a241537130c78b13368a63e1fed5a20c",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-dependent",
@@ -2036,7 +2036,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:f5bc6b753c5ec14a92e937769b92891dfd2c19d63a7cd7b970f4d617a92ec490",
+        "manifestDigest": "sha256:491f87e343f57e6c39a532c99a15c661824a7412c85ae8d4aa6700e087a9af3d",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-unknown",
@@ -2092,7 +2092,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:8a9609128691edddf1697aa52308871da3b641d44c259a1065a9d1594de144bd",
+        "manifestDigest": "sha256:0e2f37a28c602fa0e568805f22366caf6688af16d6c11dc5cb8e96ea39209c1d",
         "verdict": "incomplete"
       },
       "id": "incomplete-window",
@@ -2148,7 +2148,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:58f53283a9df7e7e5e41a942b18efb4468f3848f484bfff8ac3ff96655014a27",
+        "manifestDigest": "sha256:7015d4e61ea1919ed704108dd6747a1a203aca24d0ab822c504795b2c8d703c7",
         "verdict": "incomplete"
       },
       "id": "partial-with-approval",
@@ -2209,7 +2209,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:a6436d19647bfa78759d542162a753e275265ffe10fc7db0c372f9510664b64f",
+        "manifestDigest": "sha256:90df98b359acb7c3fe3fcad8742066392b2b0e36c3bf73e7002b2d72afc5258f",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed",
@@ -2272,7 +2272,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:5f1077a4be4acf8d3de2ae89b9d1cef75af3cbdbbce2b39b162430afc2f25be3",
+        "manifestDigest": "sha256:b3c09ce492f1d6f7b6535d522ac50e6bacd7c40b2641eb5ca1625bf608e32e24",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-failed",
@@ -2335,7 +2335,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:15b89333dce65137ed2fe394ed69e16c3a4ee723593704c81b37a4c57512fa37",
+        "manifestDigest": "sha256:6b5d959807bbf23681420446d313c37756226aee805a6e37280efffb7a1ac0bd",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-no-run",
@@ -2398,7 +2398,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:ebe8dbf4e0949729319f5e45acc44f7e5c6017b1bd9964e026f4fe564d96aa98",
+        "manifestDigest": "sha256:13a8e95eed1cdaf7c8dd99ba831d455f0284f535fd2f9b28ef82effff77bd261",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-after-merge",
@@ -2459,7 +2459,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:866211496cd5358b0ed7efb2db7bb4bac5f8555522574274e5df610668599692",
+        "manifestDigest": "sha256:33495bec2bff0b6a248dcf87125abf7fc97f9f198c2e26ba5091a4487e4affee",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-on-merge-commit",
@@ -2522,7 +2522,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:06ce9801b934b0342f5fb492e82c66a8a02d2c9137045a4d78bbed73078fde48",
+        "manifestDigest": "sha256:1084ca1aa5bdd5f7f80d5b46be9bd756a2426381ac547722f792d94e45506842",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-simultaneous-disagree",
@@ -2585,7 +2585,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:ea6cb58a30dfd713305b0880c281f4e659de77077918bccf79f405ad0cab3c77",
+        "manifestDigest": "sha256:d90cb78eec8353b5c5098f96057322439b5873a0067ff1b698debf74d0d10b87",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-policy-required",
@@ -2646,7 +2646,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:f9d1cbbb23f40019d693b1d6cba2abb6a551de7b9b5c67f37cd89ff8ff1fc003",
+        "manifestDigest": "sha256:e333984b242d72f9af574b10b8a7666ad122e35fbffaafad04b93d47806915f4",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-nothing-required",
@@ -2707,12 +2707,504 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:5b1a849da21c3bf8b99f509cb1d2a9aecd7e82df3e26dca3dcd171615454b1c0",
+        "manifestDigest": "sha256:d6dfe2f3abd02ac00f2042b28c6ba9a7cf748c6b1206eb915fad9e0d7a20e711",
         "verdict": "evaluated"
       },
       "id": "open-pr--checks-enabled",
       "kind": "accept",
       "path": "accept/open-pr--checks-enabled.json"
+    },
+    {
+      "conditions": [
+        "#42-protection-bypass",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:6d1665ba269e21d9892e3e124e1a44c50a3d527f0bfac721976f0641cbe4c1ba",
+        "verdict": "evaluated"
+      },
+      "id": "human-clean--bypass-passed",
+      "kind": "accept",
+      "path": "accept/human-clean--bypass-passed.json"
+    },
+    {
+      "conditions": [
+        "#42-protection-bypass",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC005"
+        ],
+        "manifestDigest": "sha256:8d0137e09cd6f6cc963bd1e65fc305913e945412658375a94339fc16ab6c0173",
+        "verdict": "evaluated"
+      },
+      "id": "human-clean--bypass-recorded",
+      "kind": "accept",
+      "path": "accept/human-clean--bypass-recorded.json"
+    },
+    {
+      "conditions": [
+        "#42-protection-bypass",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:016315e91678ff341d0937825bf85e6a38580b402f7e815d25eeaf7b6bc256c9",
+        "verdict": "evaluated"
+      },
+      "id": "human-clean--bypass-suite-failed",
+      "kind": "accept",
+      "path": "accept/human-clean--bypass-suite-failed.json"
+    },
+    {
+      "conditions": [
+        "#42-protection-bypass",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:7dd78e5b9f708157d756ad3d5d3176930b1f2491444dbd193b95a73c469d8baf",
+        "verdict": "evaluated"
+      },
+      "id": "human-clean--bypass-none-recorded",
+      "kind": "accept",
+      "path": "accept/human-clean--bypass-none-recorded.json"
+    },
+    {
+      "conditions": [
+        "#42-protection-bypass",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:a72e1e1696704696c49e4a8cf197a820b5172f8d98206e77cab08c37f2fd0859",
+        "verdict": "evaluated"
+      },
+      "id": "open-pr--bypass-enabled",
+      "kind": "accept",
+      "path": "accept/open-pr--bypass-enabled.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:0d4a00e70550d830e8b24e891dc7e5233cc09f455d1f0a5c9415f92637515d97",
+        "verdict": "incomplete"
+      },
+      "id": "human-clean--bypass-not-collected",
+      "kind": "incomplete",
+      "path": "incomplete/human-clean--bypass-not-collected.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:2ac2a666afb6b9664a9bd6450fe435d6c2e60d27640809b1d1734071d9c473dd",
+        "verdict": "incomplete"
+      },
+      "id": "human-clean--bypass-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/human-clean--bypass-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC005"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          }
+        ],
+        "codes": [
+          "ACC005"
+        ],
+        "manifestDigest": "sha256:d0ac112a3a5b30b3ceef6963fa2324c1848a4a40077313051f3e1bd46d54088e",
+        "verdict": "incomplete"
+      },
+      "id": "human-clean--bypass-recorded-incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/human-clean--bypass-recorded-incomplete.json"
     },
     {
       "conditions": [
@@ -2768,7 +3260,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:50f46b017a16971cf33020f3a82cac7b22d0bb1b9f499caa728e08696d3254e5",
+        "manifestDigest": "sha256:098a61cb690cc4ebb50ba12ee98ee728acb2dc85e37b726f31754e0b7d28aa42",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-not-collected",
@@ -2829,7 +3321,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e34ad724e95c4e2ded604670c514a9f795cb93fcc3a85cd14bc03f079b999d6c",
+        "manifestDigest": "sha256:0f5dbc47ba691144f207b59d05697db3f39a1ea7b9137e4a1958dfd15979e511",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-incomplete",
@@ -2890,7 +3382,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:afe0ba75d9f7c0b15a9ee72ebfb3fc28a0f0bd8a4b553c7d818481a3df36e1f1",
+        "manifestDigest": "sha256:f46ea07e68ad97f4e6d3404cfcf8d2d0fe5dd75acad23c742c0f2a1be8bb663e",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-required-unreadable",
@@ -2946,7 +3438,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:cc4910f9e2c67f8a007a9e275b6f569e74415d9f5d9a102ee3b7db73ebc34a35",
+        "manifestDigest": "sha256:50544a0140bae83e1c83b09f8b3ae4b2a2b5f4166314425462b8f4a5f7f9163c",
         "verdict": "incomplete"
       },
       "id": "claude-clean--reviews-incomplete",
@@ -3004,7 +3496,7 @@
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:0637ce74594e8b542235e5092a5bb8baabbbca0101bd8bd9ab29c4c39808002e",
+        "manifestDigest": "sha256:79a1abaa89b93c9ab4eb99d50103ab46c514689fa7118ca6d36c4bfba067b571",
         "verdict": "incomplete"
       },
       "id": "human-self-approved--reviews-incomplete",
@@ -3026,6 +3518,54 @@
       "kind": "reject",
       "parent": "open-pr--checks-enabled",
       "path": "reject/open-pr--checks-on-unmerged.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "open-pr--protection-on-unmerged",
+      "kind": "reject",
+      "parent": "open-pr--bypass-enabled",
+      "path": "reject/open-pr--protection-on-unmerged.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "codes": [
+          "ACV003"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--suite-on-unrelated-push",
+      "kind": "reject",
+      "parent": "human-clean--bypass-passed",
+      "path": "reject/human-clean--suite-on-unrelated-push.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#42-protection-bypass"
+      ],
+      "expected": {
+        "codes": [
+          "ACV010"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "human-clean--unknown-suite-result",
+      "kind": "reject",
+      "parent": "human-clean--bypass-passed",
+      "path": "reject/human-clean--unknown-suite-result.json"
     },
     {
       "conditions": [

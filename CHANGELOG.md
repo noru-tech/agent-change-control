@@ -16,8 +16,14 @@ All notable changes to this project are documented here. The format is based on
   repository's rules count (`from_forge`, default true). `scan` and `pr` collect the facts when
   the policy enables ACC004; `export --checks` collects them on request. With ACC004 enabled,
   missing or partial check data makes collection incomplete (exit 4).
-- Conformance suite for ACP 0.4, revision 1, with vectors for ACC004 and the validation of check
-  facts.
+- **ACC005** (`merged_with_protection_bypass`, `high`, disabled by default) fails a merged change
+  whose merge GitHub's rule suites record as a ruleset `bypass`. It never passes on an empty
+  record: an exempt actor or a classic-protection override leaves none, so that is `unknown`.
+  `scan` and `pr` collect the rule suites when the policy enables ACC005, and `export --bypass`
+  on request; they need repository administration read access and reach back one month. With
+  ACC005 enabled, an unreadable or out-of-reach record makes collection incomplete (exit 4).
+- Conformance suite for ACP 0.4, revision 1, with vectors for ACC004, ACC005 and the validation
+  of check and protection facts.
 
 ### Changed
 - Manifests, policies and exports are written as ACP 0.4, and attestations use predicate type

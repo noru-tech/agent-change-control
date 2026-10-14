@@ -28,6 +28,9 @@ rules:
   merged_without_required_checks:
     enabled: false                     # opt in: see "Required checks" below
     severity: high
+  merged_with_protection_bypass:
+    enabled: false                     # opt in: see "Protection bypass" below
+    severity: high
   unknown_agent_operator:
     enabled: true
     severity: warning
@@ -69,6 +72,18 @@ or, under `from_forge`, whose required set could not be read in full, makes the 
 incomplete (exit 4). If the token cannot read classic branch protection, list the checks in
 `checks.required` and set `from_forge: false`. See [ACC004](rules/ACC004.md) for the limits.
 
+## Protection bypass
+
+ACC005 is off by default. Turn it on with `rules.merged_with_protection_bypass.enabled: true`.
+It reads GitHub's rule suites, the record rulesets keep of each push they evaluate, for the push
+that landed each merged change's merge commit: `bypass` fails, all `pass` passes, and a `fail`
+that still landed or no record at all is `unknown`, because an exempt actor or an override of
+classic branch protection leaves none. `acc scan` and `acc pr` collect the record whenever the
+policy enables ACC005; `acc export --bypass` collects it for a later `evaluate`. The token needs
+repository administration read access, and the record reaches back one month. With ACC005
+enabled, an unreadable or out-of-reach record makes the collection incomplete (exit 4). See
+[ACC005](rules/ACC005.md).
+
 ## Exact deterministic conditions
 
 A known effective human is the effective author when actor.kind is human, or the recorded operator when actor.kind is agent. Other cases remain unknown. A qualifying independent approval is the latest non-comment decision per reviewer at or before merge (all decisions for an open PR), has state approved and the current head SHA, belongs to a human and differs from the known effective human. Any later changes-requested/dismissed decision withdraws that reviewer's approval. Approval at exactly merge time qualifies.
@@ -79,6 +94,7 @@ A known effective human is the effective author when actor.kind is human, or the
 | ACC002 | Any recorded approved review is by the known effective human. A self-approval still counts if stale; latest effective review state determines independence separately. Without self-approval, complete reviews pass; partial reviews or unknown human yield unknown. | human-clean | human-self-approved |
 | ACC003 | Change is merged, effective human known, reviews complete and no qualifying independent human approval. Open changes are not applicable; missing evidence yields unknown. | human-clean | dismissed-approval |
 | ACC004 | Change is merged, check collection complete, and some required check has no passing latest result completed at or before merge on the head or merge commit (no result fails). Open changes and changes with nothing required are not applicable; missing or partial check facts, or an unreadable required set under `from_forge` with every known check passing, yield unknown. Off unless a policy enables it. | checks-passed | checks-failed |
+| ACC005 | Change is merged and a recorded ruleset evaluation of its merge commit is `bypass` (fails even when the record is otherwise incomplete). Passes only when every recorded evaluation passed. Open changes are not applicable; missing or incomplete protection facts, a `fail` evaluation that landed, or no recorded evaluation yield unknown. Off unless a policy enables it. | bypass-passed | bypass-recorded |
 | ACC006 | Effective author is agent and no known human operator exists. Non-agent authors are not applicable. | codex-clean | agent-operator-unknown |
 | ACC007 | An agent's latest decision at or before merge approves the current head. An observation (info), never a violation. Not applicable when no agent reviewed the head. | human-clean (n/a) | agent-review-declared |
 | ACC008 | Effective author is an agent, at least one approval of the head exists, no human approved it, and every approving agent has the author agent's vendor. Unknown when a vendor is null. | agent-review-independent | agent-review-same-vendor |

@@ -78,6 +78,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: manifest::checks_required(&policy),
+            bypass_as_of: manifest::bypass_required(&policy).then(chrono::Utc::now),
         },
     )?;
     let m = manifest::evaluate(events, policy)?;
@@ -87,6 +88,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         super::warn_incomplete(
             ctx,
             &m.events,
+            Some(&m.policy),
             "raise --max-pages (at most 1000) or retry once the pull request stops changing",
         );
     }

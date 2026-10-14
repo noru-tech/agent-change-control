@@ -69,6 +69,37 @@ const REQUIRED_INCOMPLETE: &str =
 const NOTHING_REQUIRED: &str = "No checks are required for this change.";
 const CHECKS_PASSED: &str = "Every required check passed on the head or merge commit before merge.";
 
+// ACC005
+const BYPASS_NOT_COLLECTED: &str = "Ruleset evaluations were not collected for this change.";
+const BYPASS_INCOMPLETE: &str = "Ruleset evaluations for this change could not be read, or are older than the forge's listing reaches.";
+const BYPASS_RECORDED: &str = "A ruleset evaluation of the merge records a bypass: the rules failed and the push landed anyway.";
+const BYPASS_FAILED: &str = "A ruleset evaluation of the merge failed but the push landed; whether active protection was bypassed cannot be established.";
+const BYPASS_NONE_RECORDED: &str = "No ruleset evaluation of the merge is recorded; a push by an exempt actor or an override of classic branch protection leaves none, so a bypass cannot be ruled out.";
+const BYPASS_PASSED: &str = "Every ruleset evaluation of the merge passed.";
+
+/// ACC005 for one change. Exact conditions are in `docs/policy.md`.
+fn protection_bypass(c: &Change) -> (Status, &'static str) {
+    use Status::*;
+    if c.merged_at.is_none() {
+        return (NotApplicable, NOT_MERGED);
+    }
+    let Some(b) = &c.protection else {
+        return (Unknown, BYPASS_NOT_COLLECTED);
+    };
+    let has = |r: SuiteResult| b.suites.iter().any(|s| s.result == r);
+    if has(SuiteResult::Bypass) {
+        (Fail, BYPASS_RECORDED)
+    } else if !b.complete {
+        (Unknown, BYPASS_INCOMPLETE)
+    } else if has(SuiteResult::Fail) {
+        (Unknown, BYPASS_FAILED)
+    } else if b.suites.is_empty() {
+        (Unknown, BYPASS_NONE_RECORDED)
+    } else {
+        (Pass, BYPASS_PASSED)
+    }
+}
+
 /// ACC004 for one change. Exact conditions are in `docs/policy.md`.
 fn required_checks(c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {
     use Status::*;
@@ -355,6 +386,10 @@ impl<'a> Facts<'a> {
         if rule == RuleId::Acc004 {
             return required_checks(c, p);
         }
+        if rule == RuleId::Acc005 {
+            let (status, reason) = protection_bypass(c);
+            return (status, reason.into());
+        }
         let (status, reason) = self.assess_independence(rule, c, p);
         (status, reason.into())
     }
@@ -456,7 +491,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             ) {
                 actors.extend(facts.agent_approvals.iter().map(|a| a.reviewer.to_string()));
             }
-            if rule == RuleId::Acc004 {
+            if matches!(rule, RuleId::Acc004 | RuleId::Acc005) {
                 actors.extend(c.merger.as_ref().map(|m| m.actor_id.clone()));
             }
             actors.sort();
@@ -474,6 +509,14 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             }
             if rule == RuleId::Acc004 {
                 provenance.extend(c.checks.iter().flat_map(|k| k.provenance.clone()));
+            }
+            if rule == RuleId::Acc005 {
+                provenance.extend(c.protection.iter().flat_map(|b| {
+                    b.suites
+                        .iter()
+                        .filter(|s| s.result == SuiteResult::Bypass)
+                        .flat_map(|s| s.provenance.clone())
+                }));
             }
             provenance.sort();
             provenance.dedup();

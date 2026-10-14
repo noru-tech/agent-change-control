@@ -154,7 +154,12 @@ pub const RECOLLECTED: &str = "the input records an incomplete collection; colle
 
 /// Warn on stderr (unless `--quiet`) that the collection behind a result is incomplete, why,
 /// and what to do: the output is written, but exit 4 says a clean result cannot be claimed.
-pub fn warn_incomplete(ctx: &Ctx, events: &crate::model::Events, hint: &str) {
+pub fn warn_incomplete(
+    ctx: &Ctx,
+    events: &crate::model::Events,
+    policy: Option<&crate::model::Policy>,
+    hint: &str,
+) {
     let reason = events.window.reason.clone().unwrap_or_else(|| {
         let n = events
             .changes
@@ -164,19 +169,21 @@ pub fn warn_incomplete(ctx: &Ctx, events: &crate::model::Events, hint: &str) {
         if n > 0 {
             return format!("review history incomplete for {n} change(s)");
         }
-        // The only other source of incompleteness: ACC004 is enabled and check facts are
-        // missing or partial for a merged change.
-        let n = events
-            .changes
-            .iter()
-            .filter(|c| {
-                c.merged_at.is_some()
-                    && c.checks
-                        .as_ref()
-                        .is_none_or(|k| !k.runs_complete || !k.required_complete)
-            })
-            .count();
-        format!("check data missing or incomplete for {n} merged change(s), and the policy enables ACC004")
+        // Otherwise an enabled opt-in rule's facts are missing or partial for a merged change.
+        let mut parts = Vec::new();
+        for rule in [crate::model::RuleId::Acc004, crate::model::RuleId::Acc005] {
+            let n = events
+                .changes
+                .iter()
+                .filter(|c| policy.is_some_and(|p| crate::manifest::gaps(c, p).contains(&rule)))
+                .count();
+            if n > 0 {
+                parts.push(format!(
+                    "{rule} data missing or incomplete for {n} merged change(s)"
+                ));
+            }
+        }
+        parts.join("; ")
     });
     ctx.note(format!("warning: collection incomplete: {reason}"));
     ctx.note(format!("help: {hint}"));

@@ -55,7 +55,12 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let (checked, exit) = manifest::check(&m, policy, as_of)?;
     args.output.render(ctx, &checked, Format::Table)?;
     if exit == Exit::Incomplete {
-        super::warn_incomplete(ctx, &checked.events, super::RECOLLECTED);
+        super::warn_incomplete(
+            ctx,
+            &checked.events,
+            Some(&checked.policy),
+            super::RECOLLECTED,
+        );
     }
     Ok(exit)
 }

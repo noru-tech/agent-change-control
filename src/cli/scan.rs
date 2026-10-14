@@ -20,7 +20,12 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         io::policy_source(c.policy.as_deref())
     ));
     let policy = io::load_policy(c.policy.as_deref())?;
-    let events = forge::collect(ctx, &c, manifest::checks_required(&policy))?;
+    let events = forge::collect(
+        ctx,
+        &c,
+        manifest::checks_required(&policy),
+        manifest::bypass_required(&policy),
+    )?;
     let m = manifest::evaluate(events, policy)?;
     let exit = if manifest::incomplete(&m.events, &m.policy) {
         Exit::Incomplete
@@ -35,7 +40,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         ctx.note(format!("wrote {}", path.display()));
     }
     if exit == Exit::Incomplete {
-        super::warn_incomplete(ctx, &m.events, super::forge::RECOLLECT);
+        super::warn_incomplete(ctx, &m.events, Some(&m.policy), super::forge::RECOLLECT);
     }
     Ok(exit)
 }
