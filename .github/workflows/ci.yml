@@ -119,7 +119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        break: [ACC001, ACC002, ACC003, ACC004, ACC005, ACC006, ACC008, ACC010, serialization]
+        break: [ACC001, ACC002, ACC003, ACC004, ACC005, ACC006, ACC008, ACC010, ACC011, serialization]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master 2026-10

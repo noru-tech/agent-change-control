@@ -51,6 +51,7 @@ complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcom
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l verification -d 'A verifier\'s JSON output (`gh attestation verify --format json`): its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)' -r -F
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l agent-vendor -d 'Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)' -r
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l max-pages -d 'Maximum pages per list endpoint (100 items each)' -r
+complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -l team -d 'Also record this reviewer team\'s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy\'s tiers require' -r
 complete -c acc -n "__fish_acc_using_subcommand scan; and not __fish_seen_subcommand_from github help" -s f -l format -d 'Output format; inferred from the --output extension when omitted' -r -f -a "json\t''
 yaml\t''
 table\t'A plain-text table for people; `text` is an alias'
@@ -79,6 +80,7 @@ complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l verification -d 'A verifier\'s JSON output (`gh attestation verify --format json`): its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)' -r -F
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l agent-vendor -d 'Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)' -r
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l max-pages -d 'Maximum pages per list endpoint (100 items each)' -r
+complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -l team -d 'Also record this reviewer team\'s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy\'s tiers require' -r
 complete -c acc -n "__fish_acc_using_subcommand scan; and __fish_seen_subcommand_from github" -s f -l format -d 'Output format; inferred from the --output extension when omitted' -r -f -a "json\t''
 yaml\t''
 table\t'A plain-text table for people; `text` is an alias'
@@ -107,6 +109,7 @@ complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subc
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l verification -d 'A verifier\'s JSON output (`gh attestation verify --format json`): its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)' -r -F
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l agent-vendor -d 'Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)' -r
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l max-pages -d 'Maximum pages per list endpoint (100 items each)' -r
+complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -l team -d 'Also record this reviewer team\'s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy\'s tiers require' -r
 complete -c acc -n "__fish_acc_using_subcommand export; and not __fish_seen_subcommand_from github help" -s f -l format -d 'Output format; inferred from the --output extension when omitted' -r -f -a "json\t''
 yaml\t''
 table\t'A plain-text table for people; `text` is an alias'
@@ -135,6 +138,7 @@ complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcomma
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l verification -d 'A verifier\'s JSON output (`gh attestation verify --format json`): its bundles are loaded as signed attestations with the certificate identity the verifier established (repeatable; requires --verified-by)' -r -F
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l agent-vendor -d 'Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)' -r
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l max-pages -d 'Maximum pages per list endpoint (100 items each)' -r
+complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -l team -d 'Also record this reviewer team\'s members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy\'s tiers require' -r
 complete -c acc -n "__fish_acc_using_subcommand export; and __fish_seen_subcommand_from github" -s f -l format -d 'Output format; inferred from the --output extension when omitted' -r -f -a "json\t''
 yaml\t''
 table\t'A plain-text table for people; `text` is an alias'

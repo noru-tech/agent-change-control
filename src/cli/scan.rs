@@ -25,6 +25,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         &c,
         manifest::checks_required(&policy),
         manifest::bypass_required(&policy),
+        &manifest::teams_required_by(&policy),
     )?;
     let m = manifest::evaluate(events, policy)?;
     let exit = if manifest::incomplete(&m.events, &m.policy) {

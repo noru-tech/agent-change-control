@@ -115,7 +115,7 @@ pub fn render(m: &Manifest) -> String {
             .events
             .changes
             .iter()
-            .flat_map(|c| crate::manifest::gaps(c, &m.policy))
+            .flat_map(|c| crate::manifest::gaps(c, &m.policy, &m.events.teams))
             .collect();
         let rules: Vec<&str> = rules.iter().map(|r| r.code()).collect();
         out.push_str(&format!(

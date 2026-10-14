@@ -122,10 +122,12 @@ fn evaluate_as(e: Events, p: Policy, revision: Revision, keep_legacy: bool) -> R
         version: crate::version().into(),
         source_digest: canon.digest(&e)?,
     };
+    let applied_tiers = crate::rules::applied_tiers(&e, &p);
     Ok(Manifest {
         version: revision.version().into(),
         events: e,
         policy: p,
+        applied_tiers,
         summary,
         findings,
         assessments,
@@ -180,7 +182,7 @@ pub fn bypass_required(p: &Policy) -> bool {
 
 /// The opt-in rules whose facts are missing or partial for one change, under `p`. Only a merged
 /// change has such facts.
-pub fn gaps(c: &Change, p: &Policy) -> Vec<RuleId> {
+pub fn gaps(c: &Change, p: &Policy, e_teams: &[Team]) -> Vec<RuleId> {
     let mut out = Vec::new();
     if c.merged_at.is_none() {
         return out;
@@ -196,7 +198,37 @@ pub fn gaps(c: &Change, p: &Policy) -> Vec<RuleId> {
     if bypass_required(p) && c.protection.as_ref().is_none_or(|b| !b.complete) {
         out.push(RuleId::Acc005);
     }
+    if teams_required(p, c, e_teams) {
+        out.push(RuleId::Acc011);
+    }
     out
+}
+
+/// The reviewer teams ACC011 needs facts for: every team a tier of `p` requires, when the rule is
+/// enabled.
+pub fn teams_required_by(p: &Policy) -> Vec<String> {
+    if !enabled(p, RuleName::MissingRequiredReviewerTeam) {
+        return Vec::new();
+    }
+    let mut ids: Vec<String> = p
+        .tiers
+        .iter()
+        .flat_map(|t| t.values())
+        .flat_map(|t| t.required_reviewer_teams.iter().cloned())
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
+/// Whether ACC011 is enabled and a team `c`'s tier requires has no complete membership record.
+fn teams_required(p: &Policy, c: &Change, teams: &[Team]) -> bool {
+    enabled(p, RuleName::MissingRequiredReviewerTeam)
+        && crate::rules::tier_policy(c, p).is_some_and(|t| {
+            t.required_reviewer_teams
+                .iter()
+                .any(|id| !teams.iter().any(|f| f.id == *id && f.complete))
+        })
 }
 
 /// Whether collection is incomplete for the decision `p` asks for: the window or a review history
@@ -206,7 +238,7 @@ pub fn gaps(c: &Change, p: &Policy) -> Vec<RuleId> {
 pub fn incomplete(e: &Events, p: &Policy) -> bool {
     !e.window.complete
         || e.changes.iter().any(|c| !c.reviews_complete)
-        || e.changes.iter().any(|c| !gaps(c, p).is_empty())
+        || e.changes.iter().any(|c| !gaps(c, p, &e.teams).is_empty())
 }
 
 fn validate_disposition(d: &Disposition) -> Result<()> {
@@ -322,7 +354,9 @@ pub fn verdicts(
                 .collect();
             let verdict = if !failing.is_empty() {
                 Verdict::Fail
-            } else if !c.reviews_complete || !gaps(c, &checked.policy).is_empty() {
+            } else if !c.reviews_complete
+                || !gaps(c, &checked.policy, &checked.events.teams).is_empty()
+            {
                 Verdict::Incomplete
             } else {
                 Verdict::Pass
@@ -363,21 +397,83 @@ fn reevaluate(
     let mut failing = Vec::with_capacity(checked.findings.len());
     for f in &checked.findings {
         let d = &f.disposition;
-        let suppressed = if d.status == DispositionStatus::Open {
-            false
-        } else {
-            let date = as_of.ok_or_else(|| {
+        let date = || {
+            as_of.ok_or_else(|| {
                 failure_with_hint(
                     Exit::Usage,
-                    "--as-of is required when evaluating dispositions",
-                    "pass --as-of YYYY-MM-DD, the date the dispositions are evaluated on; acc never reads the clock",
+                    "--as-of is required when evaluating dispositions or an emergency's retroactive review",
+                    "pass --as-of YYYY-MM-DD, the date they are evaluated on; acc never reads the clock",
                 )
-            })?;
-            suppressed(d, date)?
+            })
+        };
+        let suppressed = if f.obligation.is_some() {
+            // Only the retroactive review discharges an emergency's finding; until its window
+            // closes, the finding is pending rather than failing.
+            matches!(
+                standing(&checked, f, Some(date()?)),
+                Some(Standing::Pending | Standing::Met)
+            )
+        } else if d.status == DispositionStatus::Open {
+            false
+        } else {
+            suppressed(d, date()?)?
         };
         failing.push(!suppressed && f.severity >= checked.policy.fail_on);
     }
     Ok((checked, failing))
+}
+
+/// Where an emergency change's retroactive review stands on a date.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Standing {
+    /// Not yet reviewed, and the window is still open: the finding does not fail.
+    Pending,
+    /// Reviewed in time by someone independent of the effective author.
+    Met,
+    /// The window closed with no such review.
+    Overdue,
+}
+
+impl Standing {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Standing::Pending => "pending",
+            Standing::Met => "met",
+            Standing::Overdue => "overdue",
+        }
+    }
+}
+
+/// The standing of `f`'s obligation on `as_of`: None when it has none, or no date was given.
+///
+/// The review is recorded as a `remediated` disposition. It meets the obligation only when it
+/// was remediated within the window, and its owner is a human actor of the
+/// export who is not the change's effective author: the independence is checked, not taken on
+/// the owner's word. No other disposition discharges it.
+pub fn standing(m: &Manifest, f: &Finding, as_of: Option<NaiveDate>) -> Option<Standing> {
+    let o = f.obligation.as_ref()?;
+    let date = as_of?;
+    let d = &f.disposition;
+    let change = m.events.changes.iter().find(|c| c.id == f.change_id)?;
+    let effective = crate::rules::effective_human(&m.events, change, &m.policy);
+    let independent = d.owner.as_deref().is_some_and(|owner| {
+        m.events
+            .actors
+            .get(owner)
+            .is_some_and(|a| a.kind == ActorKind::Human)
+            && Some(owner) != effective.as_deref()
+            && owner != change.author.actor_id
+    });
+    let met = d.status == DispositionStatus::Remediated
+        && independent
+        && d.remediated_at.is_some_and(|r| r <= o.due && date >= r);
+    Some(if met {
+        Standing::Met
+    } else if date <= o.due {
+        Standing::Pending
+    } else {
+        Standing::Overdue
+    })
 }
 
 #[cfg(test)]

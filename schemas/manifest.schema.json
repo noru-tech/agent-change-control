@@ -606,6 +606,9 @@
         },
         "protection": {
           "$ref": "#/$defs/protection"
+        },
+        "risk": {
+          "$ref": "#/$defs/risk"
         }
       },
       "required": [
@@ -744,6 +747,12 @@
           "items": {
             "$ref": "#/$defs/change"
           }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/team"
+          }
         }
       },
       "required": [
@@ -876,6 +885,37 @@
         "checks": {
           "$ref": "#/$defs/checks_policy"
         },
+        "tiers": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "low",
+              "standard",
+              "high",
+              "emergency"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/tier_policy"
+          }
+        },
+        "missing_tier": {
+          "type": "string",
+          "enum": [
+            "low",
+            "standard",
+            "high"
+          ]
+        },
+        "minimum_risk_evidence": {
+          "type": "string",
+          "enum": [
+            "derived",
+            "declared",
+            "observed",
+            "signed"
+          ]
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -907,6 +947,9 @@
               "$ref": "#/$defs/rule_policy"
             },
             "agent_approval_unsigned": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "missing_required_reviewer_team": {
               "$ref": "#/$defs/rule_policy"
             }
           },
@@ -1017,7 +1060,8 @@
             "ACC007",
             "ACC008",
             "ACC009",
-            "ACC010"
+            "ACC010",
+            "ACC011"
           ]
         },
         "rule": {
@@ -1032,7 +1076,8 @@
             "agent_approval_recorded",
             "same_vendor_write_and_review",
             "agent_approval_not_independent",
-            "agent_approval_unsigned"
+            "agent_approval_unsigned",
+            "missing_required_reviewer_team"
           ]
         },
         "severity": {
@@ -1077,6 +1122,27 @@
             "pattern": "^acc-[a-f0-9]{16}$"
           },
           "maxItems": 1
+        },
+        "obligation": {
+          "description": "The retroactive review an emergency change owes (ACP 0.4).",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "retroactive_review"
+              ]
+            },
+            "due": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "kind",
+            "due"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1111,7 +1177,8 @@
             "ACC007",
             "ACC008",
             "ACC009",
-            "ACC010"
+            "ACC010",
+            "ACC011"
           ]
         },
         "status": {
@@ -1199,6 +1266,13 @@
         },
         "policy": {
           "$ref": "#/$defs/policy"
+        },
+        "applied_tiers": {
+          "description": "The tier applied to each change, when the policy has tiers (ACP 0.4).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/applied_tier"
+          }
         },
         "summary": {
           "$ref": "#/$defs/summary"
@@ -1302,6 +1376,147 @@
           }
         }
       ]
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "low",
+        "standard",
+        "high",
+        "emergency"
+      ]
+    },
+    "risk": {
+      "description": "The change's risk tier, from a change-risk assessment bound to its head commit (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/tier"
+        },
+        "emergency": {
+          "type": "object",
+          "properties": {
+            "declared_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "declared_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "declared_by",
+            "declared_at"
+          ],
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "tier",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "team": {
+      "description": "A reviewer team and its members as observed at collection, not at review time (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+/[a-z0-9_.-]+$"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "members",
+        "complete",
+        "observed_at",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "tier_policy": {
+      "type": "object",
+      "properties": {
+        "min_human_approvals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agent_review": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "forbidden"
+          ]
+        },
+        "required_reviewer_teams": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+          }
+        },
+        "retroactive_review_within_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "applied_tier": {
+      "type": "object",
+      "properties": {
+        "change_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "$ref": "#/$defs/tier"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "assessment",
+            "missing",
+            "below_minimum"
+          ]
+        }
+      },
+      "required": [
+        "change_id",
+        "tier",
+        "source"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -50,6 +50,7 @@ as `token`.
 | `repository` | `github.repository` | `OWNER/REPO` |
 | `token` | `github.token` | Read access to contents and pull requests; GET-only, never written to outputs |
 | `policy` | `.agent-change-control/policy.yml` when present | Policy file, see [policy](policy.md) |
+| `policy-ref` | the pull request's base commit | Read the policy file at this revision, so a pull request that edits the policy is evaluated under the one it would replace; a base without a policy file means the built-in defaults. Empty reads the working tree. Needs the commit in the checkout (fetched if missing) |
 | `agent-account` | none | Verified agent accounts, one `LOGIN=AGENT` per line |
 | `agent-trailer` | none | Extra `Co-Authored-By` identities, one `EMAIL=AGENT` per line |
 | `ignore-trailers` | `false` | Do not read `Co-Authored-By` trailers |

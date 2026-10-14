@@ -249,7 +249,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -299,6 +299,10 @@ _acc() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --team)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --format)
                     COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
                     return 0
@@ -323,7 +327,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__export__subcmd__github)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --format --output --quiet --verbose --no-color --help --version"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -370,6 +374,10 @@ _acc() {
                     return 0
                     ;;
                 --max-pages)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --team)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -731,7 +739,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --format --output --quiet --verbose --no-color --help --version github help"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version github help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -781,6 +789,10 @@ _acc() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --team)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --format)
                     COMPREPLY=($(compgen -W "json yaml table sarif in-toto in-toto-jsonl" -- "${cur}"))
                     return 0
@@ -805,7 +817,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__scan__subcmd__github)
-            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --format --output --quiet --verbose --no-color --help --version"
+            opts="-f -o -q -v -h -V --since --until --policy --agent-account --agent-trailer --ignore-trailers --agent-trace --attestations --verified-by --verification --agent-vendor --max-pages --checks --bypass --team --format --output --quiet --verbose --no-color --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -852,6 +864,10 @@ _acc() {
                     return 0
                     ;;
                 --max-pages)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --team)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

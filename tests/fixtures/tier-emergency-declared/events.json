@@ -1,0 +1,131 @@
+{
+  "version": "0.4",
+  "repository": "acme/api",
+  "window": {
+    "from": "2026-08-01T00:00:00Z",
+    "to": "2026-08-31T23:59:59Z",
+    "complete": true,
+    "reason": null
+  },
+  "actors": {
+    "github:alice": {
+      "kind": "human",
+      "display_name": "Alice",
+      "vendor": null
+    },
+    "github:bob": {
+      "kind": "human",
+      "display_name": "Bob",
+      "vendor": null
+    },
+    "agent:claude-code": {
+      "kind": "agent",
+      "display_name": "Claude Code",
+      "vendor": "anthropic"
+    },
+    "agent:codex": {
+      "kind": "agent",
+      "display_name": "Codex",
+      "vendor": "openai"
+    },
+    "github:ci": {
+      "kind": "bot",
+      "display_name": "CI",
+      "vendor": null
+    }
+  },
+  "changes": [
+    {
+      "id": "github:acme/api:pr:421",
+      "repository": "acme/api",
+      "forge": "github",
+      "title": "Example change",
+      "url": "https://github.com/acme/api/pull/421",
+      "opened_at": "2026-08-01T12:00:00Z",
+      "merged_at": "2026-08-03T12:00:00Z",
+      "head_sha": "head",
+      "merge_commit_sha": "merge",
+      "commits": [
+        {
+          "sha": "head",
+          "author": {
+            "actor_id": "github:alice",
+            "provenance": [
+              {
+                "source": "github_api",
+                "ref": "https://api.github.com/repos/acme/api/pulls/421",
+                "kind": "observed"
+              }
+            ]
+          }
+        }
+      ],
+      "forge_author": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "author": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "agent_operator": null,
+      "reviews": [],
+      "reviews_complete": true,
+      "merger": {
+        "actor_id": "github:alice",
+        "provenance": [
+          {
+            "source": "github_api",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "kind": "observed"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source": "github_api",
+          "ref": "https://api.github.com/repos/acme/api/pulls/421",
+          "kind": "observed"
+        }
+      ],
+      "labels": [],
+      "risk": {
+        "tier": "emergency",
+        "provenance": [
+          {
+            "source": "attestation",
+            "ref": "attestation:4d5e6f7a8b9c0d1e",
+            "kind": "declared"
+          }
+        ],
+        "emergency": {
+          "declared_by": "github:alice",
+          "declared_at": "2026-08-03T11:00:00Z"
+        }
+      }
+    }
+  ],
+  "attestations": {
+    "attestation:4d5e6f7a8b9c0d1e": {
+      "file": "attestations/change-risk-4d5e.json#1",
+      "predicate_type": "https://noru.tech/spec/ai-change-provenance/change-risk/v0.1",
+      "payload_digest": "sha256:4d5e6f7a8b9c0d1e000000000000000000000000000000000000000000000000",
+      "signed": false,
+      "verified_by": null,
+      "signer": null,
+      "matched": true
+    }
+  }
+}

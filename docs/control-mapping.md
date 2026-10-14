@@ -44,6 +44,7 @@ Two properties matter for evidence handling:
 | ACC007 | An agent approved the change (observation, info) | None by itself; the population of agent-approved changes for sampling |
 | ACC008 | An agent wrote the change and only agents of the same vendor approved it | One model checking its own work; treat as a missed independent review |
 | ACC009 | Under `agent_review`, the only agent approvals are dependent on the author (operator, vendor, signing identity or instructions) | Missed independence; the same response as for self-approval |
+| ACC011 | A change whose risk tier requires a reviewer team merged without a member of that team approving | Have the team review it and record a disposition; require the team in CODEOWNERS for the tier's paths |
 | ACC010 | Under `agent_review`, an agent approval is not backed by a verified signed review document | Do not count the approval; fix the reviewer's signing integration |
 | exit 4 (incomplete) | Part of the population or a review history could not be retrieved | Do not report the window as clean; re-collect, or document the gap |
 

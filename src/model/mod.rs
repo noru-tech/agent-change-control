@@ -135,6 +135,8 @@ pub enum RuleId {
     Acc009,
     #[serde(rename = "ACC010")]
     Acc010,
+    #[serde(rename = "ACC011")]
+    Acc011,
 }
 
 /// Human-readable rule names, used as policy keys.
@@ -151,6 +153,7 @@ pub enum RuleName {
     SameVendorWriteAndReview,
     AgentApprovalNotIndependent,
     AgentApprovalUnsigned,
+    MissingRequiredReviewerTeam,
 }
 
 /// The dimensions along which an agent reviewer's independence from the effective author is
@@ -200,6 +203,7 @@ impl RuleId {
             RuleId::Acc008 => "ACC008",
             RuleId::Acc009 => "ACC009",
             RuleId::Acc010 => "ACC010",
+            RuleId::Acc011 => "ACC011",
         }
     }
 
@@ -216,6 +220,7 @@ impl RuleId {
             RuleId::Acc008 => RuleName::SameVendorWriteAndReview,
             RuleId::Acc009 => RuleName::AgentApprovalNotIndependent,
             RuleId::Acc010 => RuleName::AgentApprovalUnsigned,
+            RuleId::Acc011 => RuleName::MissingRequiredReviewerTeam,
         }
     }
 }
@@ -235,6 +240,7 @@ impl RuleName {
             RuleName::SameVendorWriteAndReview => "same_vendor_write_and_review",
             RuleName::AgentApprovalNotIndependent => "agent_approval_not_independent",
             RuleName::AgentApprovalUnsigned => "agent_approval_unsigned",
+            RuleName::MissingRequiredReviewerTeam => "missing_required_reviewer_team",
         }
     }
 }
@@ -368,6 +374,10 @@ pub struct Change {
     /// only when present, so earlier documents keep their bytes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub checks: Option<Checks>,
+    /// The change's risk tier, from a change-risk assessment bound to its head commit (ACP
+    /// 0.4). Absent when none was handed over; serialized only when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub risk: Option<Risk>,
     /// Ruleset evaluations of the merge, for ACC005 (ACP 0.4). Absent when the collector was not
     /// asked for them; serialized only when present.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -542,6 +552,10 @@ pub struct Events {
     /// digest. May be absent in exports written before it existed.
     #[serde(default)]
     pub attestations: BTreeMap<String, Attestation>,
+    /// Reviewer teams the policy requires, with their members as observed at collection (ACP
+    /// 0.4). Serialized only when present.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub teams: Vec<Team>,
     pub changes: Vec<Change>,
 }
 
@@ -572,7 +586,132 @@ pub struct Policy {
     /// from earlier documents, and serialized only when present so they keep their bytes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub checks: Option<ChecksPolicy>,
+    /// What each risk tier requires (ACP 0.4). Without it no tier applies to any change.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tiers: Option<BTreeMap<Tier, TierPolicy>>,
+    /// The tier of a change with no usable risk assessment. Defaults to `standard` when `tiers`
+    /// is set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub missing_tier: Option<Tier>,
+    /// The weakest evidence a risk assessment may rest on and still lower what a change must
+    /// meet. Defaults to `signed` when `tiers` is set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum_risk_evidence: Option<EvidenceKind>,
     pub rules: BTreeMap<RuleName, RulePolicy>,
+}
+
+/// A change's risk tier (ACP 0.4), as a change-risk assessment states it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Tier {
+    Low,
+    Standard,
+    High,
+    Emergency,
+}
+
+impl Tier {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Tier::Low => "low",
+            Tier::Standard => "standard",
+            Tier::High => "high",
+            Tier::Emergency => "emergency",
+        }
+    }
+}
+
+/// What one tier requires.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct TierPolicy {
+    /// Qualifying independent approvals ACC003 requires; at least one, whatever this says.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_human_approvals: Option<u32>,
+    /// Whether an agent approval may satisfy independence in this tier, overriding
+    /// `agent_review.satisfies_independence`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_review: Option<TierAgentReview>,
+    /// `ORG/SLUG` teams each of which must approve (ACC011).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_reviewer_teams: Vec<String>,
+    /// Days after the merge within which an emergency change must be reviewed retroactively.
+    /// Emergency tier only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retroactive_review_within_days: Option<u32>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TierAgentReview {
+    Allowed,
+    Forbidden,
+}
+
+/// The risk tier a change-risk assessment gave a change.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Risk {
+    pub tier: Tier,
+    /// Who declared the emergency, for an emergency tier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emergency: Option<RiskEmergency>,
+    pub provenance: Vec<Evidence>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RiskEmergency {
+    pub declared_by: String,
+    pub declared_at: Timestamp,
+}
+
+/// A reviewer team and its members as observed at collection, not at review time.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Team {
+    /// `ORG/SLUG`.
+    pub id: String,
+    /// Actor identifiers (`github:login`), sorted.
+    pub members: Vec<String>,
+    pub complete: bool,
+    pub observed_at: Timestamp,
+    pub provenance: Vec<Evidence>,
+}
+
+/// The tier applied to one change, and why.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct AppliedTier {
+    pub change_id: String,
+    pub tier: Tier,
+    pub source: TierSource,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TierSource {
+    /// The change's risk assessment.
+    Assessment,
+    /// No risk assessment: the policy's `missing_tier`.
+    Missing,
+    /// An assessment that would lower the requirements, on evidence below
+    /// `minimum_risk_evidence`: the policy's `missing_tier`.
+    BelowMinimum,
+}
+
+/// A dated obligation a finding carries: for an emergency change, the retroactive review.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Obligation {
+    pub kind: ObligationKind,
+    pub due: NaiveDate,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ObligationKind {
+    RetroactiveReview,
 }
 
 /// The checks ACC004 requires on the approved head of a merged change.
@@ -614,6 +753,9 @@ pub struct Finding {
     /// Carried for one minor version so dispositions keyed by the old identifier still apply.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub legacy_ids: Vec<String>,
+    /// The retroactive review an emergency change owes (ACP 0.4).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub obligation: Option<Obligation>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -653,6 +795,9 @@ pub struct Manifest {
     pub version: String,
     pub events: Events,
     pub policy: Policy,
+    /// The tier applied to each change, when the policy has tiers (ACP 0.4).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_tiers: Vec<AppliedTier>,
     pub summary: Summary,
     pub findings: Vec<Finding>,
     pub assessments: Vec<Assessment>,

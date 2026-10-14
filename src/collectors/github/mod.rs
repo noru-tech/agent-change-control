@@ -38,6 +38,9 @@ pub struct Sources<'a> {
     /// Collect ruleset evaluations of merged changes (ACC005), as of this instant: the forge
     /// lists them only for the past month, so an older merge is recorded as out of reach.
     pub bypass_as_of: Option<Timestamp>,
+    /// Reviewer teams to record (`ORG/SLUG`, ACC011), and the instant their membership is
+    /// observed: the forge exposes current membership only.
+    pub teams: Option<(&'a [String], Timestamp)>,
 }
 
 /// The core rate limit, from `GET /rate_limit`.
@@ -485,6 +488,7 @@ impl Github {
             vendors,
             checks,
             bypass_as_of,
+            teams,
         } = sources;
         let mut required_by_branch: BTreeMap<String, Required> = BTreeMap::new();
         let mut suites_by_branch: BTreeMap<String, (Vec<Value>, bool, String)> = BTreeMap::new();
@@ -503,6 +507,7 @@ impl Github {
             },
             actors: BTreeMap::new(),
             attestations: BTreeMap::new(),
+            teams: Vec::new(),
             changes: vec![],
         };
         let (numbers, complete) = match pr {
@@ -792,6 +797,7 @@ impl Github {
                     .unwrap_or_default(),
                 checks: collected_checks,
                 protection: collected_protection,
+                risk: None,
             };
             if !history_complete {
                 incomplete(
@@ -934,9 +940,53 @@ impl Github {
                 c.reviews_complete = false;
                 incomplete(&mut e, "Pull request changed during collection; retry");
             }
+            if let Some(a) = attestations
+                && let Some((risk, records)) = a.risk(&c.head_sha)?
+            {
+                e.attestations.extend(records);
+                c.risk = Some(risk);
+            }
             e.changes.push(c);
         }
+        if let Some((ids, observed_at)) = teams {
+            for id in ids {
+                e.teams.push(self.team(id, observed_at)?);
+            }
+        }
         crate::normalize::events(e)
+    }
+
+    /// A reviewer team's members, as GitHub lists them now. A listing the token cannot read in
+    /// full is recorded as incomplete, never as empty.
+    fn team(&self, id: &str, observed_at: Timestamp) -> Result<Team> {
+        let (org, slug) = id
+            .split_once('/')
+            .filter(|(o, s)| !o.is_empty() && !s.is_empty() && !s.contains('/'))
+            .ok_or_else(|| failure(Exit::Usage, "a reviewer team must be ORG/SLUG"))?;
+        let path = format!(
+            "/orgs/{}/teams/{}/members",
+            path_segment(org),
+            path_segment(slug)
+        );
+        let (items, complete) = self.readable_pages(&path, None)?;
+        let mut members: Vec<String> = items
+            .iter()
+            .filter_map(|m| m["login"].as_str())
+            .filter(|l| valid_login(l))
+            .map(|l| format!("github:{}", l.to_ascii_lowercase()))
+            .collect();
+        members.sort();
+        members.dedup();
+        Ok(Team {
+            id: id.to_ascii_lowercase(),
+            members,
+            complete,
+            observed_at,
+            provenance: vec![evidence(
+                &format!("https://api.github.com{path}"),
+                EvidenceKind::Observed,
+            )],
+        })
     }
 }
 
@@ -1211,6 +1261,7 @@ mod tests {
             },
             actors: BTreeMap::new(),
             attestations: BTreeMap::new(),
+            teams: Vec::new(),
             changes: vec![],
         };
         incomplete(&mut e, "a");

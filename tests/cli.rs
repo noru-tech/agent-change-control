@@ -475,7 +475,7 @@ fn conformance_json_prints_one_result_line() {
     assert_eq!(code, 0);
     assert_eq!(v["verdict"], "evaluated");
     assert_eq!(v["codes"], serde_json::json!(["ACC002", "ACC003"]));
-    assert_eq!(v["assessments"].as_array().unwrap().len(), 8);
+    assert_eq!(v["assessments"].as_array().unwrap().len(), 9);
     assert!(v["manifestDigest"].as_str().unwrap().starts_with("sha256:"));
     let (code, v) = run("incomplete/incomplete-window.json");
     assert_eq!((code, v["verdict"].as_str()), (4, Some("incomplete")));
@@ -879,5 +879,66 @@ fn release_assets_match_the_cli() {
                 "{sub}/{name} is stale: UPDATE_ASSETS=1 cargo test --test cli release_assets"
             );
         }
+    }
+}
+
+#[test]
+fn an_emergency_owes_an_independent_retroactive_review_in_its_window() {
+    let golden = fixture("tier-emergency-unreviewed", "expected-manifest.json");
+    // Without a date, the window cannot be placed.
+    acc().arg("check").arg(&golden).assert().code(2);
+    // Inside the window the finding is pending; after it, overdue.
+    acc()
+        .args(["check", "--as-of", "2026-08-05"])
+        .arg(&golden)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "retroactive review due 2026-08-06: pending",
+        ));
+    acc()
+        .args(["check", "--as-of", "2026-08-07"])
+        .arg(&golden)
+        .assert()
+        .code(1)
+        .stderr(predicate::str::contains("overdue"));
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let with = |owner: &str, remediated: &str| {
+        let mut m: Manifest =
+            serde_json::from_str(&std::fs::read_to_string(&golden).unwrap()).unwrap();
+        m.findings[0].disposition = Disposition {
+            status: DispositionStatus::Remediated,
+            owner: Some(owner.into()),
+            decided_at: Some(remediated.parse().unwrap()),
+            expires_at: None,
+            rationale: Some("Reviewed after the emergency merge.".into()),
+            remediated_at: Some(remediated.parse().unwrap()),
+        };
+        let path = dir
+            .path()
+            .join(format!("{}-{remediated}.json", owner.replace(':', "-")));
+        std::fs::write(&path, serde_json::to_string(&m).unwrap()).unwrap();
+        path
+    };
+    // Reviewed in time by someone independent of the author: met.
+    acc()
+        .args(["check", "--as-of", "2026-08-20"])
+        .arg(with("github:bob", "2026-08-05"))
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(": met"));
+    // By the author, or too late, or by a name that is not an actor: still overdue.
+    for (owner, date) in [
+        ("github:alice", "2026-08-05"),
+        ("github:bob", "2026-08-09"),
+        ("security team", "2026-08-05"),
+    ] {
+        acc()
+            .args(["check", "--as-of", "2026-08-20"])
+            .arg(with(owner, date))
+            .assert()
+            .code(1)
+            .stderr(predicate::str::contains("overdue"));
     }
 }

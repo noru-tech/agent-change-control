@@ -1,0 +1,6 @@
+version: "0.4"
+tiers:
+  high:
+    min_human_approvals: 2
+missing_tier: high
+rules: {}

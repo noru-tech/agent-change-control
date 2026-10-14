@@ -237,7 +237,7 @@ operator) approved the current head before merge, with no later withdrawal, in f
 <a id="rules"></a>
 ## Which rules does acc check?
 
-Ten rules, each with a page that explains it, maps it to controls, shows a failing and a passing
+Eleven rules, each with a page that explains it, maps it to controls, shows a failing and a passing
 example and says how to fix it or record a disposition ([all rules and validation
 codes](docs/rules/README.md)):
 
@@ -253,6 +253,7 @@ codes](docs/rules/README.md)):
 | [ACC008](docs/rules/ACC008.md) | Same-vendor write and review | high |
 | [ACC009](docs/rules/ACC009.md) | Agent approval lacks required independence (under `agent_review`) | high |
 | [ACC010](docs/rules/ACC010.md) | Agent approval without signed identity (under `agent_review`) | warning |
+| [ACC011](docs/rules/ACC011.md) | Missing required reviewer team (under risk tiers) | high |
 
 A qualifying approval must be from a different **human**, apply to the current head SHA, precede or
 equal merge time, and be that reviewer's latest non-comment decision before merge. Comments do not
@@ -296,7 +297,10 @@ LOGIN=AGENT` and `--agent-vendor AGENT=VENDOR` for accounts and vendors your org
 verified, `--agent-trailer`, `--ignore-trailers` and `--agent-trace PATH` for the derived tier,
 and `--attestations PATH`, `--verification PATH` (the JSON that `gh attestation verify --format
 json` writes, with the verified signer) and `--verified-by TEXT` for signed authorship and review
-documents ([signing](docs/signing.md)).
+documents ([signing](docs/signing.md)). A [change-risk](https://github.com/noru-tech/change-risk) assessment handed
+over the same way gives each change a risk tier, and a policy's `tiers` set what each tier must meet
+(more approvals, required reviewer teams, an emergency's retroactive review; [risk
+tiers](docs/policy.md#risk-tiers)). `export --team ORG/SLUG` records a reviewer team's members.
 
 Historical scans select PRs **merged in the inclusive UTC window**. Dates expand to the start/end of
 the day. GitHub is the default forge, so `github` may be left out. Without `OWNER/REPO`, the

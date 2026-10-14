@@ -5,7 +5,7 @@ use anyhow::Result;
 use std::collections::BTreeMap;
 
 /// Every rule this release evaluates, in identifier order.
-pub const RULES: [RuleId; 10] = [
+pub const RULES: [RuleId; 11] = [
     RuleId::Acc001,
     RuleId::Acc002,
     RuleId::Acc003,
@@ -16,6 +16,7 @@ pub const RULES: [RuleId; 10] = [
     RuleId::Acc008,
     RuleId::Acc009,
     RuleId::Acc010,
+    RuleId::Acc011,
 ];
 
 /// The rules ACP 0.2 and 0.3 specified, for re-validating manifests written under them.
@@ -116,6 +117,9 @@ impl Default for Policy {
             minimum_review_evidence: default_review_minimum(),
             agent_review: AgentReview::default(),
             checks: Some(ChecksPolicy::default()),
+            tiers: None,
+            missing_tier: None,
+            minimum_risk_evidence: None,
             rules: rule_defaults(&RULES),
         }
     }
@@ -155,6 +159,7 @@ pub fn resolve_for(p: Policy, revision: crate::manifest::Revision) -> Result<Pol
         anyhow::bail!("ACV010 ACP {} has no rule {name}", revision.version());
     }
     ensure_checks(&p, revision)?;
+    let (tiers, missing_tier, minimum_risk_evidence) = resolve_tiers(&p, revision)?;
     let mut agent_review = p.agent_review;
     agent_review.require.sort();
     agent_review.require.dedup();
@@ -173,10 +178,84 @@ pub fn resolve_for(p: Policy, revision: crate::manifest::Revision) -> Result<Pol
         minimum_review_evidence: p.minimum_review_evidence,
         agent_review,
         checks,
+        tiers,
+        missing_tier,
+        minimum_risk_evidence,
         rules: rule_defaults(rules),
     };
     full.rules.extend(p.rules);
     Ok(full)
+}
+
+/// The default `missing_tier`: a change nobody assessed is held to the standard tier.
+pub fn default_missing_tier() -> Tier {
+    Tier::Standard
+}
+
+/// The default `minimum_risk_evidence`: only a signed assessment may lower requirements.
+pub fn default_risk_minimum() -> EvidenceKind {
+    EvidenceKind::Signed
+}
+
+/// `tiers`, `missing_tier` and `minimum_risk_evidence`, validated, with defaults filled in when
+/// `tiers` is set. Only ACP 0.4 has them.
+#[allow(clippy::type_complexity)]
+fn resolve_tiers(
+    p: &Policy,
+    revision: crate::manifest::Revision,
+) -> Result<(
+    Option<BTreeMap<Tier, TierPolicy>>,
+    Option<Tier>,
+    Option<EvidenceKind>,
+)> {
+    let any = p.tiers.is_some() || p.missing_tier.is_some() || p.minimum_risk_evidence.is_some();
+    if any && !revision.has_checks() {
+        anyhow::bail!("ACV010 ACP {} has no risk tiers", revision.version());
+    }
+    let Some(tiers) = &p.tiers else {
+        anyhow::ensure!(
+            !any,
+            "ACV010 missing_tier and minimum_risk_evidence need tiers"
+        );
+        return Ok((None, None, None));
+    };
+    let missing = p.missing_tier.unwrap_or_else(default_missing_tier);
+    anyhow::ensure!(
+        missing != Tier::Emergency,
+        "ACV010 missing_tier cannot be emergency"
+    );
+    let mut out = BTreeMap::new();
+    for (tier, t) in tiers {
+        anyhow::ensure!(
+            t.retroactive_review_within_days.is_none() || *tier == Tier::Emergency,
+            "ACV010 retroactive_review_within_days applies to the emergency tier only"
+        );
+        anyhow::ensure!(
+            t.retroactive_review_within_days.is_none_or(|d| d >= 1),
+            "ACV010 retroactive_review_within_days must be at least 1"
+        );
+        let mut t = t.clone();
+        for team in &t.required_reviewer_teams {
+            let parts: Vec<&str> = team.split('/').collect();
+            anyhow::ensure!(
+                parts.len() == 2 && parts.iter().all(|s| !s.is_empty()),
+                "ACV010 required_reviewer_teams entries must be ORG/SLUG"
+            );
+        }
+        t.required_reviewer_teams = t
+            .required_reviewer_teams
+            .iter()
+            .map(|s| s.to_ascii_lowercase())
+            .collect();
+        t.required_reviewer_teams.sort();
+        t.required_reviewer_teams.dedup();
+        out.insert(*tier, t);
+    }
+    Ok((
+        Some(out),
+        Some(missing),
+        Some(p.minimum_risk_evidence.unwrap_or_else(default_risk_minimum)),
+    ))
 }
 
 fn ensure_checks(p: &Policy, revision: crate::manifest::Revision) -> Result<()> {

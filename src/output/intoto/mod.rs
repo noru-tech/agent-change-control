@@ -101,6 +101,7 @@ fn all_evidence(c: &Change) -> impl Iterator<Item = &Evidence> {
                 .flat_map(|a| &a.provenance),
         )
         .chain(c.reviews.iter().flat_map(|r| &r.provenance))
+        .chain(c.risk.iter().flat_map(|r| &r.provenance))
 }
 
 /// The actors a change refers to.
@@ -156,6 +157,7 @@ pub fn per_change(m: &Manifest) -> Result<Vec<Manifest>> {
                     .filter(|(id, _)| all_evidence(c).any(|ev| ev.r#ref == **id))
                     .map(|(id, a)| (id.clone(), a.clone()))
                     .collect(),
+                teams: m.events.teams.clone(),
                 changes: vec![c.clone()],
             };
             let mut part = crate::manifest::evaluate(events, m.policy.clone())?;
@@ -280,6 +282,7 @@ mod tests {
             },
             actors,
             attestations: std::collections::BTreeMap::new(),
+            teams: vec![],
             changes,
         };
         crate::manifest::evaluate(events, Policy::default()).unwrap()
@@ -313,6 +316,7 @@ mod tests {
             labels: vec![],
             checks: None,
             protection: None,
+            risk: None,
         }
     }
 

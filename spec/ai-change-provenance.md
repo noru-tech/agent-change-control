@@ -232,6 +232,21 @@ signature. Operator and instructions owner resolve only to accounts the forge co
 These facts are recorded in this version; the rules that read them (independence between an agent
 reviewer and the effective author) are ACC008 to ACC010 (§6.2) and the dimensions of §6.5.
 
+### 3.8 Risk assessment
+
+How risky a change is, and therefore which requirements it must meet, is decided outside this
+specification, by a [Change Risk](https://noru.tech/spec/ai-change-provenance/change-risk/v0.1)
+assessment: an in-toto Statement with predicate type
+`https://noru.tech/spec/ai-change-provenance/change-risk/v0.1` whose predicate names the change's
+head commit (`change.head`), its tier (`low`, `standard`, `high` or `emergency`) and, for an
+emergency, who declared it and when (`emergency.declared_by`, `emergency.declared_at`).
+
+A consumer reads an assessment handed over like any attestation (§3.6) and records its conclusion
+as the change's `risk`: the tier, the emergency's declarer and time, and evidence that is `signed`
+when the caller verified the signature and `declared` otherwise. It does not re-derive the tier.
+Assessments of one head that disagree are an error for the change. The policy decides how much
+evidence a tier needs before it may lower what a change must meet (§6.7).
+
 ## 4. Collection
 
 A collector turns forge data into the normalized event model
@@ -301,6 +316,21 @@ all, and an override of protection that is not a ruleset may be visible only in 
 administrative audit log. An empty `suites` list is therefore never evidence that nothing was
 bypassed. A collector that was not asked omits `protection`.
 
+### 4.3 Reviewer teams
+
+When a policy's tiers require reviewer teams (§6.7) and ACC011 is enabled, a collector records each
+required team once for the export, in `teams`:
+
+- its identifier, `ORG/SLUG`, lowercased;
+- its members as the forge lists them **at collection**, as actor identifiers, with the time they
+  were observed and evidence;
+- `complete: false` when the listing could not be read in full.
+
+Forges expose a team's membership as it is now, not as it was when a review was submitted. A
+member who left between the review and the collection is not counted, and one who joined is: the
+observation time is recorded so that a reader can tell. A listing that could not be read is
+incomplete, never empty.
+
 ## 5. Actor classification
 
 An actor is `human` only when the forge asserts a user account. Apps, installations and accounts
@@ -349,7 +379,7 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | --- | --- | --- | --- |
 | **ACC001** Agent change without independent human | Effective author is an agent, *H* is known, reviews complete, and no qualifying approval exists. | Effective author is not an agent. | *H* unknown, or reviews incomplete. |
 | **ACC002** Approver is author | Any `approved` review, at any point, is by *H*. A stale self-approval still counts: the act, not its current effect, is the finding. | never | *H* unknown; or reviews incomplete with no self-approval seen. |
-| **ACC003** Merged without independent approval | The change is merged, *H* is known, reviews complete, and no qualifying approval exists. | The change is not merged. | *H* unknown, or reviews incomplete. |
+| **ACC003** Merged without independent approval | The change is merged, *H* is known, reviews complete, and fewer qualifying approvals exist than its tier requires (one, without tiers; §6.7). | The change is not merged. | *H* unknown, or reviews incomplete; or an agent approval unknown on a required dimension could make up the difference. |
 | **ACC004** Merged without required checks | The change is merged, check collection is complete, and for some required check neither the head commit nor the merge commit has a passing latest result completed at or before the merge. | The change is not merged, or no check is required. | Check facts were not collected or are incomplete; or, under `from_forge`, the forge's required checks could not all be read and every known required check passed. |
 | **ACC005** Merged with protection bypass | The change is merged and a recorded ruleset evaluation of its merge is `bypass`. | The change is not merged. | Protection facts were not collected or are incomplete; an evaluation of the merge is `fail` although the push landed; or no evaluation of the merge is recorded. |
 | **ACC006** Unknown agent operator | Effective author is an agent and no human operator is recorded. | Effective author is not an agent. | never |
@@ -357,6 +387,7 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | **ACC008** Same-vendor write and review | Effective author is an agent, at least one approval of the current head exists, no human approved it, and every approving agent has the author agent's vendor. | Effective author is not an agent, a human approved the head, or nothing approved it. | The author's or an approving agent's vendor is null. |
 | **ACC009** Agent approval lacks required independence | `agent_review` applies, no human independent approval exists, at least one agent approval carries the required evidence, and every such approval is `dependent` on a required dimension. | `agent_review` is off or out of scope, a human independent approval exists, or no agent approval carries the required evidence. | Some such approval is `unknown` on a required dimension and `dependent` on none. |
 | **ACC010** Agent approval without signed identity (`warning`) | `agent_review` applies and an agent approval of the current head has evidence below `agent_review.minimum_evidence`. | `agent_review` is off or out of scope, or no agent approved the head. | never |
+| **ACC011** Missing required reviewer team | The change is merged, *H* is known, reviews complete, and for some team its tier requires, no member (§4.3) approved the current head before merge independently of *H*. | The change is not merged, or its tier requires no team. | *H* unknown, or reviews incomplete; or a team that did not approve has incomplete membership. |
 
 For ACC004, the required checks are the policy's `checks.required` and, when `checks.from_forge`
 is true (the default), the forge's required checks recorded under §4.1. A required check passes
@@ -432,6 +463,10 @@ facts, or, under `from_forge`, without a complete set of the forge's required ch
 collection incomplete, which takes precedence over a policy verdict (§6.2). ACC005
 (`merged_with_protection_bypass`, disabled by default) does the same for protection facts.
 
+A policy with `tiers` (§6.7) widens incompleteness the same way: a merged change whose tier
+requires a team without a complete membership record (§4.3) makes collection incomplete when
+ACC011 is enabled.
+
 ### 6.5 Independence dimensions
 
 For an agent's approval of the current head, each dimension is `independent`, `dependent` or
@@ -459,6 +494,14 @@ decision date, rationale and optional expiry. Dispositions suppress a finding fr
 decision on a stated date; they never delete it, and the date MUST be supplied explicitly rather
 than read from a clock.
 
+A finding with a retroactive-review obligation (§6.7) is decided by that obligation alone. On the
+evaluation date it is **pending**, and does not count against the threshold, until its due date; it
+is **met**, and does not count, when it carries a `remediated` disposition whose `remediated_at` is
+on or before the due date and the evaluation date, and whose `owner` is a human actor of the export
+other than *H* and the change's author; otherwise, after the due date, it is **overdue** and counts.
+No other disposition discharges it. The owner's independence is checked against the facts, not
+taken on the disposition's word.
+
 ### 6.6 Validation
 
 An evaluator MUST reject input that is not a valid ACP document, and MUST NOT produce findings,
@@ -469,10 +512,52 @@ reporting any one of them is enough, and a consumer compares codes as a set.
 | --- | --- |
 | ACV001 | An `approved` review is later than the change's merge. |
 | ACV002 | Reserved (deployment validation). |
-| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; a check result on a commit that is neither the change's head nor its merge commit; a ruleset evaluation of a push other than the change's merge; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
-| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit, check facts or protection facts on an unmerged change; a review before opening; duplicate change, review or commit identifiers, or duplicate check results or ruleset evaluations; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
+| ACV003 | A reference between facts does not resolve or is not allowed: a malformed team identifier or team member, a risk tier without evidence, a malformed emergency declarer; an actor, operator or attestation that is not in the registry; a check result on a commit that is neither the change's head nor its merge commit; a ruleset evaluation of a push other than the change's merge; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
+| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit, check facts or protection facts on an unmerged change; a review before opening; duplicate change, review or commit identifiers, or duplicate check results, ruleset evaluations or teams; a risk tier whose emergency details disagree with it (present on a non-emergency tier, or absent on an emergency); two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
 | ACV005 to ACV009 | The input is not I-JSON as §8.2 constrains it. |
 | ACV010 | The input does not conform to its schema: an unknown member, a missing required member, a wrong type, or a value outside a closed vocabulary. |
+
+### 6.7 Risk tiers
+
+A policy MAY vary what a change must meet by its risk tier (§3.8):
+
+```yaml
+tiers:
+  low:       { min_human_approvals: 1, agent_review: allowed }
+  standard:  { min_human_approvals: 1 }
+  high:      { min_human_approvals: 2, agent_review: forbidden, required_reviewer_teams: [acme/security] }
+  emergency: { retroactive_review_within_days: 3 }
+missing_tier: standard          # default; never emergency
+minimum_risk_evidence: signed   # default
+```
+
+Without `tiers`, no tier applies to any change and nothing in this section changes a result.
+
+**The applied tier.** A change's applied tier is its assessment's tier, except that an assessment
+that would *lower* what the change must meet (an `emergency`, or a level below `missing_tier`,
+where `low < standard < high`) counts only when its evidence reaches `minimum_risk_evidence`;
+otherwise, and when there is no assessment, the applied tier is `missing_tier`. The manifest records
+every change's applied tier and why: `assessment`, `missing` or `below_minimum` (§7.1). A tier
+that raises the requirements is never refused for its evidence.
+
+**Approvals.** ACC003 requires `max(1, min_human_approvals)` qualifying approvals (§6.1) for the
+applied tier: distinct qualifying human reviewers, plus one when an agent approval qualifies. A
+`min_human_approvals` of `0` never makes an unreviewed change pass; it states what the forge's
+pre-merge rules may allow, as for an emergency, and the change is held to account afterwards.
+
+**Agent review.** A tier's `agent_review` (`allowed` or `forbidden`) replaces
+`agent_review.satisfies_independence` for changes of that tier; the dimensions, evidence minimum
+and label scope still come from `agent_review`.
+
+**Reviewer teams.** ACC011 requires, for each team the applied tier names, an approval of the current
+head before merge by a human member (§4.3), independent of *H*, with evidence at
+`minimum_review_evidence`.
+
+**Emergencies.** An emergency change that merged without the approvals its tier's ACC003 requires
+fails ACC003 like any other, and when the policy's emergency tier sets
+`retroactive_review_within_days`, its finding carries an obligation: a retroactive review due
+that many days after the merge date (UTC). The obligation changes how the finding counts against
+the threshold (§6.4), never whether it exists.
 
 ## 7. Outputs
 
@@ -496,6 +581,10 @@ changed in 0.3, and for that one minor version a 0.3 finding carried `legacy_ids
 the same finding had under 0.2. 0.4 removes `legacy_ids`; a consumer that carries dispositions
 from an earlier manifest to a re-evaluation MAY still match a 0.2 identifier, and the reference
 implementation's `check` does.
+
+Under a policy with tiers (§6.7), `applied_tiers` lists every change's applied tier and its source,
+and a finding with a retroactive-review obligation carries it as `obligation` (`kind`, `due`). Both
+are derived, and re-evaluation reproduces them.
 
 `generated.tool` and `generated.version` name the implementation that wrote a manifest, not its
 result. Re-evaluation excludes them from the comparison, so a manifest written by any conforming
@@ -688,7 +777,11 @@ that validates against a version's schema validates against that version's, neve
 - **0.4 (2026-10-14)** — required checks and protection bypass: the collection of check runs,
   commit statuses and the forge's required checks (§4.1) and of ruleset evaluations of the merge
   (§4.2) for merged changes; rules ACC004 and ACC005 (§6.2); the `checks` policy block (§6.3);
-  and validation of both kinds of fact (§6.6). Both rules are disabled by default; when one is
+  and validation of both kinds of fact (§6.6). Risk tiers: the change-risk assessment as input
+  (§3.8), reviewer teams as observed at collection (§4.3), the `tiers`, `missing_tier` and
+  `minimum_risk_evidence` policy keys with approval counts, per-tier agent review and the
+  emergency's retroactive-review obligation (§6.7, §6.4), and rule ACC011 (§6.2), enabled by
+  default and inert without tiers. `applied_tiers` and finding obligations in the manifest (§7.1). Both rules are disabled by default; when one is
   enabled, its missing or incomplete facts make collection incomplete. ACC005 never passes on an
   empty record. `legacy_ids` is removed (§7.1), as 0.3 scheduled. Re-validation ignores
   `generated.tool` and `generated.version` (§7.1). Predicate type `v0.4` (§7.3). Schemas move to

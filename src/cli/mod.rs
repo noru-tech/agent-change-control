@@ -25,7 +25,7 @@ const LONG_ABOUT: &str = "\
 acc — change control for software written with coding agents.
 
 Records the agent, human operator, reviewers and merger of each pull request, then evaluates
-explicit separation-of-duty rules (ACC001 to ACC010) deterministically and offline.
+explicit separation-of-duty rules (ACC001 to ACC011) deterministically and offline.
 Only `scan`, `export`, `pr` and `doctor --online` contact GitHub (and only the collecting commands
 read the clock, for the default window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
 network or the clock, and `verify` reads only `git`, for the range it gates. No LLM is involved, and agent authorship alone is never a finding.
@@ -176,11 +176,18 @@ pub fn warn_incomplete(
         }
         // Otherwise an enabled opt-in rule's facts are missing or partial for a merged change.
         let mut parts = Vec::new();
-        for rule in [crate::model::RuleId::Acc004, crate::model::RuleId::Acc005] {
+        for rule in [
+            crate::model::RuleId::Acc004,
+            crate::model::RuleId::Acc005,
+            crate::model::RuleId::Acc011,
+        ] {
             let n = events
                 .changes
                 .iter()
-                .filter(|c| policy.is_some_and(|p| crate::manifest::gaps(c, p).contains(&rule)))
+                .filter(|c| {
+                    policy
+                        .is_some_and(|p| crate::manifest::gaps(c, p, &events.teams).contains(&rule))
+                })
                 .count();
             if n > 0 {
                 parts.push(format!(

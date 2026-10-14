@@ -15,7 +15,9 @@
 //! predicates that exist for them (`human-review`, gittuf's reference authorization) carry the
 //! reviewer in the signature, which is exactly what pre-verified input does not expose.
 
-use crate::model::{ActorKind, Attestation, Evidence, EvidenceKind, ReviewState, Signer};
+use crate::model::{
+    ActorKind, Attestation, Evidence, EvidenceKind, ReviewState, Risk, RiskEmergency, Signer, Tier,
+};
 use anyhow::{Context, Result, ensure};
 use base64::Engine;
 use serde_json::Value;
@@ -34,6 +36,11 @@ pub const PROVENANCE_PREDICATE_TYPE: &str =
 /// predicate, with the head commit as the subject. It names the reviewer in the predicate so
 /// that pre-verified input can use it; it upgrades a forge-observed review and never creates one.
 pub const REVIEW_PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/review/v0.1";
+
+/// The predicate type of a change-risk assessment (ACP 0.4 reads its tier): the head commit's
+/// risk tier and, for an emergency, who declared it.
+pub const CHANGE_RISK_PREDICATE_TYPE: &str =
+    "https://noru.tech/spec/ai-change-provenance/change-risk/v0.1";
 
 /// The evidence source name used for every claim read from an attestation.
 pub const SOURCE: &str = "attestation";
@@ -374,6 +381,73 @@ impl Attestations {
     /// The authorship claim for the change whose head is `head`, from every loaded provenance
     /// attestation bound to it. Several attestations must agree; a bound attestation whose
     /// predicate is invalid or names another head is an error, never ignored.
+    /// The risk tier that change-risk assessments state for the change whose head is `head`,
+    /// with the records to register. Several assessments must agree. acc does not re-derive the
+    /// tier: it reads the assessment's conclusion, and the policy decides how much evidence a
+    /// tier that lowers requirements needs.
+    pub fn risk(&self, head: &str) -> Result<Option<(Risk, BTreeMap<String, Attestation>)>> {
+        let mut found: Option<(Tier, Option<RiskEmergency>)> = None;
+        let mut evidence = Vec::new();
+        let mut records = BTreeMap::new();
+        for l in &self.loaded {
+            let p = &l.statement["predicate"];
+            if l.record.predicate_type != CHANGE_RISK_PREDICATE_TYPE
+                || !p["change"]["head"]
+                    .as_str()
+                    .is_some_and(|h| h.eq_ignore_ascii_case(head))
+            {
+                continue;
+            }
+            let what = || format!("attestation {}", l.record.file);
+            let tier: Tier = serde_json::from_value(p["tier"].clone())
+                .with_context(|| format!("{}: unknown risk tier", what()))?;
+            let emergency = match (&p["emergency"], tier) {
+                (Value::Null, Tier::Emergency) => {
+                    anyhow::bail!("{}: an emergency tier without its declarer", what())
+                }
+                (Value::Null, _) => None,
+                (_, Tier::Emergency) => Some(RiskEmergency {
+                    declared_by: p["emergency"]["declared_by"]
+                        .as_str()
+                        .filter(|s| !s.trim().is_empty())
+                        .ok_or_else(|| anyhow::anyhow!("{}: no emergency declarer", what()))?
+                        .to_string(),
+                    declared_at: serde_json::from_value(p["emergency"]["declared_at"].clone())
+                        .with_context(|| format!("{}: invalid emergency time", what()))?,
+                }),
+                _ => anyhow::bail!("{}: emergency details on a non-emergency tier", what()),
+            };
+            match &found {
+                Some(existing) => ensure!(
+                    *existing == (tier, emergency.clone()),
+                    "conflicting change-risk assessments for one head commit"
+                ),
+                None => found = Some((tier, emergency)),
+            }
+            let kind = if l.record.signed && l.record.verified_by.is_some() {
+                EvidenceKind::Signed
+            } else {
+                EvidenceKind::Declared
+            };
+            evidence.push(Evidence {
+                source: SOURCE.into(),
+                r#ref: l.id.clone(),
+                kind,
+            });
+            records.insert(l.id.clone(), l.record.clone());
+        }
+        Ok(found.map(|(tier, emergency)| {
+            (
+                Risk {
+                    tier,
+                    emergency,
+                    provenance: evidence,
+                },
+                records,
+            )
+        }))
+    }
+
     pub fn authorship(&self, head: &str) -> Result<Option<Authorship>> {
         let mut claim: Option<(String, Option<String>)> = None;
         let mut evidence = Vec::new();

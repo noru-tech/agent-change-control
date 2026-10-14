@@ -1,0 +1,269 @@
+{
+  "events": {
+    "actors": {
+      "agent:claude-code": {
+        "display_name": "Claude Code",
+        "kind": "agent",
+        "vendor": "anthropic"
+      },
+      "agent:codex": {
+        "display_name": "Codex",
+        "kind": "agent",
+        "vendor": "openai"
+      },
+      "github:alice": {
+        "display_name": "Alice",
+        "kind": "human",
+        "vendor": null
+      },
+      "github:bob": {
+        "display_name": "Bob",
+        "kind": "human",
+        "vendor": null
+      },
+      "github:carol": {
+        "display_name": "Carol",
+        "kind": "human",
+        "vendor": null
+      },
+      "github:ci": {
+        "display_name": "CI",
+        "kind": "bot",
+        "vendor": null
+      }
+    },
+    "attestations": {
+      "attestation:2b3c4d5e6f7a8b9c": {
+        "file": "attestations/change-risk-2b3c.json#1",
+        "matched": true,
+        "payload_digest": "sha256:2b3c4d5e6f7a8b9c000000000000000000000000000000000000000000000000",
+        "predicate_type": "https://noru.tech/spec/ai-change-provenance/change-risk/v0.1",
+        "signed": false,
+        "signer": null,
+        "verified_by": null
+      }
+    },
+    "changes": [
+      {
+        "agent_operator": null,
+        "author": {
+          "actor_id": "github:alice",
+          "provenance": [
+            {
+              "kind": "observed",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421",
+              "source": "github_api"
+            }
+          ]
+        },
+        "commits": [
+          {
+            "author": {
+              "actor_id": "github:alice",
+              "provenance": [
+                {
+                  "kind": "observed",
+                  "ref": "https://api.github.com/repos/acme/api/pulls/421",
+                  "source": "github_api"
+                }
+              ]
+            },
+            "sha": "head"
+          }
+        ],
+        "forge": "github",
+        "forge_author": {
+          "actor_id": "github:alice",
+          "provenance": [
+            {
+              "kind": "observed",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421",
+              "source": "github_api"
+            }
+          ]
+        },
+        "head_sha": "head",
+        "id": "github:acme/api:pr:421",
+        "labels": [],
+        "merge_commit_sha": "merge",
+        "merged_at": "2026-08-03T12:00:00Z",
+        "merger": {
+          "actor_id": "github:alice",
+          "provenance": [
+            {
+              "kind": "observed",
+              "ref": "https://api.github.com/repos/acme/api/pulls/421",
+              "source": "github_api"
+            }
+          ]
+        },
+        "opened_at": "2026-08-01T12:00:00Z",
+        "provenance": [
+          {
+            "kind": "observed",
+            "ref": "https://api.github.com/repos/acme/api/pulls/421",
+            "source": "github_api"
+          }
+        ],
+        "repository": "acme/api",
+        "reviews": [
+          {
+            "actor_id": "github:bob",
+            "agent": null,
+            "at": "2026-08-02T12:00:00Z",
+            "commit_sha": "head",
+            "id": "1",
+            "provenance": [
+              {
+                "kind": "observed",
+                "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/1",
+                "source": "github_api"
+              }
+            ],
+            "state": "approved"
+          },
+          {
+            "actor_id": "github:carol",
+            "agent": null,
+            "at": "2026-08-02T13:00:00Z",
+            "commit_sha": "head",
+            "id": "2",
+            "provenance": [
+              {
+                "kind": "observed",
+                "ref": "https://api.github.com/repos/acme/api/pulls/421/reviews/2",
+                "source": "github_api"
+              }
+            ],
+            "state": "approved"
+          }
+        ],
+        "reviews_complete": true,
+        "risk": {
+          "provenance": [
+            {
+              "kind": "declared",
+              "ref": "attestation:2b3c4d5e6f7a8b9c",
+              "source": "attestation"
+            }
+          ],
+          "tier": "high"
+        },
+        "title": "Example change",
+        "url": "https://github.com/acme/api/pull/421"
+      }
+    ],
+    "repository": "acme/api",
+    "teams": [
+      {
+        "complete": false,
+        "id": "acme/security",
+        "members": [
+          "github:dave"
+        ],
+        "observed_at": "2026-08-31T00:00:00Z",
+        "provenance": [
+          {
+            "kind": "observed",
+            "ref": "https://api.github.com/orgs/acme/teams/security/members",
+            "source": "github_api"
+          }
+        ]
+      }
+    ],
+    "version": "0.4",
+    "window": {
+      "complete": true,
+      "from": "2026-08-01T00:00:00Z",
+      "reason": null,
+      "to": "2026-08-31T23:59:59Z"
+    }
+  },
+  "policy": {
+    "agent_review": {
+      "labels": [],
+      "minimum_evidence": "signed",
+      "require": [
+        "operator",
+        "provider",
+        "identity"
+      ],
+      "satisfies_independence": false
+    },
+    "checks": {
+      "from_forge": true,
+      "required": []
+    },
+    "fail_on": "medium",
+    "minimum_authorship_evidence": "derived",
+    "minimum_review_evidence": "observed",
+    "minimum_risk_evidence": "signed",
+    "missing_tier": "standard",
+    "rules": {
+      "agent_approval_not_independent": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "agent_approval_recorded": {
+        "enabled": true,
+        "severity": "info"
+      },
+      "agent_approval_unsigned": {
+        "enabled": true,
+        "severity": "warning"
+      },
+      "agent_change_without_independent_human": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "approver_is_author": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "merged_with_protection_bypass": {
+        "enabled": false,
+        "severity": "high"
+      },
+      "merged_without_independent_approval": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "merged_without_required_checks": {
+        "enabled": false,
+        "severity": "high"
+      },
+      "missing_required_reviewer_team": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "same_vendor_write_and_review": {
+        "enabled": true,
+        "severity": "high"
+      },
+      "unknown_agent_operator": {
+        "enabled": true,
+        "severity": "warning"
+      }
+    },
+    "tiers": {
+      "emergency": {
+        "min_human_approvals": 0,
+        "retroactive_review_within_days": 3
+      },
+      "high": {
+        "min_human_approvals": 2,
+        "required_reviewer_teams": [
+          "acme/security"
+        ]
+      },
+      "low": {
+        "agent_review": "allowed",
+        "min_human_approvals": 1
+      },
+      "standard": {
+        "min_human_approvals": 1
+      }
+    },
+    "version": "0.4"
+  }
+}
