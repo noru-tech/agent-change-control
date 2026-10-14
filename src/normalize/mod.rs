@@ -128,7 +128,7 @@ pub fn events(mut e: Events) -> Result<Events> {
     let mut team_ids = BTreeSet::new();
     for team in &mut e.teams {
         ensure!(
-            team.id.split('/').count() == 2
+            team.id.split('/').count() >= 2
                 && team.id.split('/').all(|s| !s.is_empty())
                 && team.id == team.id.to_ascii_lowercase(),
             "ACV003 malformed team ID"

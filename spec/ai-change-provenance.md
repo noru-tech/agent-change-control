@@ -274,7 +274,12 @@ Collectors MUST:
    during collection MUST mark the affected scope incomplete. An empty review list for a change
    whose reviews were not retrieved is a lie; `reviews_complete: false` is the truth.
 3. **Bind reviews to commits.** A review that does not carry the commit it applied to cannot
-   qualify as an approval of the head.
+   qualify as an approval of the head. Where the forge records when an approval was given but
+   not which commit it was given against, a collector MAY bind it to the head the forge recorded
+   as current at that time, as `derived` evidence that names the record it came from. When
+   that record cannot settle the question (no head recorded before the approval, or a new head
+   recorded close enough to the approval that either could be the one approved) the approval is
+   not recorded, and the review history is incomplete (§4.4).
 4. **Use read-only access** against a fixed origin. Collection MUST NOT execute repository
    contents.
 
@@ -321,7 +326,7 @@ bypassed. A collector that was not asked omits `protection`.
 When a policy's tiers require reviewer teams (§6.7) and ACC011 is enabled, a collector records each
 required team once for the export, in `teams`:
 
-- its identifier, `ORG/SLUG`, lowercased;
+- its identifier, lowercased: `ORG/SLUG` on GitHub, the group's full path on GitLab;
 - its members as the forge lists them **at collection**, as actor identifiers, with the time they
   were observed and evidence;
 - `complete: false` when the listing could not be read in full.
@@ -330,6 +335,37 @@ Forges expose a team's membership as it is now, not as it was when a review was 
 member who left between the review and the collection is not counted, and one who joined is: the
 observation time is recorded so that a reader can tell. A listing that could not be read is
 incomplete, never empty.
+
+### 4.4 GitLab
+
+How a GitLab collector meets §4 to §4.3, where GitLab's records differ from GitHub's:
+
+- **Identity.** Actors are `gitlab:username`, lowercased. The repository is the project's full
+  path (`GROUP/…/PROJECT`), and a change is `gitlab:PATH:mr:IID`. The account GitLab assigns a
+  deleted user's contributions to (`ghost`) is `unknown:unavailable`. An account is `human` only
+  when GitLab's user record says it is not a bot; when the record cannot be read, the actor is
+  `unknown`. Commit authors are names and emails without accounts, so none is recorded (rule 1).
+- **Approvals.** GitLab lists the approvals in force on a merge request with the time each was
+  given, and no commit. Each is bound (rule 3) to the head of the latest diff version GitLab
+  created at or before the approval. Because GitLab creates a version shortly after a push, a
+  version created within one second of the approval, before or after it, leaves the binding
+  ambiguous. A withdrawn approval is no longer listed, so it cannot be recorded, and never needs
+  to be: it would not qualify. Without the approval time (GitLab Community Edition omits it),
+  nothing binds and the history is incomplete.
+- **Merge commit.** The merge commit, or for a squashed fast-forward the squash commit. A plain
+  fast-forward reports neither, and the merge commit is then unknown.
+- **Checks (§4.1).** GitLab has no named required checks. When the project's merge settings
+  require pipelines to succeed, the required check is `pipeline` (source `project_settings`).
+  Every finished pipeline on the head or merge commit is recorded as a result named `pipeline`
+  (kind `pipeline`), and every finished job as a result under the job's name (kind `job`). A job
+  allowed to fail that failed is `neutral`; a job or pipeline that has not finished, including a
+  manual job never started, has no result. A merged-results pipeline runs on a commit that is
+  neither, and is not recorded.
+- **Bypass (§4.2).** GitLab does not record an evaluation of each push against the target
+  branch's protection on every tier, so `protection` is recorded with `complete: false`.
+- **Reviewer teams (§4.3).** A team is a group, and its members are the group's direct members.
+  Members inherited from an ancestor group are not counted: they would make the parent group the
+  team.
 
 ## 5. Actor classification
 
@@ -787,7 +823,11 @@ that validates against a version's schema validates against that version's, neve
   `generated.tool` and `generated.version` (§7.1). Predicate type `v0.4` (§7.3). Schemas move to
   version-pinned identifiers, and §12 names the members a consumer can rely on across versions.
   Every document written under 0.3 stays valid input and validates as 0.3; 0.3 manifests and
-  Statements are not rewritten.
+  Statements are not rewritten. GitLab: the `gitlab` forge, approvals bound to a commit from the
+  forge's head history as derived evidence (§4 rule 3), and how a GitLab collector records
+  identity, approvals, checks (`pipeline` and `job` results, the `project_settings` source),
+  bypass and reviewer teams (§4.4); team identifiers may be a group path of more than two
+  segments.
 
 - **0.3, revision 3 (2026-09-29)** — §9 no longer names a single suite revision for this
   version: revision 1 was published at `v0.5.0`, and later revisions (revision 2 adds vectors

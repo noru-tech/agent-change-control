@@ -312,6 +312,8 @@
           "type": "string",
           "enum": [
             "check_run",
+            "job",
+            "pipeline",
             "status"
           ]
         },
@@ -384,6 +386,7 @@
             "type": "string",
             "enum": [
               "branch_protection",
+              "project_settings",
               "rules"
             ]
           }
@@ -506,7 +509,8 @@
         "forge": {
           "type": "string",
           "enum": [
-            "github"
+            "github",
+            "gitlab"
           ]
         },
         "title": {
@@ -818,7 +822,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^[a-z0-9_.-]+/[a-z0-9_.-]+$"
+          "pattern": "^[a-z0-9_.-]+(/[a-z0-9_.-]+)+$"
         },
         "members": {
           "type": "array",

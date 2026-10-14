@@ -36,6 +36,7 @@ Try it offline: `acc evaluate tests/fixtures/claude-operator-self-approved/event
 - [Rules and validation codes](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/rules/README.md): index of one page per rule (ACC) and validation code (ACV), each with controls, examples, fix and disposition
 - [Exit codes](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/exit-codes.md): the eight stable process exit codes and what to do about each
 - [GitHub Action](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/github-action.md): inputs, outputs, blocking or advisory mode, attesting the verdict
+- [GitLab](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/gitlab.md): the CI/CD component, `acc scan gitlab`, and how GitLab's approvals, pipelines and groups are read
 - [Control mapping](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/control-mapping.md): where the evidence lands in SOC 2 CC8.1, ISO/IEC 27001 A.8.32, PCI DSS, NIST SP 800-53 and others
 - [Known limitations](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/KNOWN-LIMITATIONS.md): what acc does not do and cannot know
 - [Policy and dispositions](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/policy.md): policy file, severities, agent reviewers, recording exceptions

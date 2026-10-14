@@ -169,8 +169,9 @@ checks.
 The manifest schema pins `generated.version` to the crate version for current (`0.3`) manifests.
 Bump both together (the `0.2` branch of that schema stays at `0.4.0`, the release that wrote
 them), and bump the
-`version` input default in `action.yml` to the same release so the action installs the binary it was
-published with. `.github/workflows/change-control.yml` and `.github/workflows/attest.yml` pin `version` to the
+`version` input defaults in `action.yml` and `templates/acc.yml` to the same release so the action
+and the GitLab component install the binary they were published with (`tests/metadata.rs` checks
+the component and its documented `include: remote:` pins). `.github/workflows/change-control.yml` and `.github/workflows/attest.yml` pin `version` to the
 last *published* release instead, because the release pull request runs before its tag exists;
 bump those pins (and `attest.yml`'s `predicate-type`, which must match what the pinned release
 emits) in a follow-up once the release is out.

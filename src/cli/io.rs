@@ -322,6 +322,15 @@ pub fn token_source() -> Option<(&'static str, String)> {
     })
 }
 
+/// The GitLab token from the environment, `GITLAB_TOKEN`, with the variable's name. Only the
+/// name may be printed.
+pub fn gitlab_token_source() -> Option<(&'static str, String)> {
+    std::env::var("GITLAB_TOKEN")
+        .ok()
+        .filter(|t| !t.is_empty())
+        .map(|t| ("GITLAB_TOKEN", t))
+}
+
 /// Write to `path` (creating parent directories) or to stdout.
 pub fn write(data: &str, path: Option<&Path>) -> Result<()> {
     if let Some(path) = path {

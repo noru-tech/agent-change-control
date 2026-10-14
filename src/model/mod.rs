@@ -73,11 +73,12 @@ pub enum ReviewState {
     Dismissed,
 }
 
-/// Source forges. Phase 1 collects from GitHub only.
+/// Source forges.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Forge {
     Github,
+    Gitlab,
 }
 
 /// Finding severity. Variants are declared from least to most severe so the derived ordering is
@@ -424,12 +425,15 @@ pub struct Protection {
     pub provenance: Vec<Evidence>,
 }
 
-/// Whether a result is a check run or a commit status. A required check is matched by name
-/// against both, as the forge does.
+/// What kind of result a check is: a GitHub check run or commit status, or a GitLab pipeline
+/// or one of its jobs. A required check is matched by name against all of them, as the forge
+/// does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CheckKind {
     CheckRun,
+    Job,
+    Pipeline,
     Status,
 }
 
@@ -465,6 +469,8 @@ impl Conclusion {
 pub enum RequiredSource {
     /// Classic branch protection.
     BranchProtection,
+    /// GitLab's project merge settings: "Pipelines must succeed" requires the `pipeline` check.
+    ProjectSettings,
     /// Rulesets, repository and organization, in active enforcement.
     Rules,
 }

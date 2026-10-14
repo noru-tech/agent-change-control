@@ -1,0 +1,168 @@
+# GitLab CI/CD component: install a checksum-verified `acc` release and evaluate the current
+# merge request on GitLab.com.
+#
+#   include:
+#     - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.6.0/templates/acc.yml
+#       inputs:
+#         fail_on_findings: true
+#
+# It reads a masked CI/CD variable GITLAB_TOKEN holding a project access token with `read_api`
+# (Reporter role): CI_JOB_TOKEN cannot read a merge request's approvals or diff versions. Without
+# it, only a public project can be read. The evaluation is the same offline, deterministic check
+# the CLI and the GitHub Action perform. See docs/gitlab.md.
+spec:
+  inputs:
+    stage:
+      default: test
+      description: The stage the job runs in.
+    version:
+      default: "0.6.0"
+      description: >-
+        The acc release to install (a tag without the leading v). Bumped with each release of
+        this repository; pin it explicitly for byte-stable output across runs.
+    image:
+      default: alpine:3.20
+      description: The job image; it needs sh and apk, or curl, git and xz already installed.
+    policy:
+      default: ""
+      description: Path to a policy file. Defaults to .agent-change-control/policy.yml when present.
+    policy_ref:
+      default: $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      description: >-
+        Read the policy file as it stands at this revision, so a merge request that edits the
+        policy is evaluated under the one it would replace. Defaults to the merge request's base.
+        Empty reads the policy from the working tree.
+    agent_accounts:
+      default: ""
+      description: Accounts verified as agents, space-separated USERNAME=AGENT.
+    agent_vendors:
+      default: ""
+      description: Additional agent vendors, space-separated AGENT=VENDOR.
+    attestations:
+      default: ""
+      description: >-
+        Attestation files or directories in the checkout, space-separated. acc does not verify
+        signatures; verify them in an earlier job and say so in verified_by.
+    verified_by:
+      default: ""
+      description: Who verified the attestations' signatures, recorded verbatim in the manifest.
+    ignore_trailers:
+      type: boolean
+      default: false
+      description: Do not read Co-Authored-By trailers; only declarations and mappings count.
+    format:
+      default: sarif
+      description: Output format written to `output` (sarif, json, yaml, table, in-toto, in-toto-jsonl).
+    output:
+      default: acc-results.sarif
+      description: Path of the rendered output file, kept as a job artifact.
+    fail_on_findings:
+      type: boolean
+      default: true
+      description: >-
+        Fail the job when the policy threshold is exceeded (exit 1) or collection is incomplete
+        (exit 4). False runs in advisory mode; the job log still shows the result.
+    max_pages:
+      default: "100"
+      description: Maximum pages per list endpoint (100 items each).
+---
+agent-change-control:
+  stage: $[[ inputs.stage ]]
+  image: $[[ inputs.image ]]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    ACC_VERSION: $[[ inputs.version ]]
+    ACC_POLICY: $[[ inputs.policy ]]
+    ACC_POLICY_REF: $[[ inputs.policy_ref ]]
+    ACC_AGENT_ACCOUNTS: $[[ inputs.agent_accounts ]]
+    ACC_AGENT_VENDORS: $[[ inputs.agent_vendors ]]
+    ACC_ATTESTATIONS: $[[ inputs.attestations ]]
+    ACC_VERIFIED_BY: $[[ inputs.verified_by ]]
+    ACC_IGNORE_TRAILERS: $[[ inputs.ignore_trailers ]]
+    ACC_FORMAT: $[[ inputs.format ]]
+    ACC_OUTPUT: $[[ inputs.output ]]
+    ACC_FAIL: $[[ inputs.fail_on_findings ]]
+    ACC_MAX_PAGES: $[[ inputs.max_pages ]]
+  before_script:
+    - if command -v apk >/dev/null; then apk add --no-cache curl git xz >/dev/null; fi
+    - |
+      set -eu
+      case "$(uname -m)" in
+        x86_64) target=x86_64-unknown-linux-musl ;;
+        aarch64) target=aarch64-unknown-linux-musl ;;
+        *) echo "unsupported architecture $(uname -m); acc ships x86_64 and aarch64 Linux binaries" >&2; exit 1 ;;
+      esac
+      archive="agent-change-control-${target}.tar.xz"
+      base="https://github.com/noru-tech/agent-change-control/releases/download/v${ACC_VERSION}"
+      curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "$archive" "${base}/${archive}"
+      curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "${archive}.sha256" "${base}/${archive}.sha256"
+      sha256sum -c "${archive}.sha256"
+      tar -xJf "$archive"
+      mv "agent-change-control-${target}/acc" /usr/local/bin/acc
+      acc --version
+  script:
+    - |
+      # acc's exit code is the verdict, so it is captured, not fatal.
+      set +e
+      set -u
+      manifest="acc-manifest.json"
+      set -- pr "$CI_MERGE_REQUEST_IID" --forge gitlab --repo "$CI_PROJECT_PATH" --max-pages "$ACC_MAX_PAGES" --format json --output "$manifest"
+      policy_path="${ACC_POLICY:-.agent-change-control/policy.yml}"
+      policy_path="${policy_path#./}"
+      if [ -n "$ACC_POLICY_REF" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+        # The policy decides which requirements apply, so a merge request must not choose its own:
+        # read it from the base revision, fetching that commit when the clone lacks it.
+        if ! git cat-file -e "${ACC_POLICY_REF}^{commit}" 2>/dev/null; then
+          git fetch --no-tags --depth=1 origin "$ACC_POLICY_REF" >/dev/null 2>&1
+        fi
+        if ! git cat-file -e "${ACC_POLICY_REF}^{commit}" 2>/dev/null; then
+          echo "cannot read the policy at $ACC_POLICY_REF: the commit is not in the clone" >&2
+          exit 1
+        fi
+        if git cat-file -e "${ACC_POLICY_REF}:${policy_path}" 2>/dev/null; then
+          git show "${ACC_POLICY_REF}:${policy_path}" > acc-policy-at-base.yml
+          set -- "$@" --policy acc-policy-at-base.yml
+        elif [ -e "$policy_path" ]; then
+          # No policy at the base, but the merge request adds one: the built-in defaults, as a
+          # policy every acc release accepts, so the added file does not apply to itself.
+          printf 'version: "0.1"\nrules: {}\n' > acc-policy-at-base.yml
+          set -- "$@" --policy acc-policy-at-base.yml
+        fi
+      elif [ -n "$ACC_POLICY" ]; then
+        set -- "$@" --policy "$ACC_POLICY"
+      fi
+      for mapping in $ACC_AGENT_ACCOUNTS; do set -- "$@" --agent-account "$mapping"; done
+      for mapping in $ACC_AGENT_VENDORS; do set -- "$@" --agent-vendor "$mapping"; done
+      for attestation in $ACC_ATTESTATIONS; do set -- "$@" --attestations "$attestation"; done
+      if [ -n "$ACC_VERIFIED_BY" ]; then set -- "$@" --verified-by "$ACC_VERIFIED_BY"; fi
+      if [ "$ACC_IGNORE_TRAILERS" = "true" ]; then set -- "$@" --ignore-trailers; fi
+      acc "$@"
+      code=$?
+      case "$code" in
+        0|1|4) ;;
+        *) echo "acc failed with exit code $code" >&2; exit "$code" ;;
+      esac
+      # Rendering is offline: the manifest already holds the facts and the verdict.
+      acc -q check "$manifest" --format "$ACC_FORMAT" --output "$ACC_OUTPUT"
+      rendered=$?
+      case "$rendered" in
+        0|1|4) ;;
+        *) echo "rendering $ACC_FORMAT failed with exit code $rendered" >&2; exit "$rendered" ;;
+      esac
+      acc -q check "$manifest" --format table || true
+      case "$code" in
+        0) echo "Result: pass — policy threshold not exceeded." ;;
+        1) echo "Result: policy threshold exceeded (exit 1). See $ACC_OUTPUT." ;;
+        4) echo "Result: collection incomplete (exit 4) — a clean result cannot be claimed." ;;
+      esac
+      if [ "$code" -ne 0 ] && [ "$ACC_FAIL" = "true" ]; then exit "$code"; fi
+      exit 0
+  artifacts:
+    when: always
+    # The manifest names the reviewers and operators of the merge request; keep it as long as the
+    # job log and no longer.
+    expire_in: 30 days
+    paths:
+      - acc-manifest.json
+      - $[[ inputs.output ]]

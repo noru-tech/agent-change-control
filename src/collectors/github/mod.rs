@@ -5,8 +5,7 @@
 
 use crate::model::*;
 use crate::normalize::timestamp;
-use crate::provenance::agent_trace::AgentTraces;
-use crate::provenance::attestations::{self, Attestations};
+use crate::provenance::attestations;
 use crate::{Exit, Failure, failure};
 use anyhow::{Result, ensure};
 use serde_json::Value;
@@ -20,28 +19,7 @@ const USER_AGENT: &str = concat!("agent-change-control/", env!("CARGO_PKG_VERSIO
 /// The actor recorded when GitHub returns no account for a role (a deleted user, for example).
 pub const UNAVAILABLE_ACTOR: &str = "unknown:unavailable";
 
-/// The caller-supplied evidence sources for a collection.
-#[derive(Debug, Clone, Copy)]
-pub struct Sources<'a> {
-    /// Verified agent accounts, `login -> agent`.
-    pub known: &'a BTreeMap<String, String>,
-    /// The vendor trailer registry, or `None` to ignore commit trailers.
-    pub trailers: Option<&'a BTreeMap<String, String>>,
-    /// Agent Trace records to bind to commits, if any.
-    pub traces: Option<&'a AgentTraces>,
-    /// Attestations to bind to head commits, if any.
-    pub attestations: Option<&'a Attestations>,
-    /// The vendor registry, `agent -> vendor`.
-    pub vendors: &'a BTreeMap<String, String>,
-    /// Collect check runs, commit statuses and required checks for merged changes (ACC004).
-    pub checks: bool,
-    /// Collect ruleset evaluations of merged changes (ACC005), as of this instant: the forge
-    /// lists them only for the past month, so an older merge is recorded as out of reach.
-    pub bypass_as_of: Option<Timestamp>,
-    /// Reviewer teams to record (`ORG/SLUG`, ACC011), and the instant their membership is
-    /// observed: the forge exposes current membership only.
-    pub teams: Option<(&'a [String], Timestamp)>,
-}
+pub use super::Sources;
 
 /// The core rate limit, from `GET /rate_limit`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

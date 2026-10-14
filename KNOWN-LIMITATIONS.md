@@ -40,7 +40,13 @@ document that describes it in detail. Planned work is on the [roadmap](ROADMAP.m
 
 ## Collection
 
-- **GitHub only.** A GitLab collector is planned; other forges are not supported.
+- **GitHub.com and GitLab.com only.** Self-managed GitLab and other forges are not collected.
+- **A GitLab approval's commit is derived, not recorded.** GitLab does not say which commit an
+  approval was for; `acc` binds it to the head GitLab recorded as current when it was given, and
+  records an approval within a second of a push as unbound (incomplete). GitLab Community Edition
+  omits approval times, so nothing binds there. See [docs/gitlab.md](docs/gitlab.md).
+- **ACC005 is always unknown on GitLab**, which does not record an evaluation of each push against
+  branch protection on every tier.
 - **A best-effort snapshot, not an atomic archive.** GitHub data is mutable and read in several
   requests. Identity changes, deleted users and edited declarations cannot be reconstructed
   reliably from current REST data. A review or merge whose account no longer exists is recorded

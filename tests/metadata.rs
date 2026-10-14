@@ -179,3 +179,37 @@ fn documented_action_pins_name_the_crate_version() {
         "expected pins in the README and llms.txt, saw {seen}"
     );
 }
+
+/// The GitLab component installs the release it ships with, and the documented `include:
+/// remote:` pins name that release, as the Action's do.
+#[test]
+fn the_gitlab_component_names_the_crate_version() {
+    let version = field(&read("Cargo.toml"), "version", " = ");
+    let template = read("templates/acc.yml");
+    let default = template
+        .split("    version:\n")
+        .nth(1)
+        .and_then(|rest| rest.lines().next())
+        .and_then(|line| line.trim().strip_prefix("default: "))
+        .expect("a version input with a default")
+        .trim_matches('"')
+        .to_string();
+    assert_eq!(default, version, "templates/acc.yml installs {default}");
+    let prefix = "noru-tech/agent-change-control/v";
+    let mut seen = 0;
+    for file in ["templates/acc.yml", "docs/gitlab.md", "README.md"] {
+        let text = read(file);
+        for (i, _) in text.match_indices(prefix) {
+            let pin: String = text[i + prefix.len()..]
+                .chars()
+                .take_while(|c| c.is_ascii_digit() || *c == '.')
+                .collect();
+            seen += 1;
+            assert_eq!(pin, version, "{file} includes the component from v{pin}");
+        }
+    }
+    assert!(
+        seen >= 3,
+        "expected include pins in the template and docs, saw {seen}"
+    );
+}

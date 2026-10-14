@@ -4,7 +4,7 @@
 .SH NAME
 acc\-scan \- Collect facts from a forge and write an evaluated manifest
 .SH SYNOPSIS
-\fBacc scan\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-until\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-\-checks\fR] [\fB\-\-bypass\fR] [\fB\-\-team\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] [\fIsubcommands\fR]
+\fBacc scan\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-since\fR] [\fB\-\-until\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-\-checks\fR] [\fB\-\-bypass\fR] [\fB\-\-team\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] [\fIsubcommands\fR]
 .SH DESCRIPTION
 Collect facts from a forge and write an evaluated manifest
 .SH OPTIONS
@@ -12,14 +12,14 @@ Collect facts from a forge and write an evaluated manifest
 \fB\-q\fR, \fB\-\-quiet\fR
 Suppress status lines on stderr
 .TP
-\fB\-\-since\fR \fI<DATE>\fR
-Start of the merge window, inclusive: YYYY\-MM\-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before \-\-until
-.TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
 .TP
 \fB\-\-no\-color\fR
 Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-\-since\fR \fI<DATE>\fR
+Start of the merge window, inclusive: YYYY\-MM\-DD (start of that UTC day) or RFC 3339. Defaults to 30 days before \-\-until
 .TP
 \fB\-\-until\fR \fI<DATE>\fR
 End of the merge window, inclusive: YYYY\-MM\-DD (end of that UTC day) or RFC 3339. Defaults to now. A defaulted window is printed and recorded like an explicit one
@@ -55,13 +55,13 @@ Treat AGENT as built and operated by VENDOR (repeatable; extends the built\-in r
 Maximum pages per list endpoint (100 items each)
 .TP
 \fB\-\-checks\fR
-Also collect check runs, commit statuses and the target branch\*(Aqs required checks for merged changes (ACC004). Implied when the policy enables ACC004
+Also collect check runs, commit statuses (GitLab: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004
 .TP
 \fB\-\-bypass\fR
-Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. Implied when the policy enables ACC005
+Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005
 .TP
 \fB\-\-team\fR \fI<ORG/SLUG>\fR
-Also record this reviewer team\*(Aqs members (ORG/SLUG, repeatable; ACC011). The token needs organization members read access. Implied for the teams the policy\*(Aqs tiers require
+Also record this reviewer team\*(Aqs members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy\*(Aqs tiers require
 .TP
 \fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
 Output format; inferred from the \-\-output extension when omitted
@@ -94,10 +94,13 @@ Print help (see a summary with \*(Aq\-h\*(Aq)
 Print version
 .TP
 [\fIREPOSITORY\fR]
-Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory
+Repository as OWNER/REPO (GitHub) or GROUP/…/PROJECT (GitLab); defaults to GITHUB_REPOSITORY or CI_PROJECT_PATH, else the origin remote of the working directory
 .SH SUBCOMMANDS
 .TP
 acc\-scan\-github(1)
 A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
+.TP
+acc\-scan\-gitlab(1)
+A GitLab.com project. Reads GITLAB_TOKEN (read_api scope); public projects need none
 .SH VERSION
 v0.6.0

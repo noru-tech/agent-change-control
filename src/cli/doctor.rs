@@ -1,14 +1,16 @@
 //! `acc doctor [--online] [--format text|json]`: is this environment ready to collect?
 //!
 //! Offline it reports the version, whether a token is set (never the token), whether the
-//! default policy file parses, and which repository `scan` would collect. `--online` adds
-//! GET-only checks against `api.github.com`: the token and the rate limit (`GET /rate_limit`)
-//! and whether a newer acc has been released (`GET /repos/noru-tech/agent-change-control/
-//! releases/latest`). That is acc's only update check, and it runs only when asked.
+//! default policy file parses, and which repository `scan` would collect, for the forge `scan`
+//! would collect from. `--online` adds GET-only checks against `api.github.com`: the GitHub
+//! token and the rate limit (`GET /rate_limit`) and whether a newer acc has been released
+//! (`GET /repos/noru-tech/agent-change-control/releases/latest`). That is acc's only update
+//! check, and it runs only when asked.
 //!
 //! Exit 0 when nothing is broken (warnings allowed), 2 when a check failed.
 
 use super::Ctx;
+use super::forge::Kind;
 use super::io::{self, DEFAULT_POLICY, ResultFormat};
 use super::{detect, forge};
 use crate::{Exit, Failure};
@@ -90,7 +92,18 @@ pub struct Report {
     pub checks: Vec<Check>,
 }
 
-fn token_check() -> Check {
+fn token_check(kind: Kind) -> Check {
+    if kind == Kind::Gitlab {
+        return match io::gitlab_token_source() {
+            Some((name, _)) => Check::new("token", Status::Ok, format!("{name} is set")),
+            None => Check::new(
+                "token",
+                Status::Warn,
+                "GITLAB_TOKEN is not set: public projects only",
+            )
+            .hint("set GITLAB_TOKEN to a personal, project or group access token with the read_api scope"),
+        };
+    }
     match io::token_source() {
         Some((name, _)) => Check::new("token", Status::Ok, format!("{name} is set")),
         None => Check::new(
@@ -124,7 +137,22 @@ fn policy_check() -> Check {
     }
 }
 
-fn repository_check() -> Check {
+fn repository_check(kind: Kind) -> Check {
+    if kind == Kind::Gitlab {
+        return match detect::gitlab_project() {
+            Some((project, source)) => Check::new(
+                "repository",
+                Status::Ok,
+                format!("{project} on GitLab (from {})", source.describe()),
+            ),
+            None => Check::new(
+                "repository",
+                Status::Warn,
+                "none detected: scan and export need GROUP/PROJECT",
+            )
+            .hint(detect::NO_PROJECT),
+        };
+    }
     match detect::repository() {
         Some((repo, source)) => match crate::collectors::github::validate_repo(&repo) {
             Ok(()) => Check::new(
@@ -218,11 +246,12 @@ fn online_checks(checks: &mut Vec<Check>) {
 
 /// Run every check.
 pub fn report(online: bool) -> Report {
+    let kind = detect::forge();
     let mut checks = vec![
         Check::new("version", Status::Ok, format!("acc {}", crate::version())),
-        token_check(),
+        token_check(kind),
         policy_check(),
-        repository_check(),
+        repository_check(kind),
     ];
     if online {
         online_checks(&mut checks);

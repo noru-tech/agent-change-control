@@ -1,8 +1,9 @@
-//! `acc pr NUMBER --repo OWNER/REPO`
+//! `acc pr NUMBER --repo OWNER/REPO` (or `--forge gitlab --repo GROUP/PROJECT`)
 
+use super::forge::Kind;
 use super::io::{self, EvidenceArgs, OutputArgs};
 use super::{Ctx, detect, forge};
-use crate::collectors::github::{Sources, validate_repo};
+use crate::collectors::Sources;
 use crate::output::Format;
 use crate::{Exit, failure_with_hint, manifest};
 use anyhow::Result;
@@ -11,12 +12,16 @@ use std::path::PathBuf;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    /// Pull request number.
+    /// Pull request number (a merge request's IID on GitLab).
     pub number: u64,
-    /// Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin
-    /// remote of the working directory.
-    #[arg(long, env = "GITHUB_REPOSITORY", value_name = "OWNER/REPO")]
+    /// Repository as OWNER/REPO (GitHub) or GROUP/…/PROJECT (GitLab); defaults to
+    /// GITHUB_REPOSITORY or CI_PROJECT_PATH, else the origin remote of the working directory.
+    #[arg(long, value_name = "OWNER/REPO")]
     pub repo: Option<String>,
+    /// The forge; defaults to the one GitHub Actions or GitLab CI reports, else the origin
+    /// remote's, else GitHub.
+    #[arg(long, value_enum)]
+    pub forge: Option<Kind>,
     /// Policy file (defaults to .agent-change-control/policy.yml when present).
     #[arg(long, value_name = "FILE")]
     pub policy: Option<PathBuf>,
@@ -33,22 +38,32 @@ pub struct Args {
 }
 
 pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
+    let kind = args.forge.unwrap_or_else(detect::forge);
+    let detected = match kind {
+        Kind::Github => detect::repository(),
+        Kind::Gitlab => detect::gitlab_project(),
+    };
     let repo = match args.repo {
         Some(repo) => repo,
-        None => detect::repository()
+        None => detected
             .map(|(repo, source)| {
                 ctx.note(format!("repository: {repo} (from {})", source.describe()));
                 repo
             })
-            .ok_or_else(|| {
-                failure_with_hint(
+            .ok_or_else(|| match kind {
+                Kind::Github => failure_with_hint(
                     Exit::Usage,
                     "pr requires --repo OWNER/REPO or GITHUB_REPOSITORY",
                     "pass --repo OWNER/REPO, set GITHUB_REPOSITORY (GitHub Actions sets it for you), or run inside a clone whose origin remote is on github.com",
-                )
+                ),
+                Kind::Gitlab => failure_with_hint(
+                    Exit::Usage,
+                    "pr requires --repo GROUP/PROJECT or CI_PROJECT_PATH",
+                    detect::NO_PROJECT,
+                ),
             })?,
     };
-    validate_repo(&repo)?;
+    let repo = detect::resolve_repository(kind, Some(&repo), |_| {})?;
     let from = DateTime::<Utc>::UNIX_EPOCH;
     let to = Utc
         .with_ymd_and_hms(9999, 12, 31, 23, 59, 59)
@@ -65,9 +80,9 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     ));
     let policy = io::load_policy(args.policy.as_deref())?;
     let teams = manifest::teams_required_by(&policy);
-    ctx.debug(format!("collecting {repo} pull request {}", args.number));
-    forge::debug_auth(ctx);
-    let events = forge::client(args.max_pages)?.collect(
+    ctx.debug(format!("collecting {repo} change {}", args.number));
+    forge::debug_auth(ctx, kind);
+    let events = forge::Client::new(kind, args.max_pages)?.collect(
         &repo,
         from,
         to,
