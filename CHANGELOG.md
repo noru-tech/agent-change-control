@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **`acc verify`**, a deploy gate. Given `--range BASE..HEAD`, it reads the first-parent commits
+  from the local clone and requires each to be the merge commit of a change that a signed acc
+  attestation shows passing, judged as `acc check` judges a manifest (`--policy`, `--as-of`).
+  Signatures are still verified by the caller: `--verification` takes `gh attestation verify
+  --format json` output and requires its certificate identity to be one `--signer` names (and
+  `--issuer`, when given); `--attestations` with `--verified-by` takes signed bundles verified
+  elsewhere and refuses unsigned ones. Every Statement is re-validated as `acc validate` does.
+  Exit 0 covered, 1 uncovered or failing, 4 incomplete; a shallow clone is refused.
+  `docs/verify.md` and `examples/deploy-gate.yml` show a GitHub deploy job.
 - **AI Change Provenance 0.4**: required checks. For merged changes, `acc` can collect completed
   check runs and commit statuses on the head and merge commit, and the checks the repository's
   rules require on the target branch (rulesets, and classic branch protection where the token

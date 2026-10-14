@@ -252,6 +252,97 @@ pub fn check(
     p: Option<Policy>,
     as_of: Option<NaiveDate>,
 ) -> Result<(Manifest, Exit)> {
+    let (checked, failing) = reevaluate(m, p, as_of)?;
+    let exit = if incomplete(&checked.events, &checked.policy) {
+        Exit::Incomplete
+    } else if failing.iter().any(|&f| f) {
+        Exit::PolicyFailed
+    } else {
+        Exit::Ok
+    };
+    Ok((checked, exit))
+}
+
+/// One change's verdict under a policy: what a deploy gate needs to know about it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChangeVerdict {
+    pub change_id: String,
+    /// The commit the change landed on the target branch, when it is merged and the forge
+    /// reported it.
+    pub merge_commit_sha: Option<String>,
+    pub verdict: Verdict,
+    /// The identifiers of the findings that fail the policy for this change.
+    pub failing: Vec<String>,
+}
+
+/// Whether a change passes the policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Verdict {
+    /// Complete facts and no unsuppressed finding at or above `fail_on`.
+    Pass,
+    /// Its review history, or the facts an enabled opt-in rule needs, are incomplete, and no
+    /// finding fails it outright.
+    Incomplete,
+    /// At least one unsuppressed finding at or above `fail_on`.
+    Fail,
+}
+
+impl Verdict {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Verdict::Pass => "pass",
+            Verdict::Incomplete => "incomplete",
+            Verdict::Fail => "fail",
+        }
+    }
+}
+
+/// Every change's verdict, exactly as [`check`] decides the manifest's: the same re-evaluation,
+/// dispositions and `as_of` rule, applied one change at a time. A failing finding decides a change
+/// even when its facts are incomplete; otherwise incomplete facts never pass. The window's own
+/// completeness is about which changes were listed, not about any one of them, so it is not part
+/// of a change's verdict.
+pub fn verdicts(
+    m: &Manifest,
+    p: Option<Policy>,
+    as_of: Option<NaiveDate>,
+) -> Result<Vec<ChangeVerdict>> {
+    let (checked, failing) = reevaluate(m, p, as_of)?;
+    Ok(checked
+        .events
+        .changes
+        .iter()
+        .map(|c| {
+            let failing: Vec<String> = checked
+                .findings
+                .iter()
+                .zip(&failing)
+                .filter(|(f, fails)| **fails && f.change_id == c.id)
+                .map(|(f, _)| f.id.clone())
+                .collect();
+            let verdict = if !failing.is_empty() {
+                Verdict::Fail
+            } else if !c.reviews_complete || !gaps(c, &checked.policy).is_empty() {
+                Verdict::Incomplete
+            } else {
+                Verdict::Pass
+            };
+            ChangeVerdict {
+                change_id: c.id.clone(),
+                merge_commit_sha: c.merged_at.and(c.merge_commit_sha.clone()),
+                verdict,
+                failing,
+            }
+        })
+        .collect())
+}
+
+/// The re-evaluated manifest and, for each of its findings in order, whether it fails the policy.
+fn reevaluate(
+    m: &Manifest,
+    p: Option<Policy>,
+    as_of: Option<NaiveDate>,
+) -> Result<(Manifest, Vec<bool>)> {
     validate(m)?;
     let mut checked = evaluate_as(
         m.events.clone(),
@@ -269,7 +360,7 @@ pub fn check(
         }
         f.legacy_ids.clear();
     }
-    let mut failed = false;
+    let mut failing = Vec::with_capacity(checked.findings.len());
     for f in &checked.findings {
         let d = &f.disposition;
         let suppressed = if d.status == DispositionStatus::Open {
@@ -284,16 +375,9 @@ pub fn check(
             })?;
             suppressed(d, date)?
         };
-        failed |= !suppressed && f.severity >= checked.policy.fail_on;
+        failing.push(!suppressed && f.severity >= checked.policy.fail_on);
     }
-    let exit = if incomplete(&checked.events, &checked.policy) {
-        Exit::Incomplete
-    } else if failed {
-        Exit::PolicyFailed
-    } else {
-        Exit::Ok
-    };
-    Ok((checked, exit))
+    Ok((checked, failing))
 }
 
 #[cfg(test)]

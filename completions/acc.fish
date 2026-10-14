@@ -34,6 +34,7 @@ complete -c acc -n "__fish_acc_needs_command" -f -a "export" -d 'Export normaliz
 complete -c acc -n "__fish_acc_needs_command" -f -a "evaluate" -d 'Evaluate a normalized event export offline'
 complete -c acc -n "__fish_acc_needs_command" -f -a "validate" -d 'Validate a manifest: schema, timeline, references and recomputed contents'
 complete -c acc -n "__fish_acc_needs_command" -f -a "check" -d 'Enforce policy against a manifest, honoring recorded dispositions'
+complete -c acc -n "__fish_acc_needs_command" -f -a "verify" -d 'Gate a deploy: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing'
 complete -c acc -n "__fish_acc_needs_command" -f -a "pr" -d 'Collect and evaluate one pull request'
 complete -c acc -n "__fish_acc_needs_command" -f -a "doctor" -d 'Check that this environment is ready to collect: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)'
 complete -c acc -n "__fish_acc_needs_command" -f -a "completions" -d 'Generate shell completions'
@@ -187,6 +188,23 @@ complete -c acc -n "__fish_acc_using_subcommand check" -s v -l verbose -d 'Print
 complete -c acc -n "__fish_acc_using_subcommand check" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
 complete -c acc -n "__fish_acc_using_subcommand check" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c acc -n "__fish_acc_using_subcommand check" -s V -l version -d 'Print version'
+complete -c acc -n "__fish_acc_using_subcommand verify" -l range -d 'The commits to cover, as BASE..HEAD: the commit deployed last and the one about to be. Every first-parent commit after BASE up to and including HEAD must be covered' -r
+complete -c acc -n "__fish_acc_using_subcommand verify" -l verification -d 'A verifier\'s JSON output (`gh attestation verify --format json`), whose bundles hold acc attestations (repeatable; requires --signer)' -r -F
+complete -c acc -n "__fish_acc_using_subcommand verify" -l signer -d 'A certificate identity the gate trusts to sign verdicts, compared exactly with the verifier\'s subject alternative name, for example https://github.com/acme/api/.github/workflows/attest.yml@refs/heads/main (repeatable)' -r
+complete -c acc -n "__fish_acc_using_subcommand verify" -l issuer -d 'The OIDC issuer the signer\'s identity must come from, for example https://token.actions.githubusercontent.com' -r
+complete -c acc -n "__fish_acc_using_subcommand verify" -l attestations -d 'Signed DSSE envelopes or Sigstore bundles (.json or .jsonl, files or directories) whose signatures the caller has verified (repeatable; requires --verified-by)' -r -F
+complete -c acc -n "__fish_acc_using_subcommand verify" -l verified-by -d 'Who verified the --attestations signatures, and against which identity, recorded verbatim in the result' -r
+complete -c acc -n "__fish_acc_using_subcommand verify" -l policy -d 'Policy file; overrides the policy embedded in each attestation' -r -F
+complete -c acc -n "__fish_acc_using_subcommand verify" -l as-of -d 'Calendar date dispositions are evaluated on (YYYY-MM-DD). Required when a signed finding has a non-open disposition; the machine clock is never consulted' -r
+complete -c acc -n "__fish_acc_using_subcommand verify" -l checkout -d 'The local clone the range is read from' -r -F
+complete -c acc -n "__fish_acc_using_subcommand verify" -s f -l format -d 'Result format: `text` (one line per commit) or `json` (a result object); inferred from the --output extension when omitted' -r -f -a "text\t'One status line; `table` is an alias'
+json\t'One JSON object (RFC 8785 bytes) followed by a newline'"
+complete -c acc -n "__fish_acc_using_subcommand verify" -s o -l output -d 'Write the result to FILE instead of stdout' -r -F
+complete -c acc -n "__fish_acc_using_subcommand verify" -s q -l quiet -d 'Suppress status lines on stderr'
+complete -c acc -n "__fish_acc_using_subcommand verify" -s v -l verbose -d 'Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout'
+complete -c acc -n "__fish_acc_using_subcommand verify" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
+complete -c acc -n "__fish_acc_using_subcommand verify" -s h -l help -d 'Print help (see more with \'--help\')'
+complete -c acc -n "__fish_acc_using_subcommand verify" -s V -l version -d 'Print version'
 complete -c acc -n "__fish_acc_using_subcommand pr" -l repo -d 'Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory' -r
 complete -c acc -n "__fish_acc_using_subcommand pr" -l policy -d 'Policy file (defaults to .agent-change-control/policy.yml when present)' -r -F
 complete -c acc -n "__fish_acc_using_subcommand pr" -l agent-account -d 'Treat LOGIN as the verified account of AGENT (repeatable)' -r
@@ -231,15 +249,16 @@ complete -c acc -n "__fish_acc_using_subcommand manpage" -s v -l verbose -d 'Pri
 complete -c acc -n "__fish_acc_using_subcommand manpage" -l no-color -d 'Never color diagnostics. acc\'s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too'
 complete -c acc -n "__fish_acc_using_subcommand manpage" -s h -l help -d 'Print help'
 complete -c acc -n "__fish_acc_using_subcommand manpage" -s V -l version -d 'Print version'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "scan" -d 'Collect facts from a forge and write an evaluated manifest'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "export" -d 'Export normalized events as JSON for offline evaluation'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "evaluate" -d 'Evaluate a normalized event export offline'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "validate" -d 'Validate a manifest: schema, timeline, references and recomputed contents'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "check" -d 'Enforce policy against a manifest, honoring recorded dispositions'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "pr" -d 'Collect and evaluate one pull request'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "doctor" -d 'Check that this environment is ready to collect: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "completions" -d 'Generate shell completions'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "manpage" -d 'Generate man pages'
-complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check pr doctor completions manpage help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "scan" -d 'Collect facts from a forge and write an evaluated manifest'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "export" -d 'Export normalized events as JSON for offline evaluation'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "evaluate" -d 'Evaluate a normalized event export offline'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "validate" -d 'Validate a manifest: schema, timeline, references and recomputed contents'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "check" -d 'Enforce policy against a manifest, honoring recorded dispositions'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "verify" -d 'Gate a deploy: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "pr" -d 'Collect and evaluate one pull request'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "doctor" -d 'Check that this environment is ready to collect: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "completions" -d 'Generate shell completions'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "manpage" -d 'Generate man pages'
+complete -c acc -n "__fish_acc_using_subcommand help; and not __fish_seen_subcommand_from scan export evaluate validate check verify pr doctor completions manpage help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
 complete -c acc -n "__fish_acc_using_subcommand help; and __fish_seen_subcommand_from scan" -f -a "github" -d 'A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none'
 complete -c acc -n "__fish_acc_using_subcommand help; and __fish_seen_subcommand_from export" -f -a "github" -d 'A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none'

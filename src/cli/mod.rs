@@ -12,6 +12,7 @@ pub mod io;
 pub mod pr;
 pub mod scan;
 pub mod validate;
+pub mod verify;
 
 use crate::Exit;
 use anyhow::Result;
@@ -27,9 +28,9 @@ Records the agent, human operator, reviewers and merger of each pull request, th
 explicit separation-of-duty rules (ACC001 to ACC010) deterministically and offline.
 Only `scan`, `export`, `pr` and `doctor --online` contact GitHub (and only the collecting commands
 read the clock, for the default window, or `git`, to find the repository); `evaluate`, `validate` and `check` never touch the
-network or the clock. No LLM is involved, and agent authorship alone is never a finding.
+network or the clock, and `verify` reads only `git`, for the range it gates. No LLM is involved, and agent authorship alone is never a finding.
 
-Exit codes: 0 ok · 1 policy threshold exceeded (check, pr) · 2 usage (or doctor: broken) · 3 invalid input or
+Exit codes: 0 ok · 1 policy threshold exceeded (check, pr, verify) · 2 usage (or doctor: broken) · 3 invalid input or
 manifest · 4 collection incomplete (beats 1) · 5 authentication rejected · 6 API, permission,
 rate-limit or transport failure · 7 unsupported API data.";
 
@@ -75,6 +76,9 @@ pub enum Command {
     Validate(validate::Args),
     /// Enforce policy against a manifest, honoring recorded dispositions.
     Check(check::Args),
+    /// Gate a deploy: every first-parent commit in a range must be landed by a change that a
+    /// signed acc attestation shows passing.
+    Verify(verify::Args),
     /// Collect and evaluate one pull request.
     Pr(pr::Args),
     /// Check that this environment is ready to collect: version, token, policy file, repository;
@@ -115,6 +119,7 @@ pub fn run(cli: Cli) -> Result<Exit> {
         Command::Export(args) => export::run(&ctx, args),
         Command::Evaluate(args) => evaluate::run(&ctx, args),
         Command::Validate(args) => validate::run(&ctx, args),
+        Command::Verify(args) => verify::run(&ctx, args),
         Command::Check(args) => check::run(&ctx, args),
         Command::Pr(args) => pr::run(&ctx, args),
         Command::Doctor(args) => doctor::run(&ctx, args),

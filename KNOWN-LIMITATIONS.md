@@ -25,7 +25,9 @@ document that describes it in detail. Planned work is on the [roadmap](ROADMAP.m
   ([spec §10](spec/ai-change-provenance.md#10-security-and-privacy-considerations)).
 - **`acc` does not verify signatures.** Signed authorship and review documents are read as
   pre-verified input; the manifest records who said they verified them (`--verification`,
-  `--verified-by`). Signature verification inside `acc` is planned ([signing](docs/signing.md)).
+  `--verified-by`). `acc verify` likewise takes verified verdicts, and checks only that the
+  verifier's signer identity is one the gate names. Signature verification inside `acc` is planned
+  ([signing](docs/signing.md)).
 - **A digest detects inconsistency, not forgery.** Re-validating a manifest catches edits to its
   derived parts; it does not prove that the embedded events are what the forge held, or that an
   entire export was not replaced ([model](docs/model.md), [SECURITY.md](SECURITY.md)).
@@ -57,7 +59,9 @@ document that describes it in detail. Planned work is on the [roadmap](ROADMAP.m
 - **From trailers, the operator is derived only when one human authored every commit.**
 - **Unnamed AI authorship cannot be recorded.** An Agent Trace record that marks AI authorship
   without naming the tool is ignored until the specification defines an unnamed agent.
-- **Deployments are not evaluated.**
+- **Deployments are not evaluated.** `acc verify` gates a deploy you run, from the commits and
+  signed verdicts you give it; it does not read what was deployed. A rebase merge of several
+  commits leaves all but the last uncovered ([verify](docs/verify.md#limits)).
 - **Protection bypass (ACC005) is only as visible as GitHub's rule suites**: an actor a ruleset
   exempts, and an administrator's override of classic branch protection, leave no record that
   API exposes, so an empty record is `unknown`, never a pass. Rule suites need administration read

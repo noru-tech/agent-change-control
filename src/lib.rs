@@ -14,6 +14,7 @@
 pub mod canonical;
 pub mod cli;
 pub mod collectors;
+pub mod coverage;
 pub mod manifest;
 pub mod model;
 pub mod normalize;

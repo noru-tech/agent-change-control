@@ -46,5 +46,6 @@ Try it offline: `acc evaluate tests/fixtures/claude-operator-self-approved/event
 - [Agent authorship](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/agent-authorship.md): how the agent and its operator are established, by evidence tier
 - [in-toto attestations](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/in-toto.md): the predicate acc emits
 - [Signing](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/signing.md): signing verdicts and reading signed provenance and review documents
+- [Gating a deploy](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/docs/verify.md): `acc verify`, every commit in a range covered by a signed passing verdict
 - [Conformance corpus](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/conformance/README.md): test vectors and the external-verifier contract for other implementations
 - [Changelog](https://raw.githubusercontent.com/noru-tech/agent-change-control/main/CHANGELOG.md): release history

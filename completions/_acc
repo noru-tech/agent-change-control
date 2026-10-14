@@ -353,6 +353,34 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 ':input -- A manifest (JSON or YAML) written by `scan` or `evaluate`:_files' \
 && ret=0
 ;;
+(verify)
+_arguments "${_arguments_options[@]}" : \
+'--range=[The commits to cover, as BASE..HEAD\: the commit deployed last and the one about to be. Every first-parent commit after BASE up to and including HEAD must be covered]:BASE..HEAD:_default' \
+'*--verification=[A verifier'\''s JSON output (\`gh attestation verify --format json\`), whose bundles hold acc attestations (repeatable; requires --signer)]:PATH:_files' \
+'*--signer=[A certificate identity the gate trusts to sign verdicts, compared exactly with the verifier'\''s subject alternative name, for example https\://github.com/acme/api/.github/workflows/attest.yml@refs/heads/main (repeatable)]:IDENTITY:_default' \
+'--issuer=[The OIDC issuer the signer'\''s identity must come from, for example https\://token.actions.githubusercontent.com]:URL:_default' \
+'*--attestations=[Signed DSSE envelopes or Sigstore bundles (.json or .jsonl, files or directories) whose signatures the caller has verified (repeatable; requires --verified-by)]:PATH:_files' \
+'--verified-by=[Who verified the --attestations signatures, and against which identity, recorded verbatim in the result]:TEXT:_default' \
+'--policy=[Policy file; overrides the policy embedded in each attestation]:FILE:_files' \
+'--as-of=[Calendar date dispositions are evaluated on (YYYY-MM-DD). Required when a signed finding has a non-open disposition; the machine clock is never consulted]:DATE:_default' \
+'--checkout=[The local clone the range is read from]:DIR:_files' \
+'-f+[Result format\: \`text\` (one line per commit) or \`json\` (a result object); inferred from the --output extension when omitted]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'--format=[Result format\: \`text\` (one line per commit) or \`json\` (a result object); inferred from the --output extension when omitted]:FORMAT:((text\:"One status line; \`table\` is an alias"
+json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
+'-o+[Write the result to FILE instead of stdout]:FILE:_files' \
+'--output=[Write the result to FILE instead of stdout]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+&& ret=0
+;;
 (pr)
 _arguments "${_arguments_options[@]}" : \
 '--repo=[Repository as OWNER/REPO; defaults to GITHUB_REPOSITORY, else the github.com origin remote of the working directory]:OWNER/REPO:_default' \
@@ -506,6 +534,10 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(verify)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (pr)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -543,6 +575,7 @@ _acc_commands() {
 'evaluate:Evaluate a normalized event export offline' \
 'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
 'check:Enforce policy against a manifest, honoring recorded dispositions' \
+'verify:Gate a deploy\: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing' \
 'pr:Collect and evaluate one pull request' \
 'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
 'completions:Generate shell completions' \
@@ -610,6 +643,7 @@ _acc__subcmd__help_commands() {
 'evaluate:Evaluate a normalized event export offline' \
 'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
 'check:Enforce policy against a manifest, honoring recorded dispositions' \
+'verify:Gate a deploy\: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing' \
 'pr:Collect and evaluate one pull request' \
 'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
 'completions:Generate shell completions' \
@@ -682,6 +716,11 @@ _acc__subcmd__help__subcmd__validate_commands() {
     local commands; commands=()
     _describe -t commands 'acc help validate commands' commands "$@"
 }
+(( $+functions[_acc__subcmd__help__subcmd__verify_commands] )) ||
+_acc__subcmd__help__subcmd__verify_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help verify commands' commands "$@"
+}
 (( $+functions[_acc__subcmd__manpage_commands] )) ||
 _acc__subcmd__manpage_commands() {
     local commands; commands=()
@@ -727,6 +766,11 @@ _acc__subcmd__scan__subcmd__help__subcmd__help_commands() {
 _acc__subcmd__validate_commands() {
     local commands; commands=()
     _describe -t commands 'acc validate commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__verify_commands] )) ||
+_acc__subcmd__verify_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc verify commands' commands "$@"
 }
 
 if [ "$funcstack[1]" = "_acc" ]; then

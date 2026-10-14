@@ -1,0 +1,70 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH acc-verify 1  "verify 0.6.0" 
+.SH NAME
+acc\-verify \- Gate a deploy: every first\-parent commit in a range must be landed by a change that a signed acc attestation shows passing
+.SH SYNOPSIS
+\fBacc verify\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-verification\fR] [\fB\-\-no\-color\fR] [\fB\-\-signer\fR] [\fB\-\-issuer\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-policy\fR] [\fB\-\-as\-of\fR] [\fB\-\-checkout\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fB\-\-range\fR> 
+.SH DESCRIPTION
+Gate a deploy: every first\-parent commit in a range must be landed by a change that a signed acc attestation shows passing
+.SH OPTIONS
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress status lines on stderr
+.TP
+\fB\-\-range\fR \fI<BASE..HEAD>\fR
+The commits to cover, as BASE..HEAD: the commit deployed last and the one about to be. Every first\-parent commit after BASE up to and including HEAD must be covered
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout
+.TP
+\fB\-\-verification\fR \fI<PATH>\fR
+A verifier\*(Aqs JSON output (`gh attestation verify \-\-format json`), whose bundles hold acc attestations (repeatable; requires \-\-signer)
+.TP
+\fB\-\-no\-color\fR
+Never color diagnostics. acc\*(Aqs own output is never colored; this and a non\-empty NO_COLOR environment variable switch off color in help and usage errors too
+.TP
+\fB\-\-signer\fR \fI<IDENTITY>\fR
+A certificate identity the gate trusts to sign verdicts, compared exactly with the verifier\*(Aqs subject alternative name, for example https://github.com/acme/api/.github/workflows/attest.yml@refs/heads/main (repeatable)
+.TP
+\fB\-\-issuer\fR \fI<URL>\fR
+The OIDC issuer the signer\*(Aqs identity must come from, for example https://token.actions.githubusercontent.com
+.TP
+\fB\-\-attestations\fR \fI<PATH>\fR
+Signed DSSE envelopes or Sigstore bundles (.json or .jsonl, files or directories) whose signatures the caller has verified (repeatable; requires \-\-verified\-by)
+.TP
+\fB\-\-verified\-by\fR \fI<TEXT>\fR
+Who verified the \-\-attestations signatures, and against which identity, recorded verbatim in the result
+.TP
+\fB\-\-policy\fR \fI<FILE>\fR
+Policy file; overrides the policy embedded in each attestation
+.TP
+\fB\-\-as\-of\fR \fI<DATE>\fR
+Calendar date dispositions are evaluated on (YYYY\-MM\-DD). Required when a signed finding has a non\-open disposition; the machine clock is never consulted
+.TP
+\fB\-\-checkout\fR \fI<DIR>\fR [default: .]
+The local clone the range is read from
+.TP
+\fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
+Result format: `text` (one line per commit) or `json` (a result object); inferred from the \-\-output extension when omitted
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+text: One status line; `table` is an alias
+.IP \(bu 2
+json: One JSON object (RFC 8785 bytes) followed by a newline
+.RE
+.TP
+\fB\-o\fR, \fB\-\-output\fR \fI<FILE>\fR
+Write the result to FILE instead of stdout
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH VERSION
+v0.6.0

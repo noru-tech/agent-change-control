@@ -159,7 +159,7 @@ The convention it implements is published as [AI Change Provenance 0.4](spec/ai-
 | --- | --- |
 | **Specification** — AI Change Provenance 0.4: declarations, collection, evaluation, formats | [`spec/`](spec/ai-change-provenance.md) |
 | **Schemas** — events, manifest, policy, provenance, review, in-toto statement (JSON Schema 2020-12) | [`schemas/`](schemas/) |
-| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check | [`src/`](src/) |
+| **CLI** — `acc`: GitHub collector, offline evaluator, validator, policy check, deploy gate | [`src/`](src/), [verify](docs/verify.md) |
 | **GitHub Action** — evaluate the current pull request, SARIF and job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Outputs** — table, JSON, YAML, SARIF 2.1.0, in-toto Statement v1 (one, or JSON Lines per change) | [`src/output/`](src/output/), [docs](docs/in-toto.md) |
 | **Control mapping** — where the evidence lands in SOC 2, ISO 27001, PCI DSS, NIST | [docs](docs/control-mapping.md) |
@@ -280,6 +280,7 @@ findings; every validation code has a page in the [rules index](docs/rules/READM
 | `acc evaluate EVENTS` | Evaluate an export offline into a manifest (`--policy`, `-f`, `-o`) |
 | `acc validate INPUT` | Check a manifest (schema, timeline, references, recomputed findings, summary and digest), or an in-toto Statement or JSON Lines of Statements (subjects and predicate); `--format json` prints a [result object](#validate-result-object) |
 | `acc check MANIFEST` | Enforce policy, honoring dispositions (`--policy`, `--as-of DATE`); exit 1 on failure |
+| `acc verify --range BASE..HEAD` | Gate a deploy: every first-parent commit in the range must be landed by a change a signed attestation shows passing (`--verification` with `--signer`, or `--attestations` with `--verified-by`); exit 1 if not. See [verify](docs/verify.md) |
 | `acc pr NUMBER [--repo OWNER/REPO]` | Collect and check one pull request (the repository is found like `scan`'s) |
 | `acc doctor [--online]` | Check the environment: version, token set (never printed), default policy file, detected repository; `--online` adds the token, the rate limit and whether a newer `acc` exists (GET only; the only update check, never automatic). Exit 0 healthy, 2 broken. `--format json` prints a [report object](#doctor-report-object) |
 | `acc completions <shell>` / `acc manpage` | Shell completions and man pages (`-o FILE` writes them to a file) |
@@ -326,7 +327,9 @@ acc validate august.intoto.jsonl                            # subjects match, fi
 Sign them with the DSSE signer you already use for build provenance. A verifier checks that the
 subjects cover the commits it cares about and runs `acc validate` on the Statement, which confirms
 that the subjects are exactly the predicate's changes and that the findings follow from the
-embedded facts. The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.4`; the
+embedded facts. Before a deploy, `acc verify` does both for a whole range: every first-parent
+commit since the last deploy must be the merge commit of a change whose signed verdict passes
+([verify](docs/verify.md)). The predicate type is `https://noru.tech/spec/ai-change-provenance/v0.4`; the
 predicate is documented in [docs/in-toto.md](docs/in-toto.md). Every digest is SHA-256 over
 [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) bytes, and `acc` writes JSON as exactly those
 bytes, so any JCS implementation reproduces them.

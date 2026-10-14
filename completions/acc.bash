@@ -46,6 +46,9 @@ _acc() {
             acc,validate)
                 cmd="acc__subcmd__validate"
                 ;;
+            acc,verify)
+                cmd="acc__subcmd__verify"
+                ;;
             acc__subcmd__export,github)
                 cmd="acc__subcmd__export__subcmd__github"
                 ;;
@@ -88,6 +91,9 @@ _acc() {
             acc__subcmd__help,validate)
                 cmd="acc__subcmd__help__subcmd__validate"
                 ;;
+            acc__subcmd__help,verify)
+                cmd="acc__subcmd__help__subcmd__verify"
+                ;;
             acc__subcmd__help__subcmd__export,github)
                 cmd="acc__subcmd__help__subcmd__export__subcmd__github"
                 ;;
@@ -113,7 +119,7 @@ _acc() {
 
     case "${cmd}" in
         acc)
-            opts="-q -v -h -V --quiet --verbose --no-color --help --version scan export evaluate validate check pr doctor completions manpage help"
+            opts="-q -v -h -V --quiet --verbose --no-color --help --version scan export evaluate validate check verify pr doctor completions manpage help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -433,7 +439,7 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help)
-            opts="scan export evaluate validate check pr doctor completions manpage help"
+            opts="scan export evaluate validate check verify pr doctor completions manpage help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -601,6 +607,20 @@ _acc() {
             return 0
             ;;
         acc__subcmd__help__subcmd__validate)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__help__subcmd__verify)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -907,6 +927,72 @@ _acc() {
                 return 0
             fi
             case "${prev}" in
+                --format)
+                    COMPREPLY=($(compgen -W "text json" -- "${cur}"))
+                    return 0
+                    ;;
+                -f)
+                    COMPREPLY=($(compgen -W "text json" -- "${cur}"))
+                    return 0
+                    ;;
+                --output)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -o)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        acc__subcmd__verify)
+            opts="-f -o -q -v -h -V --range --verification --signer --issuer --attestations --verified-by --policy --as-of --checkout --format --output --quiet --verbose --no-color --help --version"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --range)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verification)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --signer)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --issuer)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --attestations)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --verified-by)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --policy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --as-of)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --checkout)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --format)
                     COMPREPLY=($(compgen -W "text json" -- "${cur}"))
                     return 0
