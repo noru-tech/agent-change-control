@@ -282,6 +282,25 @@ change:
 
 A collector that was not asked omits `checks`. Absence never reads as a pass (§6.2).
 
+### 4.2 Protection bypass
+
+When asked for the facts ACC005 reads (§6.2), a collector records `protection` for each merged
+change:
+
+- the branch the change merged into;
+- every ruleset evaluation the forge recorded for the push that landed the merge commit: its
+  identifier, the commit the push moved the branch to (always the merge commit), its result
+  (`pass`, `fail` or `bypass`), the pushing account as the forge reports it, and the push time,
+  with evidence;
+- `complete: false` when the evaluations could not be read, when the merge is older than the
+  forge's listing reaches, when the merge commit is unknown, or when a result is outside the
+  vocabulary.
+
+Forges do not record everything a bypass can be. An actor a ruleset exempts is not evaluated at
+all, and an override of protection that is not a ruleset may be visible only in an
+administrative audit log. An empty `suites` list is therefore never evidence that nothing was
+bypassed. A collector that was not asked omits `protection`.
+
 ## 5. Actor classification
 
 An actor is `human` only when the forge asserts a user account. Apps, installations and accounts
@@ -332,6 +351,7 @@ incomplete, independence is `unknown`: an approval that was later withdrawn coul
 | **ACC002** Approver is author | Any `approved` review, at any point, is by *H*. A stale self-approval still counts: the act, not its current effect, is the finding. | never | *H* unknown; or reviews incomplete with no self-approval seen. |
 | **ACC003** Merged without independent approval | The change is merged, *H* is known, reviews complete, and no qualifying approval exists. | The change is not merged. | *H* unknown, or reviews incomplete. |
 | **ACC004** Merged without required checks | The change is merged, check collection is complete, and for some required check neither the head commit nor the merge commit has a passing latest result completed at or before the merge. | The change is not merged, or no check is required. | Check facts were not collected or are incomplete; or, under `from_forge`, the forge's required checks could not all be read and every known required check passed. |
+| **ACC005** Merged with protection bypass | The change is merged and a recorded ruleset evaluation of its merge is `bypass`. | The change is not merged. | Protection facts were not collected or are incomplete; an evaluation of the merge is `fail` although the push landed; or no evaluation of the merge is recorded. |
 | **ACC006** Unknown agent operator | Effective author is an agent and no human operator is recorded. | Effective author is not an agent. | never |
 | **ACC007** Agent approval recorded (`info`) | An agent's latest decision at or before merge is `approved` on the current head. Not a violation: it makes the population of agent-approved changes visible. | No agent reviewed the current head. | never |
 | **ACC008** Same-vendor write and review | Effective author is an agent, at least one approval of the current head exists, no human approved it, and every approving agent has the author agent's vendor. | Effective author is not an agent, a human approved the head, or nothing approved it. | The author's or an approving agent's vendor is null. |
@@ -347,7 +367,12 @@ not on the head. A check with no result at all fails. ACC004 is disabled unless 
 it, and when it is enabled, a merged change whose check facts are missing or incomplete makes
 collection incomplete (§6.3), so it can never pass on data that was not read.
 
-ACC005 is reserved (protection bypass). Retired identifiers are never reused. ACC007 and ACC008
+ACC005 passes only when every recorded evaluation of the merge passed. It never passes on an
+empty record (§4.2): absence is `unknown`. A recorded `bypass` fails even when the record is
+otherwise incomplete. ACC005 is disabled unless a policy enables it, and when it is enabled, a
+merged change whose protection facts are missing or incomplete makes collection incomplete.
+
+Retired identifiers are never reused. ACC007 and ACC008
 evaluate under every policy, as observations; ACC009 and ACC010 only under `agent_review`.
 
 Note the design choices these encode:
@@ -404,7 +429,8 @@ rules:
 
 A policy that enables ACC004 also widens incompleteness: a merged change without complete check
 facts, or, under `from_forge`, without a complete set of the forge's required checks, makes the
-collection incomplete, which takes precedence over a policy verdict (§6.2).
+collection incomplete, which takes precedence over a policy verdict (§6.2). ACC005
+(`merged_with_protection_bypass`, disabled by default) does the same for protection facts.
 
 ### 6.5 Independence dimensions
 
@@ -443,8 +469,8 @@ reporting any one of them is enough, and a consumer compares codes as a set.
 | --- | --- |
 | ACV001 | An `approved` review is later than the change's merge. |
 | ACV002 | Reserved (deployment validation). |
-| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; a check result on a commit that is neither the change's head nor its merge commit; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
-| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit or check facts on an unmerged change; a review before opening; duplicate change, review or commit identifiers, or duplicate check results; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
+| ACV003 | A reference between facts does not resolve or is not allowed: an actor, operator or attestation that is not in the registry; a check result on a commit that is neither the change's head nor its merge commit; a ruleset evaluation of a push other than the change's merge; an operator that is not a human, or on a change whose effective author is not an agent; agent review facts on a reviewer that is not an agent; `signed` evidence that does not resolve to a signed attestation with a recorded verifier (§3.6); a malformed actor or attestation identifier. |
+| ACV004 | The timeline or identities are inconsistent: a reversed window, or a window whose completeness and reason disagree; a merge before opening, a merge time without a merger or the reverse, a merge commit, check facts or protection facts on an unmerged change; a review before opening; duplicate change, review or commit identifiers, or duplicate check results or ruleset evaluations; two decisions by one reviewer at one instant that disagree; a change whose repository differs from the export's; an invalid timestamp. |
 | ACV005 to ACV009 | The input is not I-JSON as §8.2 constrains it. |
 | ACV010 | The input does not conform to its schema: an unknown member, a missing required member, a wrong type, or a value outside a closed vocabulary. |
 
@@ -659,11 +685,12 @@ that validates against a version's schema validates against that version's, neve
 
 ## Changelog
 
-- **0.4 (2026-10-14)** — required checks: the collection of check runs, commit statuses and the
-  forge's required checks for merged changes (§4.1), rule ACC004 (§6.2), the `checks` policy block
-  (§6.3), and validation of check facts (§6.6). ACC004 is disabled by default; when enabled,
-  missing or incomplete check facts make collection incomplete. ACC005 stays reserved for
-  protection bypass. `legacy_ids` is removed (§7.1), as 0.3 scheduled. Re-validation ignores
+- **0.4 (2026-10-14)** — required checks and protection bypass: the collection of check runs,
+  commit statuses and the forge's required checks (§4.1) and of ruleset evaluations of the merge
+  (§4.2) for merged changes; rules ACC004 and ACC005 (§6.2); the `checks` policy block (§6.3);
+  and validation of both kinds of fact (§6.6). Both rules are disabled by default; when one is
+  enabled, its missing or incomplete facts make collection incomplete. ACC005 never passes on an
+  empty record. `legacy_ids` is removed (§7.1), as 0.3 scheduled. Re-validation ignores
   `generated.tool` and `generated.version` (§7.1). Predicate type `v0.4` (§7.3). Schemas move to
   version-pinned identifiers, and §12 names the members a consumer can rely on across versions.
   Every document written under 0.3 stays valid input and validates as 0.3; 0.3 manifests and

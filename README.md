@@ -237,7 +237,7 @@ operator) approved the current head before merge, with no later withdrawal, in f
 <a id="rules"></a>
 ## Which rules does acc check?
 
-Nine rules, each with a page that explains it, maps it to controls, shows a failing and a passing
+Ten rules, each with a page that explains it, maps it to controls, shows a failing and a passing
 example and says how to fix it or record a disposition ([all rules and validation
 codes](docs/rules/README.md)):
 
@@ -247,6 +247,7 @@ codes](docs/rules/README.md)):
 | [ACC002](docs/rules/ACC002.md) | Effective human author/operator approved own change | high |
 | [ACC003](docs/rules/ACC003.md) | Merged change without independent human approval | high |
 | [ACC004](docs/rules/ACC004.md) | Merged without required checks (opt-in) | high |
+| [ACC005](docs/rules/ACC005.md) | Merged with protection bypass (opt-in) | high |
 | [ACC006](docs/rules/ACC006.md) | Agent operator unknown | warning |
 | [ACC007](docs/rules/ACC007.md) | Agent approval recorded (observation) | info |
 | [ACC008](docs/rules/ACC008.md) | Same-vendor write and review | high |

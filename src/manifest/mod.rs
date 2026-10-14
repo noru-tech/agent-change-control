@@ -164,27 +164,49 @@ pub fn canonicalization(version: &str) -> Result<Canonicalization> {
     Ok(Revision::parse(version)?.canonicalization())
 }
 
+fn enabled(p: &Policy, rule: RuleName) -> bool {
+    p.rules.get(&rule).is_some_and(|r| r.enabled)
+}
+
 /// Whether the policy enables ACC004, which makes missing check data a collection gap.
 pub fn checks_required(p: &Policy) -> bool {
-    p.rules
-        .get(&RuleName::MergedWithoutRequiredChecks)
-        .is_some_and(|r| r.enabled)
+    enabled(p, RuleName::MergedWithoutRequiredChecks)
+}
+
+/// Whether the policy enables ACC005, which makes missing ruleset evaluations a collection gap.
+pub fn bypass_required(p: &Policy) -> bool {
+    enabled(p, RuleName::MergedWithProtectionBypass)
+}
+
+/// The opt-in rules whose facts are missing or partial for one change, under `p`. Only a merged
+/// change has such facts.
+pub fn gaps(c: &Change, p: &Policy) -> Vec<RuleId> {
+    let mut out = Vec::new();
+    if c.merged_at.is_none() {
+        return out;
+    }
+    let from_forge = p.checks.as_ref().is_none_or(|k| k.from_forge);
+    if checks_required(p)
+        && c.checks
+            .as_ref()
+            .is_none_or(|k| !k.runs_complete || (from_forge && !k.required_complete))
+    {
+        out.push(RuleId::Acc004);
+    }
+    if bypass_required(p) && c.protection.as_ref().is_none_or(|b| !b.complete) {
+        out.push(RuleId::Acc005);
+    }
+    out
 }
 
 /// Whether collection is incomplete for the decision `p` asks for: the window or a review history
-/// is incomplete, or ACC004 is enabled and a merged change's check data is missing or partial.
-/// Incomplete collection takes exit-code precedence and can never produce a clean result.
+/// is incomplete, or an enabled opt-in rule's facts are missing or partial for a merged change
+/// ([`gaps`]). Incomplete collection takes exit-code precedence and can never produce a clean
+/// result.
 pub fn incomplete(e: &Events, p: &Policy) -> bool {
-    let from_forge = p.checks.as_ref().is_none_or(|c| c.from_forge);
     !e.window.complete
         || e.changes.iter().any(|c| !c.reviews_complete)
-        || (checks_required(p)
-            && e.changes.iter().any(|c| {
-                c.merged_at.is_some()
-                    && c.checks
-                        .as_ref()
-                        .is_none_or(|k| !k.runs_complete || (from_forge && !k.required_complete))
-            }))
+        || e.changes.iter().any(|c| !gaps(c, p).is_empty())
 }
 
 fn validate_disposition(d: &Disposition) -> Result<()> {

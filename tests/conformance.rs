@@ -79,6 +79,7 @@ const DERIVED: &str = "#34-derived-evidence-records-written-at-authoring-time";
 const STRENGTH: &str = "#36-evidence-strength";
 const COLLECTION: &str = "#4-collection";
 const CHECKS: &str = "#41-checks";
+const BYPASS: &str = "#42-protection-bypass";
 const ACTORS: &str = "#5-actor-classification";
 const NORMALIZATION: &str = "#81-normalization";
 const SERIALIZATION: &str = "#82-serialization";
@@ -107,6 +108,29 @@ fn run_on(commit: &str, conclusion: &str, completed_at: &str) -> Value {
         "conclusion": conclusion,
         "completed_at": completed_at,
         "provenance": [{"source": "github", "ref": format!("https://api.github.com/repos/acme/api/check-runs/{commit}-{conclusion}-{completed_at}"), "kind": "observed"}]
+    })
+}
+
+/// Ruleset evaluations of `human-clean`'s merge commit, with ACC005 enabled.
+fn protection(v: &mut Value, suites: Value, complete: bool) {
+    v["events"]["version"] = "0.4".into();
+    policy(v)["rules"]["merged_with_protection_bypass"]["enabled"] = true.into();
+    change(v)["protection"] = json!({
+        "branch": "main",
+        "suites": suites,
+        "complete": complete,
+        "provenance": [{"source": "github", "ref": "https://api.github.com/repos/acme/api/rulesets/rule-suites?ref=refs%2Fheads%2Fmain", "kind": "observed"}]
+    });
+}
+
+fn suite(id: &str, result: &str) -> Value {
+    json!({
+        "id": id,
+        "after_sha": "merge",
+        "result": result,
+        "actor": "Alice",
+        "pushed_at": "2026-08-03T12:00:01Z",
+        "provenance": [{"source": "github", "ref": format!("https://api.github.com/repos/acme/api/rulesets/rule-suites/{id}"), "kind": "observed"}]
     })
 }
 
@@ -426,6 +450,74 @@ fn evaluated() -> Vec<Evaluated> {
             conditions: &[CHECKS, RULES],
         },
         Evaluated {
+            id: "human-clean--bypass-passed",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([suite("41", "pass")]), true)),
+            fails: &[],
+            conditions: &[BYPASS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--bypass-recorded",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([suite("42", "bypass")]), true)),
+            fails: &["ACC005"],
+            conditions: &[BYPASS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--bypass-suite-failed",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([suite("43", "fail")]), true)),
+            fails: &[],
+            conditions: &[BYPASS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--bypass-none-recorded",
+            kind: Kind::Accept,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([]), true)),
+            fails: &[],
+            conditions: &[BYPASS, RULES],
+        },
+        Evaluated {
+            id: "open-pr--bypass-enabled",
+            kind: Kind::Accept,
+            fixture: "open-pr",
+            edit: Some(|v| {
+                policy(v)["rules"]["merged_with_protection_bypass"]["enabled"] = true.into()
+            }),
+            fails: &[],
+            conditions: &[BYPASS, RULES],
+        },
+        Evaluated {
+            id: "human-clean--bypass-not-collected",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| {
+                policy(v)["rules"]["merged_with_protection_bypass"]["enabled"] = true.into()
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, BYPASS],
+        },
+        Evaluated {
+            id: "human-clean--bypass-incomplete",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([]), false)),
+            fails: &[],
+            conditions: &[COLLECTION, BYPASS],
+        },
+        Evaluated {
+            id: "human-clean--bypass-recorded-incomplete",
+            kind: Kind::Incomplete,
+            fixture: "human-clean",
+            edit: Some(|v| protection(v, json!([suite("44", "bypass")]), false)),
+            fails: &["ACC005"],
+            conditions: &[COLLECTION, BYPASS],
+        },
+        Evaluated {
             id: "human-clean--checks-not-collected",
             kind: Kind::Incomplete,
             fixture: "human-clean",
@@ -527,6 +619,34 @@ fn rejects() -> Vec<Reject> {
             }),
             codes: &["ACV004"],
             conditions: &[VALIDATION, CHECKS],
+        },
+        Reject {
+            id: "open-pr--protection-on-unmerged",
+            parent: "open-pr--bypass-enabled",
+            mutation: Mutation::Json(|v| {
+                change(v)["protection"] =
+                    json!({"branch": "main", "suites": [], "complete": true, "provenance": []})
+            }),
+            codes: &["ACV004"],
+            conditions: &[VALIDATION, BYPASS],
+        },
+        Reject {
+            id: "human-clean--suite-on-unrelated-push",
+            parent: "human-clean--bypass-passed",
+            mutation: Mutation::Json(|v| {
+                change(v)["protection"]["suites"][0]["after_sha"] = "elsewhere".into()
+            }),
+            codes: &["ACV003"],
+            conditions: &[VALIDATION, BYPASS],
+        },
+        Reject {
+            id: "human-clean--unknown-suite-result",
+            parent: "human-clean--bypass-passed",
+            mutation: Mutation::Json(|v| {
+                change(v)["protection"]["suites"][0]["result"] = "override".into()
+            }),
+            codes: &["ACV010"],
+            conditions: &[VALIDATION, BYPASS],
         },
         Reject {
             id: "human-clean--check-on-unrelated-commit",
@@ -731,6 +851,22 @@ const UNKNOWN_PATHS: &[(&str, &str)] = &[
     (
         "ACC009",
         "An agent approval of the current head is unknown on a required dimension and dependent on none.",
+    ),
+    (
+        "ACC005",
+        "Ruleset evaluations were not collected for this change.",
+    ),
+    (
+        "ACC005",
+        "Ruleset evaluations for this change could not be read, or are older than the forge's listing reaches.",
+    ),
+    (
+        "ACC005",
+        "A ruleset evaluation of the merge failed but the push landed; whether active protection was bypassed cannot be established.",
+    ),
+    (
+        "ACC005",
+        "No ruleset evaluation of the merge is recorded; a push by an exempt actor or an override of classic branch protection leaves none, so a bypass cannot be ruled out.",
     ),
     ("ACC004", "Check data was not collected for this change."),
     ("ACC004", "Check collection is incomplete."),
@@ -996,7 +1132,8 @@ fn coverage_requirements_hold() {
         .collect();
     // Every rule fails somewhere and does not fail somewhere.
     for rule in [
-        "ACC001", "ACC002", "ACC003", "ACC004", "ACC006", "ACC007", "ACC008", "ACC009", "ACC010",
+        "ACC001", "ACC002", "ACC003", "ACC004", "ACC005", "ACC006", "ACC007", "ACC008", "ACC009",
+        "ACC010",
     ] {
         assert!(
             outcomes.contains(&(rule.into(), "fail".into(), String::new())),

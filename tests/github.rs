@@ -259,6 +259,18 @@ fn checks_response(mode: &str, path: &str) -> Option<(&'static str, &'static str
         ("200 OK", "", r#"{"total_count":0,"check_runs":[]}"#.into())
     } else if path.starts_with("/repos/acme/api/commits/merge/statuses?") {
         ("200 OK", "", "[]".into())
+    } else if path.starts_with(
+        "/repos/acme/api/rulesets/rule-suites?ref=refs%2Fheads%2Fmain&time_period=month&rule_suite_result=all&",
+    ) {
+        if mode == "bypass-forbidden" {
+            forbidden
+        } else {
+            (
+                "200 OK",
+                "",
+                r#"[{"id":31,"actor_name":"Alice","before_sha":"base","after_sha":"merge","ref":"refs/heads/main","pushed_at":"2026-08-03T12:00:01Z","result":"bypass","evaluation_result":"fail"},{"id":32,"actor_name":"bob","before_sha":"merge","after_sha":"later","ref":"refs/heads/main","pushed_at":"2026-08-04T09:00:00Z","result":"pass","evaluation_result":"pass"}]"#.into(),
+            )
+        }
     } else {
         return None;
     };
@@ -333,6 +345,14 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: mode.starts_with("checks"),
+            bypass_as_of: mode.starts_with("bypass").then(|| {
+                timestamp(if mode == "bypass-old" {
+                    "2026-10-14T00:00:00Z"
+                } else {
+                    "2026-08-20T00:00:00Z"
+                })
+                .unwrap()
+            }),
         },
     )
 }
@@ -1129,4 +1149,66 @@ fn unreadable_checks_are_incomplete_only_where_acc004_is_enabled() {
     assert_eq!(acc004.status, Status::Unknown);
     let (_, exit) = manifest::check(&on, None, None).unwrap();
     assert_eq!(exit, Exit::Incomplete);
+}
+
+fn acc005_policy() -> Policy {
+    let mut p = Policy::default();
+    p.rules
+        .get_mut(&agent_change_control::model::RuleName::MergedWithProtectionBypass)
+        .unwrap()
+        .enabled = true;
+    p
+}
+
+fn acc005(m: &agent_change_control::model::Manifest) -> (Status, String) {
+    let a = m
+        .assessments
+        .iter()
+        .find(|a| a.rule_id == RuleId::Acc005)
+        .unwrap();
+    (a.status, a.reason.clone())
+}
+
+#[test]
+fn a_recorded_ruleset_bypass_of_the_merge_fails_acc005() {
+    let e = collect("bypass").unwrap();
+    let b = e.changes[0].protection.as_ref().unwrap();
+    // Only the evaluation whose push landed the merge commit is recorded.
+    assert_eq!(b.suites.len(), 1);
+    assert_eq!(b.suites[0].id, "31");
+    assert_eq!(b.suites[0].actor.as_deref(), Some("Alice"));
+    assert!(b.complete);
+    assert!(e.changes[0].checks.is_none());
+    let m = manifest::evaluate(e, acc005_policy()).unwrap();
+    assert_eq!(acc005(&m).0, Status::Fail);
+    let finding = m
+        .findings
+        .iter()
+        .find(|f| f.rule_id == RuleId::Acc005)
+        .unwrap();
+    assert!(
+        finding
+            .provenance
+            .iter()
+            .any(|p| p.r#ref.ends_with("/rulesets/rule-suites/31"))
+    );
+}
+
+#[test]
+fn unreadable_or_out_of_reach_evaluations_are_incomplete_only_where_acc005_is_enabled() {
+    for mode in ["bypass-forbidden", "bypass-old"] {
+        let e = collect(mode).unwrap();
+        let b = e.changes[0].protection.as_ref().unwrap();
+        assert!(!b.complete, "{mode}");
+        assert!(e.window.complete, "{mode}");
+        let off = manifest::evaluate(e.clone(), Policy::default()).unwrap();
+        assert!(!manifest::incomplete(&off.events, &off.policy), "{mode}");
+        let on = manifest::evaluate(e, acc005_policy()).unwrap();
+        assert!(manifest::incomplete(&on.events, &on.policy), "{mode}");
+        // A bypass outside the listing's reach is still read where the listing has it; here the
+        // forbidden token sees nothing and the old merge's evaluation is out of reach.
+        if mode == "bypass-forbidden" {
+            assert_eq!(acc005(&on).0, Status::Unknown, "{mode}");
+        }
+    }
 }

@@ -409,6 +409,89 @@
       ],
       "additionalProperties": false
     },
+    "rule_suite": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "after_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "bypass",
+            "fail",
+            "pass"
+          ]
+        },
+        "actor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pushed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "after_sha",
+        "result",
+        "actor",
+        "pushed_at",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "protection": {
+      "description": "Ruleset evaluations of the push that landed a merged change's merge commit (ACP 0.4, ACC005).",
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_suite"
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "branch",
+        "suites",
+        "complete",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
     "change": {
       "type": "object",
       "properties": {
@@ -520,6 +603,9 @@
         },
         "checks": {
           "$ref": "#/$defs/checks"
+        },
+        "protection": {
+          "$ref": "#/$defs/protection"
         }
       },
       "required": [
@@ -805,6 +891,9 @@
             "merged_without_required_checks": {
               "$ref": "#/$defs/rule_policy"
             },
+            "merged_with_protection_bypass": {
+              "$ref": "#/$defs/rule_policy"
+            },
             "unknown_agent_operator": {
               "$ref": "#/$defs/rule_policy"
             },
@@ -923,6 +1012,7 @@
             "ACC002",
             "ACC003",
             "ACC004",
+            "ACC005",
             "ACC006",
             "ACC007",
             "ACC008",
@@ -937,6 +1027,7 @@
             "approver_is_author",
             "merged_without_independent_approval",
             "merged_without_required_checks",
+            "merged_with_protection_bypass",
             "unknown_agent_operator",
             "agent_approval_recorded",
             "same_vendor_write_and_review",
@@ -1015,6 +1106,7 @@
             "ACC002",
             "ACC003",
             "ACC004",
+            "ACC005",
             "ACC006",
             "ACC007",
             "ACC008",

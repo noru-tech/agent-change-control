@@ -1,6 +1,6 @@
 //! A plain aligned-column terminal summary.
 
-use crate::model::{Confidence, Manifest, Operator, Severity, Status};
+use crate::model::{Confidence, Manifest, Operator, RuleId, Severity, Status};
 use crate::policy::RULES;
 
 /// Strip terminal control characters from untrusted identifiers.
@@ -111,9 +111,17 @@ pub fn render(m: &Manifest) -> String {
             plain(m.events.window.reason.as_deref().unwrap_or("unspecified"))
         ));
     } else if crate::manifest::incomplete(&m.events, &m.policy) {
-        out.push_str(
-            "INCOMPLETE: check data is missing or partial for a merged change, and the policy enables ACC004\n",
-        );
+        let rules: std::collections::BTreeSet<RuleId> = m
+            .events
+            .changes
+            .iter()
+            .flat_map(|c| crate::manifest::gaps(c, &m.policy))
+            .collect();
+        let rules: Vec<&str> = rules.iter().map(|r| r.code()).collect();
+        out.push_str(&format!(
+            "INCOMPLETE: data for {} is missing or partial for a merged change, and the policy enables it\n",
+            rules.join(" and ")
+        ));
     }
     out
 }

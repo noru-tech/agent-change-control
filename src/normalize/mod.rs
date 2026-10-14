@@ -269,6 +269,31 @@ pub fn events(mut e: Events) -> Result<Events> {
             k.required_sources.dedup();
             evidence(&mut k.provenance, &attestations)?;
         }
+        if let Some(b) = &mut c.protection {
+            ensure!(
+                c.merged_at.is_some(),
+                "ACV004 protection facts on unmerged change"
+            );
+            let mut suite_ids = BTreeSet::new();
+            for suite in &mut b.suites {
+                ensure!(
+                    c.merge_commit_sha.as_deref() == Some(suite.after_sha.as_str()),
+                    "ACV003 ruleset evaluation of a push that is not the change's merge"
+                );
+                ensure!(
+                    !suite.id.trim().is_empty(),
+                    "ACV010 empty ruleset evaluation ID"
+                );
+                ensure!(
+                    suite_ids.insert(suite.id.clone()),
+                    "ACV004 duplicate ruleset evaluation"
+                );
+                evidence(&mut suite.provenance, &attestations)?;
+            }
+            b.suites
+                .sort_by(|a, b| (a.pushed_at, &a.id).cmp(&(b.pushed_at, &b.id)));
+            evidence(&mut b.provenance, &attestations)?;
+        }
     }
     e.changes.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(e)

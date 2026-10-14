@@ -5,11 +5,12 @@ use anyhow::Result;
 use std::collections::BTreeMap;
 
 /// Every rule this release evaluates, in identifier order.
-pub const RULES: [RuleId; 9] = [
+pub const RULES: [RuleId; 10] = [
     RuleId::Acc001,
     RuleId::Acc002,
     RuleId::Acc003,
     RuleId::Acc004,
+    RuleId::Acc005,
     RuleId::Acc006,
     RuleId::Acc007,
     RuleId::Acc008,
@@ -98,11 +99,11 @@ impl RuleId {
 }
 
 impl RuleId {
-    /// Whether a rule runs unless a policy turns it on or off. ACC004 needs check data the
-    /// collector gathers only when asked, and a token permission older workflows lack, so it is
-    /// opt-in.
+    /// Whether a rule runs unless a policy turns it on or off. ACC004 and ACC005 need data the
+    /// collector gathers only when asked, under token permissions older workflows lack, so
+    /// they are opt-in.
     pub const fn enabled_by_default(self) -> bool {
-        !matches!(self, RuleId::Acc004)
+        !matches!(self, RuleId::Acc004 | RuleId::Acc005)
     }
 }
 

@@ -312,6 +312,7 @@ mod tests {
             provenance: vec![evidence()],
             labels: vec![],
             checks: None,
+            protection: None,
         }
     }
 

@@ -241,6 +241,9 @@ predicate:
       approver_is_author:
         enabled: true
         severity: high
+      merged_with_protection_bypass:
+        enabled: false
+        severity: high
       merged_without_independent_approval:
         enabled: true
         severity: high

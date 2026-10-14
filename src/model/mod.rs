@@ -123,6 +123,8 @@ pub enum RuleId {
     Acc003,
     #[serde(rename = "ACC004")]
     Acc004,
+    #[serde(rename = "ACC005")]
+    Acc005,
     #[serde(rename = "ACC006")]
     Acc006,
     #[serde(rename = "ACC007")]
@@ -143,6 +145,7 @@ pub enum RuleName {
     ApproverIsAuthor,
     MergedWithoutIndependentApproval,
     MergedWithoutRequiredChecks,
+    MergedWithProtectionBypass,
     UnknownAgentOperator,
     AgentApprovalRecorded,
     SameVendorWriteAndReview,
@@ -191,6 +194,7 @@ impl RuleId {
             RuleId::Acc002 => "ACC002",
             RuleId::Acc003 => "ACC003",
             RuleId::Acc004 => "ACC004",
+            RuleId::Acc005 => "ACC005",
             RuleId::Acc006 => "ACC006",
             RuleId::Acc007 => "ACC007",
             RuleId::Acc008 => "ACC008",
@@ -206,6 +210,7 @@ impl RuleId {
             RuleId::Acc002 => RuleName::ApproverIsAuthor,
             RuleId::Acc003 => RuleName::MergedWithoutIndependentApproval,
             RuleId::Acc004 => RuleName::MergedWithoutRequiredChecks,
+            RuleId::Acc005 => RuleName::MergedWithProtectionBypass,
             RuleId::Acc006 => RuleName::UnknownAgentOperator,
             RuleId::Acc007 => RuleName::AgentApprovalRecorded,
             RuleId::Acc008 => RuleName::SameVendorWriteAndReview,
@@ -224,6 +229,7 @@ impl RuleName {
             RuleName::ApproverIsAuthor => "approver_is_author",
             RuleName::MergedWithoutIndependentApproval => "merged_without_independent_approval",
             RuleName::MergedWithoutRequiredChecks => "merged_without_required_checks",
+            RuleName::MergedWithProtectionBypass => "merged_with_protection_bypass",
             RuleName::UnknownAgentOperator => "unknown_agent_operator",
             RuleName::AgentApprovalRecorded => "agent_approval_recorded",
             RuleName::SameVendorWriteAndReview => "same_vendor_write_and_review",
@@ -362,6 +368,50 @@ pub struct Change {
     /// only when present, so earlier documents keep their bytes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub checks: Option<Checks>,
+    /// Ruleset evaluations of the merge, for ACC005 (ACP 0.4). Absent when the collector was not
+    /// asked for them; serialized only when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protection: Option<Protection>,
+}
+
+/// The outcome of a ruleset evaluation of a push, as the forge records it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SuiteResult {
+    /// The rules failed and an actor with bypass permission pushed anyway.
+    Bypass,
+    Fail,
+    Pass,
+}
+
+/// One recorded ruleset evaluation of the push that landed the merge commit.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RuleSuite {
+    /// The forge's identifier for the evaluation.
+    pub id: String,
+    /// The commit the push moved the branch to; always the change's merge commit.
+    pub after_sha: String,
+    pub result: SuiteResult,
+    /// The pushing account's login, as the forge reports it. Recorded, not resolved.
+    pub actor: Option<String>,
+    pub pushed_at: Timestamp,
+    pub provenance: Vec<Evidence>,
+}
+
+/// What the collector recorded about ruleset evaluations of a merged change's merge commit.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Protection {
+    /// The branch the change merged into.
+    pub branch: String,
+    /// The evaluations whose push landed the merge commit. Empty when none is recorded: no
+    /// ruleset applied, or the actor was exempt, which the forge does not record.
+    pub suites: Vec<RuleSuite>,
+    /// False when the evaluations could not be read, or the merge is older than the forge lets
+    /// a listing reach.
+    pub complete: bool,
+    pub provenance: Vec<Evidence>,
 }
 
 /// Whether a result is a check run or a commit status. A required check is matched by name

@@ -66,6 +66,10 @@ pub struct Collect {
     /// merged changes (ACC004). Implied when the policy enables ACC004.
     #[arg(long)]
     pub checks: bool,
+    /// Also collect ruleset evaluations of merged changes (ACC005); the token needs repository
+    /// administration read access. Implied when the policy enables ACC005.
+    #[arg(long)]
+    pub bypass: bool,
     #[command(flatten)]
     pub output: OutputArgs,
 }
@@ -96,8 +100,9 @@ pub fn client(max_pages: usize) -> Result<Github> {
 }
 
 /// Collect the pull requests merged in the window.
-/// `checks` asks for ACC004's facts whatever `--checks` says: the caller's policy needs them.
-pub fn collect(ctx: &Ctx, c: &Collect, checks: bool) -> Result<Events> {
+/// `checks` and `bypass` ask for ACC004's and ACC005's facts whatever `--checks` and `--bypass`
+/// say: the caller's policy needs them.
+pub fn collect(ctx: &Ctx, c: &Collect, checks: bool, bypass: bool) -> Result<Events> {
     let repository = detect::resolve_repository(c.repository.as_deref(), |m| ctx.note(m))?;
     let since = c
         .since
@@ -154,6 +159,7 @@ pub fn collect(ctx: &Ctx, c: &Collect, checks: bool) -> Result<Events> {
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: checks || c.checks,
+            bypass_as_of: (bypass || c.bypass).then(chrono::Utc::now),
         },
     )
 }

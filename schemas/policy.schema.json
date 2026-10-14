@@ -139,6 +139,9 @@
             "merged_without_required_checks": {
               "$ref": "#/$defs/rule_policy"
             },
+            "merged_with_protection_bypass": {
+              "$ref": "#/$defs/rule_policy"
+            },
             "unknown_agent_operator": {
               "$ref": "#/$defs/rule_policy"
             },
