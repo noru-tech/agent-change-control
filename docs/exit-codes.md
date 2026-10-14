@@ -7,10 +7,10 @@ once, in `Exit` in [`src/lib.rs`](../src/lib.rs), and a unit test pins each valu
 | Code | Meaning | Returned by |
 | --- | --- | --- |
 | [0](#0-success) | Success, or the policy threshold passed | every command |
-| [1](#1-policy-threshold-exceeded) | Policy threshold exceeded | `check`, `pr` |
+| [1](#1-policy-threshold-exceeded) | Policy threshold exceeded | `check`, `pr`, `verify` |
 | [2](#2-invalid-command-line-arguments) | Invalid command-line arguments; `doctor` found a broken check | every command |
 | [3](#3-invalid-input-or-manifest) | Invalid input or manifest | every command that reads a file |
-| [4](#4-collection-incomplete) | Collection incomplete (takes precedence over 1) | `scan`, `export`, `pr`, `evaluate`, `check` |
+| [4](#4-collection-incomplete) | Collection incomplete (takes precedence over 1) | `scan`, `export`, `pr`, `evaluate`, `check`, `verify` |
 | [5](#5-authentication-rejected) | Authentication rejected | `scan`, `export`, `pr` |
 | [6](#6-api-permission-rate-limit-or-transport-failure) | API, permission, rate-limit or transport failure | `scan`, `export`, `pr` |
 | [7](#7-unsupported-api-data-condition) | Unsupported API data condition | `scan`, `export`, `pr` |
@@ -43,6 +43,8 @@ $ acc evaluate tests/fixtures/claude-clean/events.json --format table > /dev/nul
 `check` or `pr` found at least one finding whose severity is at or above `fail_on` and that no
 disposition suppresses on the `--as-of` date. Each finding names its rule; see the
 [rule pages](rules/README.md) for what it means and how to fix it or record a disposition.
+`verify` exits 1 when a commit in its range is `uncovered` (no verified change landed it) or
+`failing` (the change that landed it fails); see [verify](verify.md).
 
 ```console
 $ acc -q check tests/fixtures/human-self-approved/expected-manifest.json > /dev/null; echo $?
@@ -54,7 +56,9 @@ $ acc -q check tests/fixtures/human-self-approved/expected-manifest.json > /dev/
 The command line could not be used: an unknown subcommand or flag, a bad value (`--format nope`),
 a malformed date or window (`--since` after `--until`), a malformed `LOGIN=AGENT` mapping, a
 missing `--repo` for `pr`, `--verified-by` without attestations, or `check` on a manifest with
-non-open dispositions but no `--as-of` date. The message says which. `acc doctor` also exits 2 when
+non-open dispositions but no `--as-of` date. For `verify`: no attestations, `--verification` without
+`--signer`, a range that is not `BASE..HEAD` or that git cannot resolve, or a shallow clone. The
+message says which. `acc doctor` also exits 2 when
 one of its checks failed (an invalid default policy file, a rejected token, GitHub unreachable with
 `--online`); its report says which.
 
@@ -73,6 +77,8 @@ than 32 MiB, not JSON or YAML, violates a [validation code](rules/README.md#vali
 (ACV001 to ACV010), or is a manifest or attestation that does not re-validate (its findings,
 summary or digest do not follow from its embedded facts). No manifest is produced for invalid
 input. When the error names a validation code, the message ends with a link to that code's page.
+`verify` also exits 3 for an attestation that carries no signature, or whose verified signer is not
+one `--signer` names.
 
 ```console
 $ acc evaluate tests/fixtures/approval-after-merge/events.json > /dev/null; echo $?
@@ -87,7 +93,8 @@ dismissed review whose time GitHub does not expose, an export marked incomplete)
 enables [ACC004](rules/ACC004.md) or [ACC005](rules/ACC005.md) and that rule's data is missing or
 partial for a merged change. The output is
 still written, with the gap recorded, but a clean result cannot be claimed. Exit 4 takes precedence
-over exit 1: an incomplete window is never reported as a plain policy failure or pass.
+over exit 1: an incomplete window is never reported as a plain policy failure or pass. `verify`
+exits 4 when a commit's only verdicts are incomplete.
 
 ```console
 $ acc evaluate tests/fixtures/incomplete-window/events.json --format table > /dev/null; echo $?

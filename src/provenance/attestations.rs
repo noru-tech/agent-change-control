@@ -137,6 +137,60 @@ fn container(value: Value) -> Result<Container> {
     }
 }
 
+/// A verifier's JSON output (`gh attestation verify --format json`): every result's container,
+/// which must carry a signature, and the certificate identity the verifier established for it.
+fn verifier_output(path: &Path) -> Result<Vec<(Container, Signer)>> {
+    let meta =
+        std::fs::metadata(path).with_context(|| format!("unable to read {}", path.display()))?;
+    ensure!(
+        meta.len() <= MAX_FILE,
+        "verification file exceeds 32 MiB limit"
+    );
+    let data = std::fs::read_to_string(path)
+        .with_context(|| format!("unable to read {}", path.display()))?;
+    let value: Value = serde_json::from_str(&data)
+        .with_context(|| format!("{} is not valid JSON", path.display()))?;
+    let results = match value {
+        Value::Array(items) => items,
+        v => vec![v],
+    };
+    ensure!(!results.is_empty(), "verification file holds no results");
+    let mut out = Vec::with_capacity(results.len());
+    for (i, result) in results.into_iter().enumerate() {
+        let bundle = result
+            .get("attestation")
+            .and_then(|a| a.get("bundle"))
+            .cloned()
+            .ok_or_else(|| {
+                anyhow::anyhow!("{}#{}: no attestation.bundle", path.display(), i + 1)
+            })?;
+        let certificate = &result["verificationResult"]["signature"]["certificate"];
+        let identity = certificate["subjectAlternativeName"]
+            .as_str()
+            .filter(|s| !s.trim().is_empty())
+            .ok_or_else(|| {
+                anyhow::anyhow!("{}#{}: no verified signer identity", path.display(), i + 1)
+            })?;
+        let signer = Signer {
+            identity: identity.to_string(),
+            issuer: certificate["issuer"]
+                .as_str()
+                .or_else(|| certificate["certificateIssuer"].as_str())
+                .filter(|s| !s.trim().is_empty())
+                .map(String::from),
+        };
+        let c = container(bundle).with_context(|| format!("{}#{}", path.display(), i + 1))?;
+        ensure!(
+            c.signed,
+            "{}#{}: verified bundle carries no signature",
+            path.display(),
+            i + 1
+        );
+        out.push((c, signer));
+    }
+    Ok(out)
+}
+
 impl Attestations {
     /// Load every `.json` and `.jsonl` file under `paths` (files or directories, recursively, in
     /// sorted order). A `.json` file holds one container or an array of them; a `.jsonl` file
@@ -158,55 +212,17 @@ impl Attestations {
         self.loaded.is_empty()
     }
 
+    /// Every loaded Statement with its registry record, in load order. A payload loaded twice
+    /// appears once, with the record that knows more about its signer.
+    pub fn statements(&self) -> impl Iterator<Item = (&Attestation, &Value)> {
+        self.loaded.iter().map(|l| (&l.record, &l.statement))
+    }
+
     /// Load a verifier's JSON output (`gh attestation verify --format json`): each result
     /// carries the verified Sigstore bundle and the certificate identity the verifier
     /// established. The bundles are loaded as signed attestations with their signer recorded.
     pub fn load_verification(&mut self, path: &Path) -> Result<()> {
-        let meta = std::fs::metadata(path)
-            .with_context(|| format!("unable to read {}", path.display()))?;
-        ensure!(
-            meta.len() <= MAX_FILE,
-            "verification file exceeds 32 MiB limit"
-        );
-        let data = std::fs::read_to_string(path)
-            .with_context(|| format!("unable to read {}", path.display()))?;
-        let value: Value = serde_json::from_str(&data)
-            .with_context(|| format!("{} is not valid JSON", path.display()))?;
-        let results = match value {
-            Value::Array(items) => items,
-            v => vec![v],
-        };
-        ensure!(!results.is_empty(), "verification file holds no results");
-        for (i, result) in results.into_iter().enumerate() {
-            let bundle = result
-                .get("attestation")
-                .and_then(|a| a.get("bundle"))
-                .cloned()
-                .ok_or_else(|| {
-                    anyhow::anyhow!("{}#{}: no attestation.bundle", path.display(), i + 1)
-                })?;
-            let certificate = &result["verificationResult"]["signature"]["certificate"];
-            let identity = certificate["subjectAlternativeName"]
-                .as_str()
-                .filter(|s| !s.trim().is_empty())
-                .ok_or_else(|| {
-                    anyhow::anyhow!("{}#{}: no verified signer identity", path.display(), i + 1)
-                })?;
-            let signer = Signer {
-                identity: identity.to_string(),
-                issuer: certificate["issuer"]
-                    .as_str()
-                    .or_else(|| certificate["certificateIssuer"].as_str())
-                    .filter(|s| !s.trim().is_empty())
-                    .map(String::from),
-            };
-            let c = container(bundle).with_context(|| format!("{}#{}", path.display(), i + 1))?;
-            ensure!(
-                c.signed,
-                "{}#{}: verified bundle carries no signature",
-                path.display(),
-                i + 1
-            );
+        for (i, (c, signer)) in verifier_output(path)?.into_iter().enumerate() {
             self.push(c, path, i, Some(signer));
         }
         Ok(())

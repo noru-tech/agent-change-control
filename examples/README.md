@@ -8,6 +8,7 @@
 | `review.intoto.json` | A review document for an agent reviewer, as a Statement to sign (spec §3.7); validate the predicate with the `review` schema |
 | `policy.yml` | A policy that fails on unknown operators |
 | `workflow-required-check.yml` | The GitHub Action as a merge gate with SARIF upload |
+| `deploy-gate.yml` | A deploy job that runs `acc verify` on every commit since the last production deployment ([verify](../docs/verify.md)) |
 
 Synthetic inputs for the offline commands live in `tests/fixtures/`; for instance:
 

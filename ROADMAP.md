@@ -58,9 +58,6 @@ manifests, dispositions, table/JSON/YAML/SARIF output.
   the author and reviewer signing identities as functionaries and a threshold, mapping the
   `identity` dimension of `agent_review` to in-toto verification. Only worth it for users who
   already run in-toto verification.
-- **`acc verify`** for signed attestations: unwrap the DSSE envelope, then apply what
-  `acc validate` already does for unsigned Statements (subjects match the predicate, the predicate
-  re-validates), and check the subjects against a commit range.
 - **Dismissal timing** via GitHub's GraphQL timeline, so dismissed reviews stop forcing
   `reviews_complete: false`.
 - **Classic-protection overrides** from the organization audit log

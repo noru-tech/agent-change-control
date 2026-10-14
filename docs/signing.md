@@ -176,6 +176,10 @@ embedded policy, and requires byte-identical findings, assessments and summary. 
 predicate marks collection incomplete validates, but cannot be read as clean; check
 `events.window.complete` and every change's `reviews_complete` before treating a verdict as pass.
 
+To gate a deploy on these verdicts, `acc verify` takes the JSON from step 1 for every change in a
+commit range, checks the signer identity it names, and re-validates each Statement as step 2 does;
+see [verify](verify.md).
+
 What verification does not establish: that the events in the predicate are what the forge held at
 the time. The signer attests that this evaluator, run by this identity, saw these facts; a
 declaration inside them is still a declaration (see [agent authorship](agent-authorship.md)),
