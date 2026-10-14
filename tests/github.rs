@@ -203,6 +203,9 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
     if path.starts_with("/users/") {
         return ("200 OK", "", USER.into());
     }
+    if let Some(response) = checks_response(mode, path) {
+        return response;
+    }
     *pull_reads += 1;
     let body = match mode {
         "moving" if *pull_reads > 1 => edited(PULL, |v| v["head"]["sha"] = "moved".into()),
@@ -215,6 +218,51 @@ fn respond(mode: &str, path: &str, pull_reads: &mut usize) -> (&'static str, &'s
         _ => PULL.into(),
     };
     ("200 OK", "", body)
+}
+
+/// Required-check and check-result endpoints, for the `checks*` modes.
+fn checks_response(mode: &str, path: &str) -> Option<(&'static str, &'static str, String)> {
+    let forbidden = ("403 Forbidden", "", "{}".to_string());
+    let response = if path.starts_with("/repos/acme/api/rules/branches/main?") {
+        (
+            "200 OK",
+            "",
+            r#"[{"type":"pull_request","parameters":{}},{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"ci / test"}]}}]"#.into(),
+        )
+    } else if path == "/repos/acme/api/branches/main" {
+        if mode == "checks-forbidden" {
+            forbidden
+        } else {
+            (
+                "200 OK",
+                "",
+                r#"{"name":"main","protected":true,"protection":{"enabled":true,"required_status_checks":{"enforcement_level":"everyone","contexts":["lint"],"checks":[{"context":"lint","app_id":null}]}}}"#.into(),
+            )
+        }
+    } else if path.starts_with("/repos/acme/api/commits/head/check-runs?") {
+        if mode == "checks-forbidden" {
+            forbidden
+        } else {
+            (
+                "200 OK",
+                "",
+                r#"{"total_count":2,"check_runs":[{"id":11,"name":"ci / test","status":"completed","conclusion":"success","completed_at":"2026-08-03T11:00:00Z"},{"id":12,"name":"ci / test","status":"in_progress","conclusion":null,"completed_at":null}]}"#.into(),
+            )
+        }
+    } else if path.starts_with("/repos/acme/api/commits/head/statuses?") {
+        (
+            "200 OK",
+            "",
+            r#"[{"id":21,"context":"lint","state":"success","created_at":"2026-08-03T10:00:00Z"},{"id":22,"context":"lint","state":"pending","created_at":"2026-08-03T09:00:00Z"}]"#.into(),
+        )
+    } else if path.starts_with("/repos/acme/api/commits/merge/check-runs?") {
+        ("200 OK", "", r#"{"total_count":0,"check_runs":[]}"#.into())
+    } else if path.starts_with("/repos/acme/api/commits/merge/statuses?") {
+        ("200 OK", "", "[]".into())
+    } else {
+        return None;
+    };
+    Some(response)
 }
 
 fn window() -> (
@@ -284,6 +332,7 @@ fn collect_with(mode: &'static str, known: &BTreeMap<String, String>) -> anyhow:
             traces: traces.as_ref(),
             attestations: attestations.as_ref(),
             vendors: &vendors,
+            checks: mode.starts_with("checks"),
         },
     )
 }
@@ -1012,4 +1061,72 @@ fn doctor_never_prints_the_token() {
             assert!(all.contains(&format!("{var} is set")), "{args:?}: {all}");
         }
     }
+}
+
+fn acc004_policy() -> Policy {
+    let mut p = Policy::default();
+    p.rules
+        .get_mut(&agent_change_control::model::RuleName::MergedWithoutRequiredChecks)
+        .unwrap()
+        .enabled = true;
+    p
+}
+
+#[test]
+fn checks_are_collected_only_when_asked() {
+    let e = collect("normal").unwrap();
+    assert!(e.changes.iter().all(|c| c.checks.is_none()));
+    let m = manifest::evaluate(e, Policy::default()).unwrap();
+    assert!(m.assessments.iter().all(|a| a.rule_id != RuleId::Acc004));
+}
+
+#[test]
+fn required_checks_and_results_are_collected_from_rules_protection_runs_and_statuses() {
+    let e = collect("checks").unwrap();
+    let k = e.changes[0].checks.as_ref().unwrap();
+    assert_eq!(k.branch, "main");
+    // Rulesets name one check, classic protection another; both are required.
+    assert_eq!(
+        k.required,
+        vec!["ci / test".to_string(), "lint".to_string()]
+    );
+    assert!(k.required_complete && k.runs_complete);
+    // In-progress runs and pending statuses are not results.
+    let names: Vec<(&str, &str)> = k
+        .runs
+        .iter()
+        .map(|r| (r.name.as_str(), r.commit_sha.as_str()))
+        .collect();
+    assert_eq!(names, vec![("ci / test", "head"), ("lint", "head")]);
+    assert!(e.window.complete);
+    let m = manifest::evaluate(e, acc004_policy()).unwrap();
+    let acc004 = m
+        .assessments
+        .iter()
+        .find(|a| a.rule_id == RuleId::Acc004)
+        .unwrap();
+    assert_eq!(acc004.status, Status::Pass, "{}", acc004.reason);
+    assert!(!manifest::incomplete(&m.events, &m.policy));
+}
+
+#[test]
+fn unreadable_checks_are_incomplete_only_where_acc004_is_enabled() {
+    // A token that cannot read check runs or branch protection is not an error: the gap is
+    // recorded on the change, and the window stays complete.
+    let e = collect("checks-forbidden").unwrap();
+    let k = e.changes[0].checks.as_ref().unwrap();
+    assert!(!k.runs_complete && !k.required_complete);
+    assert!(e.window.complete);
+    let off = manifest::evaluate(e.clone(), Policy::default()).unwrap();
+    assert!(!manifest::incomplete(&off.events, &off.policy));
+    let on = manifest::evaluate(e, acc004_policy()).unwrap();
+    assert!(manifest::incomplete(&on.events, &on.policy));
+    let acc004 = on
+        .assessments
+        .iter()
+        .find(|a| a.rule_id == RuleId::Acc004)
+        .unwrap();
+    assert_eq!(acc004.status, Status::Unknown);
+    let (_, exit) = manifest::check(&on, None, None).unwrap();
+    assert_eq!(exit, Exit::Incomplete);
 }

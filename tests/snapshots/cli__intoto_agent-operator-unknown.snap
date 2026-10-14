@@ -134,8 +134,6 @@ predicate:
         status: open
       explanation: Agent authorship is recorded but its human operator is unknown.
       id: acc-a77f6c869b9816b1
-      legacy_ids:
-        - acc-3031f6b4807c5738
       provenance:
         - kind: observed
           ref: "https://api.github.com/repos/acme/api/pulls/421"
@@ -159,6 +157,9 @@ predicate:
         - provider
         - identity
       satisfies_independence: false
+    checks:
+      from_forge: true
+      required: []
     fail_on: medium
     minimum_authorship_evidence: derived
     minimum_review_evidence: observed
@@ -181,13 +182,16 @@ predicate:
       merged_without_independent_approval:
         enabled: true
         severity: high
+      merged_without_required_checks:
+        enabled: false
+        severity: high
       same_vendor_write_and_review:
         enabled: true
         severity: high
       unknown_agent_operator:
         enabled: true
         severity: warning
-    version: "0.3"
+    version: "0.4"
   summary:
     agent_authored: 1
     agent_operator_unknown: 1
@@ -197,8 +201,8 @@ predicate:
     human_authored: 0
     indeterminate: 0
     with_findings: 1
-  version: "0.3"
-predicateType: "https://noru.tech/spec/ai-change-provenance/v0.3"
+  version: "0.4"
+predicateType: "https://noru.tech/spec/ai-change-provenance/v0.4"
 subject:
   - digest:
       gitCommit: head

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/policy.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/v0.4/policy.schema.json",
   "$ref": "#/$defs/policy",
   "$defs": {
     "rule_policy": {
@@ -62,6 +62,23 @@
       "required": [],
       "additionalProperties": false
     },
+    "checks_policy": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "from_forge": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
     "policy": {
       "type": "object",
       "properties": {
@@ -70,7 +87,8 @@
           "enum": [
             "0.1",
             "0.2",
-            "0.3"
+            "0.3",
+            "0.4"
           ]
         },
         "fail_on": {
@@ -103,6 +121,9 @@
         "agent_review": {
           "$ref": "#/$defs/agent_review"
         },
+        "checks": {
+          "$ref": "#/$defs/checks_policy"
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -113,6 +134,9 @@
               "$ref": "#/$defs/rule_policy"
             },
             "merged_without_independent_approval": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "merged_without_required_checks": {
               "$ref": "#/$defs/rule_policy"
             },
             "unknown_agent_operator": {

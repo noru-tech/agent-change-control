@@ -121,6 +121,8 @@ pub enum RuleId {
     Acc002,
     #[serde(rename = "ACC003")]
     Acc003,
+    #[serde(rename = "ACC004")]
+    Acc004,
     #[serde(rename = "ACC006")]
     Acc006,
     #[serde(rename = "ACC007")]
@@ -140,6 +142,7 @@ pub enum RuleName {
     AgentChangeWithoutIndependentHuman,
     ApproverIsAuthor,
     MergedWithoutIndependentApproval,
+    MergedWithoutRequiredChecks,
     UnknownAgentOperator,
     AgentApprovalRecorded,
     SameVendorWriteAndReview,
@@ -187,6 +190,7 @@ impl RuleId {
             RuleId::Acc001 => "ACC001",
             RuleId::Acc002 => "ACC002",
             RuleId::Acc003 => "ACC003",
+            RuleId::Acc004 => "ACC004",
             RuleId::Acc006 => "ACC006",
             RuleId::Acc007 => "ACC007",
             RuleId::Acc008 => "ACC008",
@@ -201,6 +205,7 @@ impl RuleId {
             RuleId::Acc001 => RuleName::AgentChangeWithoutIndependentHuman,
             RuleId::Acc002 => RuleName::ApproverIsAuthor,
             RuleId::Acc003 => RuleName::MergedWithoutIndependentApproval,
+            RuleId::Acc004 => RuleName::MergedWithoutRequiredChecks,
             RuleId::Acc006 => RuleName::UnknownAgentOperator,
             RuleId::Acc007 => RuleName::AgentApprovalRecorded,
             RuleId::Acc008 => RuleName::SameVendorWriteAndReview,
@@ -218,6 +223,7 @@ impl RuleName {
             }
             RuleName::ApproverIsAuthor => "approver_is_author",
             RuleName::MergedWithoutIndependentApproval => "merged_without_independent_approval",
+            RuleName::MergedWithoutRequiredChecks => "merged_without_required_checks",
             RuleName::UnknownAgentOperator => "unknown_agent_operator",
             RuleName::AgentApprovalRecorded => "agent_approval_recorded",
             RuleName::SameVendorWriteAndReview => "same_vendor_write_and_review",
@@ -351,6 +357,90 @@ pub struct Change {
     /// written before it existed.
     #[serde(default)]
     pub labels: Vec<String>,
+    /// Check and status results and the required checks, for ACC004 (ACP 0.4). Absent when the
+    /// collector was not asked for them, and in every document written before 0.4; serialized
+    /// only when present, so earlier documents keep their bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checks: Option<Checks>,
+}
+
+/// Whether a result is a check run or a commit status. A required check is matched by name
+/// against both, as the forge does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CheckKind {
+    CheckRun,
+    Status,
+}
+
+/// How a check run or commit status ended. Only `success`, `neutral` and `skipped` satisfy a
+/// required check.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Conclusion {
+    ActionRequired,
+    Cancelled,
+    Error,
+    Failure,
+    Neutral,
+    Skipped,
+    Stale,
+    Success,
+    TimedOut,
+}
+
+impl Conclusion {
+    /// Whether this conclusion satisfies a required check.
+    pub const fn passing(self) -> bool {
+        matches!(
+            self,
+            Conclusion::Success | Conclusion::Neutral | Conclusion::Skipped
+        )
+    }
+}
+
+/// Where the forge's required checks for the target branch were read from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RequiredSource {
+    /// Classic branch protection.
+    BranchProtection,
+    /// Rulesets, repository and organization, in active enforcement.
+    Rules,
+}
+
+/// One completed check run or commit status on the head or the merge commit.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct CheckRun {
+    /// The check run's name or the status's context.
+    pub name: String,
+    pub kind: CheckKind,
+    pub commit_sha: String,
+    pub conclusion: Conclusion,
+    pub completed_at: Timestamp,
+    pub provenance: Vec<Evidence>,
+}
+
+/// What the collector recorded about checks for a merged change.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Checks {
+    /// The branch the change merged into.
+    pub branch: String,
+    /// Completed runs and statuses on the head and the merge commit. Runs completed after the
+    /// merge are recorded too; the evaluator ignores them.
+    pub runs: Vec<CheckRun>,
+    /// False when a listing was truncated or could not be read.
+    pub runs_complete: bool,
+    /// The check names the forge's rules for `branch` require, as read at collection time. The
+    /// forge exposes no record of the rules in force at merge time.
+    pub required: Vec<String>,
+    /// The sources `required` was read from.
+    pub required_sources: Vec<RequiredSource>,
+    /// False when a source of required checks could not be read.
+    pub required_complete: bool,
+    pub provenance: Vec<Evidence>,
 }
 
 /// An attestation the collector consulted, as handed over by the caller. `acc` does not verify
@@ -428,7 +518,23 @@ pub struct Policy {
     /// Whether, and on what conditions, an agent approval satisfies independence.
     #[serde(default)]
     pub agent_review: AgentReview,
+    /// Which checks ACC004 requires (ACP 0.4). Always present in a resolved 0.4 policy; absent
+    /// from earlier documents, and serialized only when present so they keep their bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checks: Option<ChecksPolicy>,
     pub rules: BTreeMap<RuleName, RulePolicy>,
+}
+
+/// The checks ACC004 requires on the approved head of a merged change.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ChecksPolicy {
+    /// Check names always required, whatever the forge's rules say.
+    #[serde(default)]
+    pub required: Vec<String>,
+    /// Also require the checks the forge's rules required, as read at collection time.
+    #[serde(default = "crate::policy::default_from_forge")]
+    pub from_forge: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

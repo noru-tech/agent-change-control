@@ -23,8 +23,8 @@ Two properties matter for evidence handling:
 
 | Framework | Control objective (paraphrased) | What `acc` provides |
 | --- | --- | --- |
-| SOC 2 (2017 TSC) | CC8.1 — changes are authorized, designed, tested, approved and implemented under change-management procedures | Per-change evidence of independent approval before merge (ACC003), agent changes with independent review (ACC001), and self-approval (ACC002) |
-| ISO/IEC 27001:2022 Annex A | A.8.32 Change management; A.5.3 Segregation of duties; A.8.25 Secure development life cycle | Population of merged changes with author, approver and merger identities; failures of segregation surfaced as findings |
+| SOC 2 (2017 TSC) | CC8.1 — changes are authorized, designed, tested, approved and implemented under change-management procedures | Per-change evidence of independent approval before merge (ACC003), agent changes with independent review (ACC001), self-approval (ACC002), and, when enabled, required checks passing on the merged commit before merge (ACC004) |
+| ISO/IEC 27001:2022 Annex A | A.8.32 Change management; A.5.3 Segregation of duties; A.8.25 Secure development life cycle; A.8.29 Security testing in development and acceptance (ACC004) | Population of merged changes with author, approver and merger identities; failures of segregation surfaced as findings; required checks not passing before merge (ACC004) |
 | PCI DSS v4.0.1 | 6.5.1 — changes to system components follow change-control procedures including approval by authorized parties | Approval facts bound to the merged head commit; open items reported rather than assumed |
 | NIST SP 800-53 Rev. 5 | CM-3 Configuration change control; CM-5 Access restrictions for change; AC-5 Separation of duties | Machine-checkable separation between the effective author (including an agent's operator) and the approver |
 | NIST SP 800-218 (SSDF) | PS.1 Protect code from unauthorized access and tampering; PW.7 Review and/or analyze human-readable code | Evidence that human review occurred, by whom, and whether the reviewer was independent of the author |
@@ -38,6 +38,7 @@ Two properties matter for evidence handling:
 | ACC001 | An agent-written change merged (or is open) without a human independent of its operator approving the current head | Treat as a missed four-eyes review; retrospective review and a disposition, or a required status check going forward |
 | ACC002 | The effective human author, or the agent's operator, approved the change themselves | Self-approval; the same response as for any author-approved change |
 | ACC003 | A merged change has no qualifying independent approval | Missed review or an approval that did not cover the merged head |
+| ACC004 | A merged change's required check failed, or never ran, on its head or merge commit before merge | Run the checks on the merged commit and record a disposition, or revert; require the checks in a ruleset without bypass |
 | ACC006 | An agent wrote the change and no human operator is recorded | Not a violation; a gap in provenance. Fix the declaration at the source (agent integration or PR template) |
 | ACC007 | An agent approved the change (observation, info) | None by itself; the population of agent-approved changes for sampling |
 | ACC008 | An agent wrote the change and only agents of the same vendor approved it | One model checking its own work; treat as a missed independent review |

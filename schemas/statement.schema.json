@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/statement.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/v0.4/statement.schema.json",
   "$comment": "The in-toto Statement v1 shape that acc emits and validates: a strict subset of https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md. Subjects carry a name and a digest set only; the predicate is validated separately against manifest.schema.json.",
   "$ref": "#/$defs/statement",
   "$defs": {

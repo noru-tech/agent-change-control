@@ -6,7 +6,32 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **AI Change Provenance 0.4**: required checks. For merged changes, `acc` can collect completed
+  check runs and commit statuses on the head and merge commit, and the checks the repository's
+  rules require on the target branch (rulesets, and classic branch protection where the token
+  can see it). New rule **ACC004** (`merged_without_required_checks`, `high`, disabled by
+  default) fails a merged change whose required checks did not pass on its head or merge commit
+  before the merge. A `checks` policy block names checks to require (`required`) and whether the
+  repository's rules count (`from_forge`, default true). `scan` and `pr` collect the facts when
+  the policy enables ACC004; `export --checks` collects them on request. With ACC004 enabled,
+  missing or partial check data makes collection incomplete (exit 4).
+- Conformance suite for ACP 0.4, revision 1, with vectors for ACC004 and the validation of check
+  facts.
+
 ### Changed
+- Manifests, policies and exports are written as ACP 0.4, and attestations use predicate type
+  `https://noru.tech/spec/ai-change-provenance/v0.4`. ACP 0.3 manifests and `v0.3` Statements
+  still validate, as 0.3; 0.2 ones as before.
+- Findings no longer carry `legacy_ids` (scheduled by ACP 0.3). `acc check` still carries a
+  disposition recorded under a 0.2 identifier forward.
+- `acc validate` ignores `generated.tool` and `generated.version`, so a manifest written by any
+  release, or any conforming evaluator, of its ACP version validates; the schema no longer pins
+  the generator release.
+- Schemas are published at version-pinned identifiers under
+  `https://noru.tech/spec/ai-change-provenance/v0.4/`, and spec §12 names the manifest members a
+  consumer can rely on across versions.
+- The table's per-rule counts show `off` for a rule the policy disables.
 - Dependencies updated: `serde-saphyr` 1.3 → 2.0, `serde_json_canonicalizer` 0.3 → 0.4 (it now
   rejects an object with a duplicate key instead of keeping one), `jsonschema` 0.58.6,
   `insta` 1.49, and the pinned `dtolnay/rust-toolchain`, `crate-ci/typos` v1.51.1,

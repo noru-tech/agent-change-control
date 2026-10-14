@@ -50,7 +50,7 @@ pub fn render(m: &Manifest) -> Result<String> {
             })
         })
         .collect();
-    let complete = m.events.window.complete && m.events.changes.iter().all(|c| c.reviews_complete);
+    let complete = !crate::manifest::incomplete(&m.events, &m.policy);
     let log = json!({
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",

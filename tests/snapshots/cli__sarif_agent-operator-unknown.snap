@@ -86,6 +86,11 @@ runs:
             name: merged_without_independent_approval
             shortDescription:
               text: merged without independent approval
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC004.md"
+            id: ACC004
+            name: merged_without_required_checks
+            shortDescription:
+              text: merged without required checks
           - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC006.md"
             id: ACC006
             name: unknown_agent_operator

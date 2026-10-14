@@ -57,7 +57,10 @@ document that describes it in detail. Planned work is on the [roadmap](ROADMAP.m
 - **From trailers, the operator is derived only when one human authored every commit.**
 - **Unnamed AI authorship cannot be recorded.** An Agent Trace record that marks AI authorship
   without naming the tool is ignored until the specification defines an unnamed agent.
-- **Deployment and bypass rules are not implemented** (ACC004 and ACC005 are reserved).
+- **Protection bypass and deployments are not evaluated** (ACC005 is reserved).
+- **Required checks (ACC004) are judged against today's rules**, not the rules in force at the
+  merge, which GitHub does not record; and a check posted only to the test merge commit, whose
+  SHA GitHub discards after the merge, reads as never run ([ACC004](docs/rules/ACC004.md#limits)).
 
 ## Privacy
 

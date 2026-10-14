@@ -1,8 +1,8 @@
 # Predicate type: AI Change Provenance
 
-Type URI: `https://noru.tech/spec/ai-change-provenance/v0.3`
+Type URI: `https://noru.tech/spec/ai-change-provenance/v0.4`
 
-Version: 0.3
+Version: 0.4
 
 This page describes the predicate `acc` emits inside an
 [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md),
@@ -52,7 +52,7 @@ Statement
 ├── subject: for each change
 │   ├── <change id>        gitCommit = head commit (what the approvals are bound to)
 │   └── <change id>:merge  gitCommit = merge commit (when merged, known and distinct)
-├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.3
+├── predicateType: https://noru.tech/spec/ai-change-provenance/v0.4
 └── predicate (manifest)
     ├── events      repository, window, actors, changes (facts with evidence references)
     ├── policy      the resolved rules, severities and threshold
@@ -84,9 +84,9 @@ and are embedded in the `acc` binary.
     {"name": "github:acme/api:pr:421", "digest": {"gitCommit": "<head sha>"}},
     {"name": "github:acme/api:pr:421:merge", "digest": {"gitCommit": "<merge sha>"}}
   ],
-  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.3",
+  "predicateType": "https://noru.tech/spec/ai-change-provenance/v0.4",
   "predicate": {
-    "version": "0.3",
+    "version": "0.4",
     "events": { "...": "repository, window, actors, changes" },
     "policy": { "...": "resolved policy" },
     "summary": { "...": "counts" },
@@ -176,6 +176,11 @@ evidence (`--attestations`). See [signing](signing.md#signing-an-authorship-clai
 
 ## Changelog and Migrations
 
+- **0.4** — type URI `v0.4`. Merged changes may carry `checks` (check runs, commit statuses and
+  the forge's required checks), the policy gains a `checks` block and rule
+  `merged_without_required_checks` (ACC004, disabled by default), and findings no longer carry
+  `legacy_ids`. Re-validation ignores `generated.tool` and `generated.version`. A `v0.3`
+  Statement still validates, as 0.3.
 - **0.3** — type URI `v0.3`. Every digest is SHA-256 over RFC 8785 bytes, and the trailing
   newline that 0.2 included in each preimage is gone, so finding identifiers, `source_digest`
   and the `sha256` subject digest all change while findings, assessments and verdicts do not.

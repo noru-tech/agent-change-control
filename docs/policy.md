@@ -3,7 +3,7 @@
 The evaluator uses defaults unless a policy is passed or `.agent-change-control/policy.yml` exists. Partial rule maps inherit defaults. `check` uses the policy embedded in the manifest unless `--policy` explicitly overrides it, preserving reproducibility across machines. Disabling a rule removes its finding and assessment but does not alter facts. Unknown rules and severities fail validation.
 
 ```yaml
-version: "0.3"
+version: "0.4"
 fail_on: medium
 minimum_authorship_evidence: derived   # derived | declared | observed | signed
 minimum_review_evidence: observed      # derived | declared | observed | signed
@@ -12,6 +12,9 @@ agent_review:
   require: [operator, provider, identity]   # dimensions that must be independent
   minimum_evidence: signed             # not lowerable
   labels: []                           # scope the mode to changes carrying one of these
+checks:
+  required: []                         # check names ACC004 always requires
+  from_forge: true                     # also require what the repository's rules require
 rules:
   agent_change_without_independent_human:
     enabled: true
@@ -21,6 +24,9 @@ rules:
     severity: high
   merged_without_independent_approval:
     enabled: true
+    severity: high
+  merged_without_required_checks:
+    enabled: false                     # opt in: see "Required checks" below
     severity: high
   unknown_agent_operator:
     enabled: true
@@ -47,6 +53,22 @@ Evidence kinds are ordered derived < declared < observed < signed. `minimum_auth
 
 By default an agent's approval never qualifies as independent. With `agent_review.satisfies_independence: true` it does when its evidence is `signed` (a review document verified before the run, see [signing](signing.md)) and every dimension in `require` is independent: `operator` (the reviewing agent's operator is not the effective human), `provider` (the reviewing agent's vendor differs from the author agent's), `identity` (the review document's verified signer differs from the signer behind the authorship claim) and `instructions` (the reviewer's instructions owner is not the effective human; opt-in, because few producers can declare it yet). ACC001 and ACC003 then pass with a reason that names the policy. If no approval qualifies but an agent approval is unknown on a required dimension and dependent on none, ACC001, ACC003 and ACC009 are unknown, never pass. `labels` restricts the mode to changes carrying one of the listed forge labels; the fixtures `agent-review-*` cover each case of the design's worked table.
 
+## Required checks
+
+ACC004 is off by default. Turn it on with `rules.merged_without_required_checks.enabled: true`.
+The required checks are `checks.required` plus, with `checks.from_forge: true` (the default),
+what the repository's rules require on the branch a change merged into: active rulesets and
+classic branch protection, as read at collection time. `acc scan` and `acc pr` collect the check
+facts whenever the policy enables ACC004; `acc export --checks` collects them for a later
+`evaluate`. The token needs `checks: read` and `statuses: read`.
+
+A required check passes when, on the head commit or the merge commit, its latest result completed
+at or before the merge is `success`, `neutral` or `skipped` (every result at that instant, when
+several share it). With ACC004 enabled, a merged change whose check data is missing or partial,
+or, under `from_forge`, whose required set could not be read in full, makes the collection
+incomplete (exit 4). If the token cannot read classic branch protection, list the checks in
+`checks.required` and set `from_forge: false`. See [ACC004](rules/ACC004.md) for the limits.
+
 ## Exact deterministic conditions
 
 A known effective human is the effective author when actor.kind is human, or the recorded operator when actor.kind is agent. Other cases remain unknown. A qualifying independent approval is the latest non-comment decision per reviewer at or before merge (all decisions for an open PR), has state approved and the current head SHA, belongs to a human and differs from the known effective human. Any later changes-requested/dismissed decision withdraws that reviewer's approval. Approval at exactly merge time qualifies.
@@ -56,6 +78,7 @@ A known effective human is the effective author when actor.kind is human, or the
 | ACC001 | Effective author is agent, operator known, reviews complete and no qualifying independent human approval. Partial collection cannot establish whether an approval was later withdrawn. Unknown operator or missing reviews yields unknown. | claude-clean | claude-operator-self-approved |
 | ACC002 | Any recorded approved review is by the known effective human. A self-approval still counts if stale; latest effective review state determines independence separately. Without self-approval, complete reviews pass; partial reviews or unknown human yield unknown. | human-clean | human-self-approved |
 | ACC003 | Change is merged, effective human known, reviews complete and no qualifying independent human approval. Open changes are not applicable; missing evidence yields unknown. | human-clean | dismissed-approval |
+| ACC004 | Change is merged, check collection complete, and some required check has no passing latest result completed at or before merge on the head or merge commit (no result fails). Open changes and changes with nothing required are not applicable; missing or partial check facts, or an unreadable required set under `from_forge` with every known check passing, yield unknown. Off unless a policy enables it. | checks-passed | checks-failed |
 | ACC006 | Effective author is agent and no known human operator exists. Non-agent authors are not applicable. | codex-clean | agent-operator-unknown |
 | ACC007 | An agent's latest decision at or before merge approves the current head. An observation (info), never a violation. Not applicable when no agent reviewed the head. | human-clean (n/a) | agent-review-declared |
 | ACC008 | Effective author is an agent, at least one approval of the head exists, no human approved it, and every approving agent has the author agent's vendor. Unknown when a vendor is null. | agent-review-independent | agent-review-same-vendor |

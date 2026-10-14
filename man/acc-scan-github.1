@@ -4,7 +4,7 @@
 .SH NAME
 acc\-scan\-github \- A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
 .SH SYNOPSIS
-\fBacc scan github\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-\-until\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] 
+\fBacc scan github\fR [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-since\fR] [\fB\-\-until\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-\-no\-color\fR] [\fB\-\-policy\fR] [\fB\-\-agent\-account\fR] [\fB\-\-agent\-trailer\fR] [\fB\-\-ignore\-trailers\fR] [\fB\-\-agent\-trace\fR] [\fB\-\-attestations\fR] [\fB\-\-verified\-by\fR] [\fB\-\-verification\fR] [\fB\-\-agent\-vendor\fR] [\fB\-\-max\-pages\fR] [\fB\-\-checks\fR] [\fB\-f\fR|\fB\-\-format\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIREPOSITORY\fR] 
 .SH DESCRIPTION
 A GitHub.com repository. Reads GITHUB_TOKEN or GH_TOKEN; public repositories need none
 .SH OPTIONS
@@ -53,6 +53,9 @@ Treat AGENT as built and operated by VENDOR (repeatable; extends the built\-in r
 .TP
 \fB\-\-max\-pages\fR \fI<N>\fR [default: 100]
 Maximum pages per list endpoint (100 items each)
+.TP
+\fB\-\-checks\fR
+Also collect check runs, commit statuses and the target branch\*(Aqs required checks for merged changes (ACC004). Implied when the policy enables ACC004
 .TP
 \fB\-f\fR, \fB\-\-format\fR \fI<FORMAT>\fR
 Output format; inferred from the \-\-output extension when omitted

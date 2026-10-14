@@ -1,0 +1,5 @@
+version: "0.4"
+rules:
+  merged_without_required_checks:
+    enabled: true
+    severity: high

@@ -223,6 +223,52 @@ pub fn events(mut e: Events) -> Result<Events> {
             "ACV004 duplicate commit"
         );
         evidence(&mut c.provenance, &attestations)?;
+        if let Some(k) = &mut c.checks {
+            ensure!(
+                c.merged_at.is_some(),
+                "ACV004 check facts on unmerged change"
+            );
+            for run in &mut k.runs {
+                ensure!(
+                    run.commit_sha == c.head_sha
+                        || c.merge_commit_sha.as_deref() == Some(run.commit_sha.as_str()),
+                    "ACV003 check result on a commit that is neither the head nor the merge commit"
+                );
+                ensure!(!run.name.trim().is_empty(), "ACV010 empty check name");
+                evidence(&mut run.provenance, &attestations)?;
+            }
+            k.runs.sort_by(|a, b| {
+                (
+                    &a.name,
+                    &a.commit_sha,
+                    a.completed_at,
+                    a.kind,
+                    a.conclusion,
+                    &a.provenance,
+                )
+                    .cmp(&(
+                        &b.name,
+                        &b.commit_sha,
+                        b.completed_at,
+                        b.kind,
+                        b.conclusion,
+                        &b.provenance,
+                    ))
+            });
+            ensure!(
+                k.runs.windows(2).all(|w| w[0] != w[1]),
+                "ACV004 duplicate check result"
+            );
+            ensure!(
+                k.required.iter().all(|n| !n.trim().is_empty()),
+                "ACV010 empty check name"
+            );
+            k.required.sort();
+            k.required.dedup();
+            k.required_sources.sort();
+            k.required_sources.dedup();
+            evidence(&mut k.provenance, &attestations)?;
+        }
     }
     e.changes.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(e)

@@ -32,9 +32,8 @@ fn finding_identifiers_hash_the_jcs_tuple() {
         let preimage = jcs(&(&m.events.repository, &f.change_id, f.rule_id, &f.actor_ids));
         assert!(!preimage.ends_with('\n'));
         assert_eq!(f.id, format!("acc-{}", &sha256(preimage.as_bytes())[7..23]));
-        // The 0.2 identifier hashed the same tuple with a trailing newline.
-        let legacy = sha256(format!("{preimage}\n").as_bytes());
-        assert_eq!(f.legacy_ids, vec![format!("acc-{}", &legacy[7..23])]);
+        // 0.4 dropped the 0.2 identifier that 0.3 carried for one minor version.
+        assert!(f.legacy_ids.is_empty());
     }
 }
 

@@ -24,18 +24,18 @@ def patch(path, old, new):
 target = sys.argv[1]
 if re.fullmatch(r"ACC\d{3}", target):
     rule = "Acc" + target[3:]
-    signature = "    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, &'static str) {\n"
+    signature = "    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {\n"
     patch(
         "src/rules/mod.rs",
         signature,
-        f"""    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, &'static str) {{
+        f"""    fn assess(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {{
         match self.assess_unbroken(rule, c, p) {{
             (Status::Fail, reason) if rule == RuleId::{rule} => (Status::Pass, reason),
             other => other,
         }}
     }}
 
-    fn assess_unbroken(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, &'static str) {{
+    fn assess_unbroken(&self, rule: RuleId, c: &Change, p: &Policy) -> (Status, Cow<'static, str>) {{
 """,
     )
 elif target == "serialization":

@@ -89,7 +89,7 @@ pub fn result(m: &Manifest) -> Result<(Value, Exit)> {
             })
         })
         .collect();
-    let (verdict, exit) = if io::incomplete(&m.events) {
+    let (verdict, exit) = if crate::manifest::incomplete(&m.events, &m.policy) {
         ("incomplete", Exit::Incomplete)
     } else {
         ("evaluated", Exit::Ok)

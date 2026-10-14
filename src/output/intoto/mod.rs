@@ -30,7 +30,9 @@ use std::collections::BTreeSet;
 /// The in-toto Statement layer this renderer emits.
 pub const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";
 /// The predicate type: an AI Change Provenance manifest, versioned with the specification.
-pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.3";
+pub const PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.4";
+/// The ACP 0.3 predicate type. Validated, never written.
+pub const PREVIOUS_PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.3";
 /// The ACP 0.2 predicate type, whose digests used the legacy canonicalization. Validated, never
 /// written.
 pub const LEGACY_PREDICATE_TYPE: &str = "https://noru.tech/spec/ai-change-provenance/v0.2";
@@ -195,6 +197,7 @@ pub fn validate_statement(v: &Value) -> Result<Manifest> {
     crate::normalize::schema(v, "statement")?;
     let version = match v["predicateType"].as_str() {
         Some(PREDICATE_TYPE) => crate::manifest::VERSION,
+        Some(PREVIOUS_PREDICATE_TYPE) => "0.3",
         Some(LEGACY_PREDICATE_TYPE) => crate::manifest::LEGACY_VERSION,
         _ => bail!("unsupported predicate type; expected {PREDICATE_TYPE}"),
     };
@@ -204,7 +207,7 @@ pub fn validate_statement(v: &Value) -> Result<Manifest> {
     );
     crate::normalize::schema(&v["predicate"], "manifest")?;
     let m: Manifest = serde_json::from_value(v["predicate"].clone())?;
-    let canon = crate::manifest::validate(&m)?;
+    let canon = crate::manifest::validate(&m)?.canonicalization();
     ensure!(
         subjects_match(v, &m, canon)?,
         "statement subjects do not match the predicate's changes"
@@ -308,6 +311,7 @@ mod tests {
             merger: merged.map(|_| alice),
             provenance: vec![evidence()],
             labels: vec![],
+            checks: None,
         }
     }
 

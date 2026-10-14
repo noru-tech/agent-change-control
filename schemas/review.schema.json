@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/noru-tech/agent-change-control/main/schemas/review.schema.json",
+  "$id": "https://noru.tech/spec/ai-change-provenance/review/v0.1/review.schema.json",
   "$comment": "A review document: the predicate of https://noru.tech/spec/ai-change-provenance/review/v0.1, signed by the reviewer's tooling and bound to a head commit. Names the reviewer in the predicate so that a consumer reading pre-verified attestations can use it.",
   "$ref": "#/$defs/review",
   "$defs": {
