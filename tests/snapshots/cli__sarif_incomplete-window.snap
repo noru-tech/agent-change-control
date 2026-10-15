@@ -114,5 +114,5 @@ runs:
             name: deployed_without_passing_change
             shortDescription:
               text: deployed without passing change
-        version: 0.6.0
+        version: 0.7.0
 version: 2.1.0

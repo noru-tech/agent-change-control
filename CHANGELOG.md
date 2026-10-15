@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-15
+
 ### Added
 - **ACC012** (`unaccounted_branch_update`, `high`, off by default): a protected branch that was
   force-pushed, deleted, or pushed to a commit no merged change landed in the window, with one
@@ -418,7 +420,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/noru-tech/agent-change-control/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/noru-tech/agent-change-control/compare/v0.5.4...v0.6.0
 [0.5.4]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/noru-tech/agent-change-control/compare/v0.5.2...v0.5.3

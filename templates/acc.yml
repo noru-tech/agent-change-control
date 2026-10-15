@@ -2,7 +2,7 @@
 # merge request on GitLab.com.
 #
 #   include:
-#     - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.6.0/templates/acc.yml
+#     - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.7.0/templates/acc.yml
 #       inputs:
 #         fail_on_findings: true
 #
@@ -16,7 +16,7 @@ spec:
       default: test
       description: The stage the job runs in.
     version:
-      default: "0.6.0"
+      default: "0.7.0"
       description: >-
         The acc release to install (a tag without the leading v). Bumped with each release of
         this repository; pin it explicitly for byte-stable output across runs.

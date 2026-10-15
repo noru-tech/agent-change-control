@@ -59,7 +59,7 @@ checksum file next to it (`<archive>.sha256`; `sha256.sum` lists all of them). C
 you unpack:
 
 ```bash
-VERSION=v0.6.0
+VERSION=v0.7.0
 ARCHIVE=agent-change-control-aarch64-apple-darwin.tar.xz
 gh release download "$VERSION" --repo noru-tech/agent-change-control \
   --pattern "$ARCHIVE" --pattern "$ARCHIVE.sha256"
@@ -119,14 +119,14 @@ jobs:
   acc:
     runs-on: ubuntu-latest
     steps:
-      - uses: noru-tech/agent-change-control@v0.6.0
+      - uses: noru-tech/agent-change-control@v0.7.0
 ```
 
 On GitLab.com, include the CI/CD component in a merge request pipeline ([docs/gitlab.md](docs/gitlab.md)):
 
 ```yaml
 include:
-  - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.6.0/templates/acc.yml
+  - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.7.0/templates/acc.yml
 ```
 
 ### See it on real pull requests
@@ -397,7 +397,7 @@ only when an `ACV` code applies. The exit status is the same as in text.
 (`ok`, `warn` or `fail`), `detail` and, when there is something to do, `hint`:
 
 ```json
-{"checks":[{"detail":"acc 0.6.0","name":"version","status":"ok"},{"detail":"GITHUB_TOKEN is set","name":"token","status":"ok"}],"healthy":true,"version":"0.6.0"}
+{"checks":[{"detail":"acc 0.7.0","name":"version","status":"ok"},{"detail":"GITHUB_TOKEN is set","name":"token","status":"ok"}],"healthy":true,"version":"0.7.0"}
 ```
 
 | Code | Meaning |

@@ -13,7 +13,7 @@ manifest and the rendered output as job artifacts:
 
 ```yaml
 include:
-  - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.6.0/templates/acc.yml
+  - remote: https://raw.githubusercontent.com/noru-tech/agent-change-control/v0.7.0/templates/acc.yml
     inputs:
       fail_on_findings: true
 ```

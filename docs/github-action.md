@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: noru-tech/agent-change-control@v0.6.0
+      - uses: noru-tech/agent-change-control@v0.7.0
 ```
 
 Run on review events as well as pushes: the verdict for an agent-written change flips from ACC001
@@ -85,7 +85,7 @@ current head. This is the intended deployment.
 While you roll out declarations, run in advisory mode and keep the evidence:
 
 ```yaml
-      - uses: noru-tech/agent-change-control@v0.6.0
+      - uses: noru-tech/agent-change-control@v0.7.0
         id: acc
         with:
           fail-on-findings: false
@@ -126,7 +126,7 @@ the change. [Signing](signing.md) shows how to do that with `actions/attest`, wh
 `format: json` instead, and what to read before publishing to a transparency log:
 
 ```yaml
-      - uses: noru-tech/agent-change-control@v0.6.0
+      - uses: noru-tech/agent-change-control@v0.7.0
         with:
           format: in-toto
           output: change-control.intoto.json
