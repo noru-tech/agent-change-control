@@ -55,7 +55,7 @@ jobs:
       - uses: actions/attest@v4
         with:
           subject-path: acc-manifest.json
-          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.3
+          predicate-type: https://noru.tech/spec/ai-change-provenance/v0.4
           predicate-path: acc-manifest.json
 ```
 
@@ -89,7 +89,7 @@ blob:
 ```bash
 acc pr 421 --repo acme/api --format json -o acc-manifest.json
 cosign attest-blob --predicate acc-manifest.json \
-  --type https://noru.tech/spec/ai-change-provenance/v0.3 \
+  --type https://noru.tech/spec/ai-change-provenance/v0.4 \
   --bundle acc-manifest.sigstore.json --yes acc-manifest.json
 ```
 
@@ -157,7 +157,7 @@ the second.
 ```bash
 # 1. Signature and identity, against GitHub's attestation store
 gh attestation verify acc-manifest.json --repo acme/api \
-  --predicate-type https://noru.tech/spec/ai-change-provenance/v0.3
+  --predicate-type https://noru.tech/spec/ai-change-provenance/v0.4
 
 # 2. Content: unwrap the Statement and re-evaluate it
 gh attestation download acc-manifest.json --repo acme/api    # writes <digest>.jsonl
