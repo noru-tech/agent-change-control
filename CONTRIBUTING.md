@@ -166,9 +166,9 @@ project's concept DOI. Zenodo reads the deposit's metadata from `.zenodo.json` i
 (it takes precedence over `CITATION.cff`); keep the two in agreement, which `tests/metadata.rs`
 checks.
 
-The manifest schema pins `generated.version` to the crate version for current (`0.3`) manifests.
-Bump both together (the `0.2` branch of that schema stays at `0.4.0`, the release that wrote
-them), and bump the
+The manifest schema pins `generated.version` only for `0.2` manifests, to `0.4.0`, the release that
+wrote them; `0.3` and `0.4` manifests record whichever release wrote them, so a version bump leaves
+the schema alone. Bump the
 `version` input defaults in `action.yml` and `templates/acc.yml` to the same release so the action
 and the GitLab component install the binary they were published with (`tests/metadata.rs` checks
 the component and its documented `include: remote:` pins). `.github/workflows/change-control.yml` and `.github/workflows/attest.yml` pin `version` to the
