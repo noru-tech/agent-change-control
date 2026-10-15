@@ -24,7 +24,7 @@
       "resource_type": "software"
     },
     {
-      "identifier": "https://noru.tech/spec/ai-change-provenance/v0.3",
+      "identifier": "https://noru.tech/spec/ai-change-provenance/v0.4",
       "relation": "isDocumentedBy",
       "resource_type": "publication-standard"
     }
