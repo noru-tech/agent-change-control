@@ -1,10 +1,11 @@
 # ACP evaluator conformance corpus
 
-`acp-evaluator-conformance`, suite revision 2, for
+`acp-evaluator-conformance`, suite revision 3, for
 [AI Change Provenance](../spec/ai-change-provenance.md) 0.4. Revisions are numbered per
 specification version; the 0.3 suite (revision 2, at `v0.5.2`) stays at its release tags.
-Revision 2 adds the risk tier vectors (§3.8, §4.3, §6.7) and ACC011 to every vector's expected
-assessments; revision 1 was never released.
+Revision 3 adds the branch update and deployment vectors (§4.5, §4.6, ACC012, ACC013), whose rules
+every resolved policy now lists. Revision 2 added the risk tier vectors (§3.8, §4.3, §6.7) and
+ACC011 to every vector's expected assessments. Neither earlier 0.4 revision was released.
 
 An evaluator conforms to ACP when it passes a named suite revision of this corpus at a named
 release (spec §9). The corpus runs any implementation as an external program, so it tests what

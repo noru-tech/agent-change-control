@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noru.tech/spec/ai-change-provenance/release/v0.1/release.schema.json",
+  "title": "AI Change Provenance release attestation",
+  "description": "An in-toto Statement v1 whose subjects are release artifacts and whose predicate lists every first-parent commit of the release's range, the changes that landed it and their verdicts (ACP 0.4, \u00a77.4).",
+  "type": "object",
+  "properties": {
+    "_type": {
+      "const": "https://in-toto.io/Statement/v1"
+    },
+    "subject": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "type": "object",
+            "properties": {
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "sha256"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "predicateType": {
+      "const": "https://noru.tech/spec/ai-change-provenance/release/v0.1"
+    },
+    "predicate": {
+      "$ref": "#/$defs/release"
+    }
+  },
+  "required": [
+    "_type",
+    "subject",
+    "predicateType",
+    "predicate"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "release": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "string",
+              "minLength": 1
+            },
+            "head": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "base",
+            "head"
+          ],
+          "additionalProperties": false
+        },
+        "verdict": {
+          "enum": [
+            "pass",
+            "fail",
+            "incomplete"
+          ]
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commit"
+          }
+        },
+        "uncovered": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "manifests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "digest": {
+                "$ref": "#/$defs/digest"
+              },
+              "source_digest": {
+                "$ref": "#/$defs/digest"
+              },
+              "repository": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "digest",
+              "source_digest",
+              "repository"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "policy": {
+          "enum": [
+            "given",
+            "embedded"
+          ]
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "generated": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "tool",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "range",
+        "verdict",
+        "commits",
+        "uncovered",
+        "manifests",
+        "policy",
+        "as_of",
+        "generated"
+      ],
+      "additionalProperties": false
+    },
+    "commit": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "covered",
+            "incomplete",
+            "uncovered",
+            "failing"
+          ]
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "change_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "verdict": {
+                "enum": [
+                  "pass",
+                  "incomplete",
+                  "fail"
+                ]
+              },
+              "failing": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "verdict_digest": {
+                "$ref": "#/$defs/digest"
+              },
+              "manifest_digest": {
+                "$ref": "#/$defs/digest"
+              }
+            },
+            "required": [
+              "change_id",
+              "verdict",
+              "failing",
+              "verdict_digest",
+              "manifest_digest"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "commit",
+        "status",
+        "changes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

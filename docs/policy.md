@@ -86,6 +86,28 @@ repository administration read access, and the record reaches back one month. Wi
 enabled, an unreadable or out-of-reach record makes the collection incomplete (exit 4). See
 [ACC005](rules/ACC005.md).
 
+## Branch updates and deployments
+
+ACC012 and ACC013 judge subjects that are not pull requests, and both are off by default:
+
+```yaml
+branches:
+  protected: [main, release]        # default: the repository's default branch
+deployments:
+  environments: [production]        # default: environments the forge marks as production
+rules:
+  unaccounted_branch_update:       { enabled: true, severity: high }   # ACC012
+  deployed_without_passing_change: { enabled: true, severity: high }   # ACC013
+```
+
+[ACC012](rules/ACC012.md) fails a protected branch that was force-pushed, deleted, or pushed to a
+commit no merged change landed, with one finding per such update.
+[ACC013](rules/ACC013.md) fails a production deployment that shipped a commit no passing change
+landed, judging every first-parent commit since the environment's previous deployment.
+`acc scan` collects their facts whenever they are enabled (`--deploy-since` starts the
+deployment window later than the merge window); `acc pr` leaves them to `scan`. Their assessments
+and findings name the branch or deployment in `change_id`.
+
 ## Risk tiers
 
 A policy can vary what a change must meet by its risk tier, as a
@@ -150,6 +172,8 @@ A known effective human is the effective author when actor.kind is human, or the
 | ACC009 | `agent_review` applies, no human independent approval exists, and every agent approval carrying the required evidence is dependent on a required dimension. Unknown when one is unknown on a required dimension and dependent on none. Not applicable when the mode is off, out of label scope, a human independent approval exists, or no agent approval carries the evidence. | agent-review-independent | agent-review-dependent-operator |
 | ACC010 | `agent_review` applies and an agent approval of the head has evidence below `agent_review.minimum_evidence`. Not applicable when the mode is off or no agent approved the head. | agent-review-independent | agent-review-unsigned |
 | ACC011 | Change is merged, effective human known, reviews complete, and for a team its applied tier requires, no member (as observed at collection) independent of the effective human approved the head before merge. Not applicable when unmerged or no team is required; unknown when a team that did not approve has incomplete membership. | tier-team-approved | tier-team-missing |
+| ACC012 | Subject: a protected branch. Some update in the window is a force push, a deletion, or a push to a commit that is no merged change's merge commit (one finding per update). Unknown when the record is incomplete and no such update was seen. Off unless a policy enables it. | branch-accounted | branch-updated-directly |
+| ACC013 | Subject: a production deployment. Some commit it shipped (first-parent history since the environment's previous successful deployment), dated inside the merge window, is no merged change's merge commit, or its change has a `fail` assessment at or above `fail_on`. Unknown when none fails and the history is incomplete or unbounded, a commit predates the merge window, or a landing change is unknown. Off unless a policy enables it. | deploy-covered | deploy-uncovered |
 
 ## Recording exceptions
 

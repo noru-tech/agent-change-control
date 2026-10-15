@@ -467,6 +467,8 @@ impl Github {
             checks,
             bypass_as_of,
             teams,
+            branches,
+            deployments,
         } = sources;
         let mut required_by_branch: BTreeMap<String, Required> = BTreeMap::new();
         let mut suites_by_branch: BTreeMap<String, (Vec<Value>, bool, String)> = BTreeMap::new();
@@ -486,6 +488,8 @@ impl Github {
             actors: BTreeMap::new(),
             attestations: BTreeMap::new(),
             teams: Vec::new(),
+            branches: Vec::new(),
+            deployments: None,
             changes: vec![],
         };
         let (numbers, complete) = match pr {
@@ -931,7 +935,350 @@ impl Github {
                 e.teams.push(self.team(id, observed_at)?);
             }
         }
+        if let Some((names, as_of)) = branches {
+            let names = if names.is_empty() {
+                self.default_branch(repository)?.into_iter().collect()
+            } else {
+                names.to_vec()
+            };
+            if names.is_empty() {
+                // The default branch could not be read: record nothing, and the gap with it.
+                incomplete(&mut e, "Default branch unavailable");
+            }
+            for name in names {
+                let b = self.branch(
+                    repository,
+                    &name,
+                    from,
+                    to,
+                    as_of,
+                    &mut e.actors,
+                    known,
+                    vendors,
+                )?;
+                e.branches.push(b);
+            }
+        }
+        if let Some(query) = deployments {
+            let d = self.deployments(repository, query, &mut e.actors, known, vendors)?;
+            e.deployments = Some(d);
+        }
         crate::normalize::events(e)
+    }
+
+    /// The repository's default branch, as `GET /repos/{repository}` says now.
+    fn default_branch(&self, repository: &str) -> Result<Option<String>> {
+        Ok(self
+            .readable(&format!("/repos/{repository}"))?
+            .and_then(|r| r["default_branch"].as_str().map(String::from)))
+    }
+
+    /// Every update of `name` in `from..=to`, from the repository activity record
+    /// (`GET /repos/{repository}/activity`), which lists pushes, force pushes, merges, creations
+    /// and deletions, newest first. Its widest period is a year back from collection, so a window
+    /// reaching further is incomplete.
+    #[allow(clippy::too_many_arguments)]
+    fn branch(
+        &self,
+        repository: &str,
+        name: &str,
+        from: Timestamp,
+        to: Timestamp,
+        as_of: Timestamp,
+        actors: &mut BTreeMap<String, Actor>,
+        known: &BTreeMap<String, String>,
+        vendors: &BTreeMap<String, String>,
+    ) -> Result<Branch> {
+        let reference = path_segment(&format!("refs/heads/{name}"));
+        let path = format!("/repos/{repository}/activity?ref={reference}&time_period=year");
+        let mut items = Vec::new();
+        let mut listed = false;
+        for page in 1..=self.max_pages {
+            let (value, next) =
+                match self.fetch(&format!("{path}&per_page=100&page={page}"), true)? {
+                    Response::Found(value, next) => (value, next),
+                    Response::NotFound | Response::Forbidden => break,
+                };
+            let page_items = value
+                .as_array()
+                .ok_or_else(|| api("GitHub list response is not an array"))?;
+            let older = page_items
+                .last()
+                .and_then(|a| a["timestamp"].as_str())
+                .and_then(|s| timestamp(s).ok())
+                .is_some_and(|at| at < from);
+            items.extend(page_items.iter().cloned());
+            if !next || older {
+                listed = true;
+                break;
+            }
+        }
+        let source = evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed);
+        let mut events = Vec::new();
+        let mut understood = true;
+        for a in &items {
+            let at = timestamp(&string(a, "timestamp")?)?;
+            if at < from || at > to {
+                continue;
+            }
+            let kind = match a["activity_type"].as_str() {
+                Some("push") => BranchEventKind::Push,
+                Some("force_push") => BranchEventKind::ForcePush,
+                Some("branch_creation") => BranchEventKind::BranchCreation,
+                Some("branch_deletion") => BranchEventKind::BranchDeletion,
+                Some("pr_merge") => BranchEventKind::PrMerge,
+                Some("merge_queue_merge") => BranchEventKind::MergeQueueMerge,
+                // An update this version does not know cannot be judged.
+                _ => {
+                    understood = false;
+                    continue;
+                }
+            };
+            let id = number(a, "id")?.to_string();
+            let provenance = evidence(&format!("{ORIGIN}{path}#{id}"), EvidenceKind::Observed);
+            let actor_id =
+                actor(&a["actor"], actors, &provenance, known, vendors)?.map(|i| i.actor_id);
+            events.push(BranchEvent {
+                id,
+                kind,
+                before: string(a, "before")?,
+                after: string(a, "after")?,
+                at,
+                actor_id,
+                provenance: vec![provenance],
+            });
+        }
+        let in_reach = from >= as_of - chrono::Duration::days(365);
+        Ok(Branch {
+            id: format!("github:{repository}:branch:{name}"),
+            name: name.to_string(),
+            events,
+            complete: listed && in_reach && understood,
+            provenance: vec![source],
+        })
+    }
+
+    /// The commit date of `sha`, from `GET /repos/{repository}/commits/{sha}`.
+    fn committed_at(&self, repository: &str, sha: &str) -> Result<Option<Timestamp>> {
+        self.readable(&format!("/repos/{repository}/commits/{sha}"))?
+            .and_then(|c| c["commit"]["committer"]["date"].as_str().map(String::from))
+            .map(|s| timestamp(&s))
+            .transpose()
+    }
+
+    /// The first-parent commits after `base` up to and including `head`, newest first, from
+    /// `GET /repos/{repository}/compare/{base}...{head}`, and whether they were read in full.
+    fn first_parent(
+        &self,
+        repository: &str,
+        base: &str,
+        head: &str,
+    ) -> Result<(Vec<DeployedCommit>, bool)> {
+        let path = format!("/repos/{repository}/compare/{base}...{head}");
+        let mut by_sha: BTreeMap<String, (Option<String>, Timestamp)> = BTreeMap::new();
+        let mut total = None;
+        let mut status = None;
+        for page in 1..=self.max_pages {
+            let Some(v) = self.readable(&format!("{path}?per_page=100&page={page}"))? else {
+                return Ok((Vec::new(), false));
+            };
+            total = v["total_commits"].as_u64();
+            status = v["status"].as_str().map(String::from);
+            let commits = v["commits"].as_array().cloned().unwrap_or_default();
+            if commits.is_empty() {
+                break;
+            }
+            for c in &commits {
+                let sha = string(c, "sha")?.to_ascii_lowercase();
+                let parent = c["parents"][0]["sha"].as_str().map(str::to_ascii_lowercase);
+                let date = timestamp(&string(&c["commit"]["committer"], "date")?)?;
+                by_sha.insert(sha, (parent, date));
+            }
+            if total.is_some_and(|t| by_sha.len() as u64 >= t) {
+                break;
+            }
+        }
+        match status.as_deref() {
+            // The head is the base, or behind it (a rollback): only the head itself shipped.
+            Some("identical" | "behind") => {
+                return Ok(match self.committed_at(repository, head)? {
+                    Some(at) => (
+                        vec![DeployedCommit {
+                            sha: head.to_ascii_lowercase(),
+                            committed_at: at,
+                        }],
+                        true,
+                    ),
+                    None => (Vec::new(), false),
+                });
+            }
+            Some("ahead" | "diverged") => {}
+            _ => return Ok((Vec::new(), false)),
+        }
+        let listed = total.is_some_and(|t| by_sha.len() as u64 == t);
+        let mut out = Vec::new();
+        let mut cursor = Some(head.to_ascii_lowercase());
+        while let Some(sha) = cursor {
+            let Some((parent, date)) = by_sha.get(&sha) else {
+                break;
+            };
+            out.push(DeployedCommit {
+                sha: sha.clone(),
+                committed_at: *date,
+            });
+            cursor = parent.clone();
+        }
+        let reached_head = out
+            .first()
+            .is_some_and(|c| c.sha.eq_ignore_ascii_case(head));
+        Ok((out, listed && reached_head))
+    }
+
+    /// The successful deployments to production environments in `query`'s window, each with the
+    /// commits it shipped since the environment's previous successful deployment.
+    fn deployments(
+        &self,
+        repository: &str,
+        query: super::DeploymentQuery<'_>,
+        actors: &mut BTreeMap<String, Actor>,
+        known: &BTreeMap<String, String>,
+        vendors: &BTreeMap<String, String>,
+    ) -> Result<Deployments> {
+        let mut complete = true;
+        let mut provenance = Vec::new();
+        let mut out = Vec::new();
+        let listings: Vec<(Option<&str>, String)> = if query.environments.is_empty() {
+            vec![(None, format!("/repos/{repository}/deployments"))]
+        } else {
+            query
+                .environments
+                .iter()
+                .map(|env| {
+                    (
+                        Some(env.as_str()),
+                        format!(
+                            "/repos/{repository}/deployments?environment={}",
+                            path_segment(env)
+                        ),
+                    )
+                })
+                .collect()
+        };
+        for (environment, path) in listings {
+            provenance.push(evidence(&format!("{ORIGIN}{path}"), EvidenceKind::Observed));
+            // Successful deployments per environment, newest first, through the first one that
+            // succeeded before the window: that one bounds the earliest deployment inside it.
+            let mut successful: BTreeMap<String, Vec<(Value, Timestamp)>> = BTreeMap::new();
+            let mut bounded: BTreeSet<String> = BTreeSet::new();
+            let mut listed = false;
+            'pages: for page in 1..=self.max_pages {
+                let sep = if path.contains('?') { '&' } else { '?' };
+                let (value, next) =
+                    match self.fetch(&format!("{path}{sep}per_page=100&page={page}"), true)? {
+                        Response::Found(value, next) => (value, next),
+                        Response::NotFound | Response::Forbidden => break,
+                    };
+                let items = value
+                    .as_array()
+                    .ok_or_else(|| api("GitHub list response is not an array"))?;
+                for d in items {
+                    let env = string(d, "environment")?;
+                    if environment.is_none() && d["production_environment"] != true {
+                        continue;
+                    }
+                    if bounded.contains(&env) {
+                        continue;
+                    }
+                    let id = number(d, "id")?;
+                    let statuses_path = format!("/repos/{repository}/deployments/{id}/statuses");
+                    let Some(Value::Array(statuses)) = self.readable(&statuses_path)? else {
+                        complete = false;
+                        continue;
+                    };
+                    let Some(succeeded) = statuses
+                        .iter()
+                        .find(|s| s["state"] == "success")
+                        .and_then(|s| s["created_at"].as_str())
+                        .map(timestamp)
+                        .transpose()?
+                    else {
+                        continue;
+                    };
+                    if succeeded < query.from {
+                        bounded.insert(env.clone());
+                    }
+                    if succeeded <= query.to {
+                        successful
+                            .entry(env)
+                            .or_default()
+                            .push((d.clone(), succeeded));
+                    }
+                }
+                let all_bounded = environment.is_some_and(|env| bounded.contains(env));
+                if !next || all_bounded {
+                    listed = true;
+                    break 'pages;
+                }
+            }
+            complete &= listed;
+            for (env, list) in successful {
+                for (i, (d, at)) in list.iter().enumerate() {
+                    if *at < query.from {
+                        continue;
+                    }
+                    let id = number(d, "id")?;
+                    let sha = string(d, "sha")?.to_ascii_lowercase();
+                    let source = evidence(
+                        &format!("{ORIGIN}/repos/{repository}/deployments/{id}"),
+                        EvidenceKind::Observed,
+                    );
+                    let creator =
+                        actor(&d["creator"], actors, &source, known, vendors)?.map(|a| a.actor_id);
+                    let previous = list
+                        .get(i + 1)
+                        .and_then(|(p, _)| p["sha"].as_str())
+                        .map(str::to_ascii_lowercase);
+                    let (commits, commits_complete) = match &previous {
+                        Some(base) => self.first_parent(repository, base, &sha)?,
+                        None => match self.committed_at(repository, &sha)? {
+                            // Nothing bounds the range: the deployed commit alone is judged.
+                            Some(at) => (
+                                vec![DeployedCommit {
+                                    sha: sha.clone(),
+                                    committed_at: at,
+                                }],
+                                false,
+                            ),
+                            None => (Vec::new(), false),
+                        },
+                    };
+                    if commits.is_empty() {
+                        // The deployed commit itself could not be read; nothing can be judged.
+                        complete = false;
+                        continue;
+                    }
+                    out.push(Deployment {
+                        id: format!("github:{repository}:deployment:{id}"),
+                        environment: env.clone(),
+                        sha,
+                        at: *at,
+                        creator,
+                        previous_sha: previous,
+                        commits,
+                        commits_complete,
+                        provenance: vec![source],
+                    });
+                }
+            }
+        }
+        Ok(Deployments {
+            environments: query.environments.to_vec(),
+            from: query.from,
+            to: query.to,
+            deployments: out,
+            complete,
+            provenance,
+        })
     }
 
     /// A reviewer team's members, as GitHub lists them now. A listing the token cannot read in
@@ -1240,6 +1587,8 @@ mod tests {
             actors: BTreeMap::new(),
             attestations: BTreeMap::new(),
             teams: Vec::new(),
+            branches: Vec::new(),
+            deployments: None,
             changes: vec![],
         };
         incomplete(&mut e, "a");

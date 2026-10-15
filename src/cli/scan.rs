@@ -20,14 +20,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
         io::policy_source(c.policy.as_deref())
     ));
     let policy = io::load_policy(c.policy.as_deref())?;
-    let events = forge::collect(
-        ctx,
-        kind,
-        &c,
-        manifest::checks_required(&policy),
-        manifest::bypass_required(&policy),
-        &manifest::teams_required_by(&policy),
-    )?;
+    let events = forge::collect(ctx, kind, &c, &forge::Wanted::for_policy(&policy))?;
     let m = manifest::evaluate(events, policy)?;
     let exit = if manifest::incomplete(&m.events, &m.policy) {
         Exit::Incomplete

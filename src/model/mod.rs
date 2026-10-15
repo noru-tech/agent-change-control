@@ -138,6 +138,10 @@ pub enum RuleId {
     Acc010,
     #[serde(rename = "ACC011")]
     Acc011,
+    #[serde(rename = "ACC012")]
+    Acc012,
+    #[serde(rename = "ACC013")]
+    Acc013,
 }
 
 /// Human-readable rule names, used as policy keys.
@@ -155,6 +159,8 @@ pub enum RuleName {
     AgentApprovalNotIndependent,
     AgentApprovalUnsigned,
     MissingRequiredReviewerTeam,
+    UnaccountedBranchUpdate,
+    DeployedWithoutPassingChange,
 }
 
 /// The dimensions along which an agent reviewer's independence from the effective author is
@@ -205,6 +211,8 @@ impl RuleId {
             RuleId::Acc009 => "ACC009",
             RuleId::Acc010 => "ACC010",
             RuleId::Acc011 => "ACC011",
+            RuleId::Acc012 => "ACC012",
+            RuleId::Acc013 => "ACC013",
         }
     }
 
@@ -222,6 +230,8 @@ impl RuleId {
             RuleId::Acc009 => RuleName::AgentApprovalNotIndependent,
             RuleId::Acc010 => RuleName::AgentApprovalUnsigned,
             RuleId::Acc011 => RuleName::MissingRequiredReviewerTeam,
+            RuleId::Acc012 => RuleName::UnaccountedBranchUpdate,
+            RuleId::Acc013 => RuleName::DeployedWithoutPassingChange,
         }
     }
 }
@@ -242,6 +252,8 @@ impl RuleName {
             RuleName::AgentApprovalNotIndependent => "agent_approval_not_independent",
             RuleName::AgentApprovalUnsigned => "agent_approval_unsigned",
             RuleName::MissingRequiredReviewerTeam => "missing_required_reviewer_team",
+            RuleName::UnaccountedBranchUpdate => "unaccounted_branch_update",
+            RuleName::DeployedWithoutPassingChange => "deployed_without_passing_change",
         }
     }
 }
@@ -562,7 +574,99 @@ pub struct Events {
     /// 0.4). Serialized only when present.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub teams: Vec<Team>,
+    /// Updates to protected branches in the window, for ACC012 (ACP 0.4). Serialized only when
+    /// present.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub branches: Vec<Branch>,
+    /// Deployments to production environments, for ACC013 (ACP 0.4). Absent when not collected.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deployments: Option<Deployments>,
     pub changes: Vec<Change>,
+}
+
+/// What moved a protected branch, as the forge's activity record names it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BranchEventKind {
+    Push,
+    ForcePush,
+    BranchCreation,
+    BranchDeletion,
+    PrMerge,
+    MergeQueueMerge,
+}
+
+/// One update of a protected branch.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct BranchEvent {
+    /// The forge's identifier for the update.
+    pub id: String,
+    pub kind: BranchEventKind,
+    /// The commit the branch pointed at before and after the update.
+    pub before: String,
+    pub after: String,
+    pub at: Timestamp,
+    /// Who updated the branch, when the forge names an account.
+    pub actor_id: Option<String>,
+    pub provenance: Vec<Evidence>,
+}
+
+/// A protected branch and every update of it in the window.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Branch {
+    /// `FORGE:REPOSITORY:branch:NAME`, the subject ACC012 assesses.
+    pub id: String,
+    pub name: String,
+    pub events: Vec<BranchEvent>,
+    /// False when the forge's record of the window could not be read in full.
+    pub complete: bool,
+    pub provenance: Vec<Evidence>,
+}
+
+/// The production deployments in a window, and the environments that count as production.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Deployments {
+    /// The environments read; empty when the forge's own production flag decided.
+    pub environments: Vec<String>,
+    pub from: Timestamp,
+    pub to: Timestamp,
+    pub deployments: Vec<Deployment>,
+    /// False when the listing could not be read in full.
+    pub complete: bool,
+    pub provenance: Vec<Evidence>,
+}
+
+/// One successful deployment to a production environment.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Deployment {
+    /// `FORGE:REPOSITORY:deployment:ID`, the subject ACC013 assesses.
+    pub id: String,
+    pub environment: String,
+    /// The commit deployed.
+    pub sha: String,
+    /// When the deployment succeeded.
+    pub at: Timestamp,
+    pub creator: Option<String>,
+    /// The commit of the environment's previous successful deployment, when one was found.
+    pub previous_sha: Option<String>,
+    /// The first-parent commits after `previous_sha` up to and including `sha`, newest first;
+    /// only `sha` when no previous deployment bounds the range.
+    pub commits: Vec<DeployedCommit>,
+    /// False when the range could not be read in full or has no previous deployment to bound it.
+    pub commits_complete: bool,
+    pub provenance: Vec<Evidence>,
+}
+
+/// A commit a deployment shipped, with its committer date.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DeployedCommit {
+    pub sha: String,
+    pub committed_at: Timestamp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -603,6 +707,12 @@ pub struct Policy {
     /// meet. Defaults to `signed` when `tiers` is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum_risk_evidence: Option<EvidenceKind>,
+    /// The protected branches ACC012 watches (ACP 0.4). Serialized only when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branches: Option<BranchesPolicy>,
+    /// The production environments ACC013 watches (ACP 0.4). Serialized only when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deployments: Option<DeploymentsPolicy>,
     pub rules: BTreeMap<RuleName, RulePolicy>,
 }
 
@@ -718,6 +828,24 @@ pub struct Obligation {
 #[serde(rename_all = "snake_case")]
 pub enum ObligationKind {
     RetroactiveReview,
+}
+
+/// The protected branches ACC012 watches (ACP 0.4).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct BranchesPolicy {
+    /// Branch names; empty means the repository's default branch.
+    #[serde(default)]
+    pub protected: Vec<String>,
+}
+
+/// The environments ACC013 treats as production (ACP 0.4).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DeploymentsPolicy {
+    /// Environment names; empty means those the forge marks as production.
+    #[serde(default)]
+    pub environments: Vec<String>,
 }
 
 /// The checks ACC004 requires on the approved head of a merged change.

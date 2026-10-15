@@ -670,13 +670,305 @@ fn finding_id(digest: &str) -> String {
     format!("acc-{}", &digest[7..23])
 }
 
-/// Evaluate every enabled rule against every change.
+const BRANCH_INCOMPLETE: &str = "The branch's updates in the window could not be read in full.";
+const BRANCH_ACCOUNTED: &str = "Every recorded update of the branch landed a change.";
+const DEPLOY_COVERED: &str =
+    "Every commit the deployment shipped was landed by a change that passes the policy.";
+
+/// What ACC012 makes of one branch update: why it is not accounted for, or `None` when it is.
+fn unaccounted(ev: &BranchEvent, merges: &BTreeSet<String>) -> Option<&'static str> {
+    match ev.kind {
+        BranchEventKind::ForcePush => Some("force push"),
+        BranchEventKind::BranchDeletion => Some("deletion"),
+        BranchEventKind::Push if !merges.contains(&ev.after.to_ascii_lowercase()) => {
+            Some("direct push")
+        }
+        _ => None,
+    }
+}
+
+/// ACC012 for one protected branch. Exact conditions are in `docs/policy.md`.
+fn branch_updates<'b>(
+    b: &'b Branch,
+    merges: &BTreeSet<String>,
+) -> (
+    Status,
+    Cow<'static, str>,
+    Vec<(&'b BranchEvent, &'static str)>,
+) {
+    let offending: Vec<(&BranchEvent, &'static str)> = b
+        .events
+        .iter()
+        .filter_map(|ev| unaccounted(ev, merges).map(|why| (ev, why)))
+        .collect();
+    if !offending.is_empty() {
+        let mut kinds: Vec<&str> = offending.iter().map(|(_, why)| *why).collect();
+        kinds.sort_unstable();
+        kinds.dedup();
+        let reason = format!(
+            "{} update(s) of {} no change accounts for: {}.",
+            offending.len(),
+            b.name,
+            kinds.join(", ")
+        );
+        return (Status::Fail, reason.into(), offending);
+    }
+    if !b.complete {
+        return (Status::Unknown, BRANCH_INCOMPLETE.into(), offending);
+    }
+    (Status::Pass, BRANCH_ACCOUNTED.into(), offending)
+}
+
+/// Whether a change passes the policy as evaluated so far: a failing assessment at or above
+/// `fail_on` fails it; otherwise an unknown one, or facts an enabled rule needs and lacks, leave
+/// it unknown. Dispositions are applied later, by `check`, and do not enter here.
+fn change_standing(c: &Change, assessments: &[Assessment], p: &Policy, teams: &[Team]) -> Status {
+    let mine = || assessments.iter().filter(|a| a.change_id == c.id);
+    let fails = mine().any(|a| {
+        a.status == Status::Fail
+            && p.rules
+                .get(&a.rule_id.name())
+                .is_some_and(|r| r.severity >= p.fail_on)
+    });
+    if fails {
+        Status::Fail
+    } else if !c.reviews_complete
+        || mine().any(|a| a.status == Status::Unknown)
+        || !crate::manifest::gaps(c, p, teams).is_empty()
+    {
+        Status::Unknown
+    } else {
+        Status::Pass
+    }
+}
+
+/// ACC013 for one deployment. Exact conditions are in `docs/policy.md`.
+fn deployment_cover(
+    d: &Deployment,
+    e: &Events,
+    assessments: &[Assessment],
+    p: &Policy,
+) -> (Status, Cow<'static, str>) {
+    let mut uncovered = Vec::new();
+    let mut failing = Vec::new();
+    let mut unknown = Vec::new();
+    let mut before_window = Vec::new();
+    for commit in &d.commits {
+        let short = &commit.sha[..commit.sha.len().min(12)];
+        let change = e.changes.iter().find(|c| {
+            c.merged_at.is_some()
+                && c.merge_commit_sha
+                    .as_deref()
+                    .is_some_and(|m| m.eq_ignore_ascii_case(&commit.sha))
+        });
+        match change {
+            None if commit.committed_at < e.window.from => before_window.push(short.to_string()),
+            None => uncovered.push(short.to_string()),
+            Some(c) => match change_standing(c, assessments, p, &e.teams) {
+                Status::Fail => failing.push(format!("{short} ({})", c.id)),
+                Status::Pass => {}
+                _ => unknown.push(format!("{short} ({})", c.id)),
+            },
+        }
+    }
+    if !uncovered.is_empty() || !failing.is_empty() {
+        let mut parts = Vec::new();
+        if !uncovered.is_empty() {
+            parts.push(format!("landed by no change: {}", uncovered.join(", ")));
+        }
+        if !failing.is_empty() {
+            parts.push(format!(
+                "landed by a change that fails: {}",
+                failing.join(", ")
+            ));
+        }
+        return (
+            Status::Fail,
+            format!(
+                "The deployment to {} shipped commits not covered by a passing change; {}.",
+                d.environment,
+                parts.join("; ")
+            )
+            .into(),
+        );
+    }
+    if !d.commits_complete {
+        return (
+            Status::Unknown,
+            "The commits the deployment shipped could not all be read, or no earlier deployment bounds them.".into(),
+        );
+    }
+    if !before_window.is_empty() {
+        return (
+            Status::Unknown,
+            format!(
+                "Commits merged before the collection window cannot be judged: {}; collect changes from earlier.",
+                before_window.join(", ")
+            )
+            .into(),
+        );
+    }
+    if !unknown.is_empty() {
+        return (
+            Status::Unknown,
+            format!(
+                "Commits landed by a change whose verdict is unknown: {}.",
+                unknown.join(", ")
+            )
+            .into(),
+        );
+    }
+    (Status::Pass, DEPLOY_COVERED.into())
+}
+
+/// A finding on a subject that is not a change: an update of a branch (ACC012), named
+/// `BRANCH#UPDATE`, or a deployment (ACC013). The subject is the finding's `change_id`, so its
+/// identifier is computed exactly as every other finding's is.
+fn subject_finding(
+    e: &Events,
+    rule: RuleId,
+    policy: &RulePolicy,
+    subject: &str,
+    actor: Option<&str>,
+    explanation: String,
+    mut provenance: Vec<Evidence>,
+) -> Result<Finding> {
+    let actors: Vec<String> = actor.map(String::from).into_iter().collect();
+    provenance.sort();
+    provenance.dedup();
+    let preimage = (&e.repository, subject, rule.code(), &actors);
+    let id = finding_id(&crate::canonical::digest(&preimage)?);
+    let legacy = finding_id(&crate::canonical::legacy::digest(&preimage)?);
+    Ok(Finding {
+        id,
+        legacy_ids: vec![legacy],
+        rule_id: rule,
+        rule: rule.name(),
+        severity: policy.severity,
+        change_id: subject.to_string(),
+        actor_ids: actors,
+        explanation,
+        provenance,
+        disposition: Disposition::default(),
+        obligation: None,
+    })
+}
+
+/// ACC012 and ACC013, whose subjects are branches and deployments rather than changes. They run
+/// after every change rule, because a deployment is judged by the changes it shipped.
+fn evaluate_subjects(
+    e: &Events,
+    p: &Policy,
+    findings: &mut Vec<Finding>,
+    assessments: &mut Vec<Assessment>,
+) -> Result<()> {
+    if let Some(policy) = p.rules.get(&RuleId::Acc012.name()).filter(|r| r.enabled) {
+        let merges: BTreeSet<String> = e
+            .changes
+            .iter()
+            .filter(|c| c.merged_at.is_some())
+            .filter_map(|c| c.merge_commit_sha.as_deref())
+            .map(str::to_ascii_lowercase)
+            .collect();
+        for b in &e.branches {
+            let (status, reason, offending) = branch_updates(b, &merges);
+            assessments.push(Assessment {
+                change_id: b.id.clone(),
+                rule_id: RuleId::Acc012,
+                status,
+                reason: reason.to_string(),
+            });
+            for (ev, why) in offending {
+                let by = ev.actor_id.as_deref().map_or_else(
+                    || "an account the forge does not name".to_string(),
+                    String::from,
+                );
+                let at = ev.at.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, true);
+                let explanation = match ev.kind {
+                    BranchEventKind::BranchDeletion => {
+                        format!("Deletion of {} by {by} at {at}.", b.name)
+                    }
+                    BranchEventKind::Push => format!(
+                        "Direct push to {} by {by} at {at}, from {} to {}, which no change landed.",
+                        b.name,
+                        short(&ev.before),
+                        short(&ev.after)
+                    ),
+                    _ => format!(
+                        "{} to {} by {by} at {at}, from {} to {}.",
+                        capitalized(why),
+                        b.name,
+                        short(&ev.before),
+                        short(&ev.after)
+                    ),
+                };
+                let mut provenance = b.provenance.clone();
+                provenance.extend(ev.provenance.clone());
+                findings.push(subject_finding(
+                    e,
+                    RuleId::Acc012,
+                    policy,
+                    &format!("{}#{}", b.id, ev.id),
+                    ev.actor_id.as_deref(),
+                    explanation,
+                    provenance,
+                )?);
+            }
+        }
+    }
+    if let Some(policy) = p.rules.get(&RuleId::Acc013.name()).filter(|r| r.enabled) {
+        let deployments = e.deployments.iter().flat_map(|d| &d.deployments);
+        let mut judged = Vec::new();
+        for d in deployments {
+            let (status, reason) = deployment_cover(d, e, assessments, p);
+            judged.push((d, status, reason));
+        }
+        for (d, status, reason) in judged {
+            assessments.push(Assessment {
+                change_id: d.id.clone(),
+                rule_id: RuleId::Acc013,
+                status,
+                reason: reason.to_string(),
+            });
+            if status == Status::Fail {
+                findings.push(subject_finding(
+                    e,
+                    RuleId::Acc013,
+                    policy,
+                    &d.id,
+                    d.creator.as_deref(),
+                    reason.to_string(),
+                    d.provenance.clone(),
+                )?);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn capitalized(s: &str) -> String {
+    let mut chars = s.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().chain(chars).collect())
+        .unwrap_or_default()
+}
+
+fn short(sha: &str) -> &str {
+    &sha[..sha.len().min(12)]
+}
+
+/// Evaluate every enabled rule against every change, then ACC012 and ACC013 against their
+/// subjects.
 pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Assessment>)> {
     let mut findings = Vec::new();
     let mut assessments = Vec::new();
     for c in &e.changes {
         let facts = Facts::new(e, c, p);
         for rule in RULES {
+            if matches!(rule, RuleId::Acc012 | RuleId::Acc013) {
+                continue;
+            }
             let Some(policy) = p.rules.get(&rule.name()) else {
                 continue;
             };
@@ -759,6 +1051,7 @@ pub(crate) fn evaluate(e: &Events, p: &Policy) -> Result<(Vec<Finding>, Vec<Asse
             });
         }
     }
+    evaluate_subjects(e, p, &mut findings, &mut assessments)?;
     findings
         .sort_by(|a, b| (&a.change_id, a.rule_id, &a.id).cmp(&(&b.change_id, b.rule_id, &b.id)));
     Ok((findings, assessments))

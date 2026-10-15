@@ -155,6 +155,12 @@
             "signed"
           ]
         },
+        "branches": {
+          "$ref": "#/$defs/branches_policy"
+        },
+        "deployments": {
+          "$ref": "#/$defs/deployments_policy"
+        },
         "rules": {
           "type": "object",
           "properties": {
@@ -189,6 +195,12 @@
               "$ref": "#/$defs/rule_policy"
             },
             "missing_required_reviewer_team": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "unaccounted_branch_update": {
+              "$ref": "#/$defs/rule_policy"
+            },
+            "deployed_without_passing_change": {
               "$ref": "#/$defs/rule_policy"
             }
           },
@@ -235,6 +247,34 @@
         "retroactive_review_within_days": {
           "type": "integer",
           "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "branches_policy": {
+      "description": "The protected branches ACC012 watches; empty means the repository's default branch (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "protected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "deployments_policy": {
+      "description": "The environments ACC013 treats as production; empty means those the forge marks as production (ACP 0.4).",
+      "type": "object",
+      "properties": {
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "additionalProperties": false

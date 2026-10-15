@@ -46,6 +46,8 @@ Two properties matter for evidence handling:
 | ACC009 | Under `agent_review`, the only agent approvals are dependent on the author (operator, vendor, signing identity or instructions) | Missed independence; the same response as for self-approval |
 | ACC011 | A change whose risk tier requires a reviewer team merged without a member of that team approving | Have the team review it and record a disposition; require the team in CODEOWNERS for the tier's paths |
 | ACC010 | Under `agent_review`, an agent approval is not backed by a verified signed review document | Do not count the approval; fix the reviewer's signing integration |
+| ACC012 | A protected branch was force-pushed, deleted, or pushed to a commit no reviewed change landed | Review what the update shipped and record a disposition; block force pushes and direct pushes |
+| ACC013 | A production deployment shipped a commit no passing change landed | Review what shipped and record a disposition; gate deployments with `acc verify` |
 | exit 4 (incomplete) | Part of the population or a review history could not be retrieved | Do not report the window as clean; re-collect, or document the gap |
 
 Dispositions (`accepted`, `remediated`, `false_positive`, with owner, date, rationale and optional

@@ -231,14 +231,43 @@ fn teams_required(p: &Policy, c: &Change, teams: &[Team]) -> bool {
         })
 }
 
+/// Whether ACC012 is enabled, which makes missing or partial branch records a collection gap.
+pub fn branches_required(p: &Policy) -> bool {
+    enabled(p, RuleName::UnaccountedBranchUpdate)
+}
+
+/// Whether ACC013 is enabled, which makes missing or partial deployment records a collection gap.
+pub fn deployments_required(p: &Policy) -> bool {
+    enabled(p, RuleName::DeployedWithoutPassingChange)
+}
+
+/// The rules whose subjects are not changes and whose facts are missing or partial under `p`:
+/// ACC012 with no branch recorded or one read in part, and ACC013 with no deployment record or
+/// one read in part.
+pub fn subject_gaps(e: &Events, p: &Policy) -> Vec<RuleId> {
+    let mut out = Vec::new();
+    if branches_required(p) && (e.branches.is_empty() || e.branches.iter().any(|b| !b.complete)) {
+        out.push(RuleId::Acc012);
+    }
+    if deployments_required(p)
+        && e.deployments
+            .as_ref()
+            .is_none_or(|d| !d.complete || d.deployments.iter().any(|dep| !dep.commits_complete))
+    {
+        out.push(RuleId::Acc013);
+    }
+    out
+}
+
 /// Whether collection is incomplete for the decision `p` asks for: the window or a review history
 /// is incomplete, or an enabled opt-in rule's facts are missing or partial for a merged change
-/// ([`gaps`]). Incomplete collection takes exit-code precedence and can never produce a clean
-/// result.
+/// ([`gaps`]) or for a branch or deployment ([`subject_gaps`]). Incomplete collection takes
+/// exit-code precedence and can never produce a clean result.
 pub fn incomplete(e: &Events, p: &Policy) -> bool {
     !e.window.complete
         || e.changes.iter().any(|c| !c.reviews_complete)
         || e.changes.iter().any(|c| !gaps(c, p, &e.teams).is_empty())
+        || !subject_gaps(e, p).is_empty()
 }
 
 fn validate_disposition(d: &Disposition) -> Result<()> {

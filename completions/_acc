@@ -47,6 +47,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -64,6 +67,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -98,6 +103,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -115,6 +123,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -141,6 +151,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -158,6 +171,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -216,6 +231,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -233,6 +251,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -267,6 +287,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -284,6 +307,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -310,6 +335,9 @@ _arguments "${_arguments_options[@]}" : \
 '*--agent-vendor=[Treat AGENT as built and operated by VENDOR (repeatable; extends the built-in registry)]:AGENT=VENDOR:_default' \
 '--max-pages=[Maximum pages per list endpoint (100 items each)]:N:_default' \
 '*--team=[Also record this reviewer team'\''s members (ORG/SLUG, or a GitLab group path; repeatable; ACC011). The token needs to read the members. Implied for the teams the policy'\''s tiers require]:ORG/SLUG:_default' \
+'*--branch=[Also record every update of this protected branch in the window (repeatable; ACC012)]:NAME:_default' \
+'*--environment=[Also record deployments to this environment as production (repeatable; ACC013)]:NAME:_default' \
+'--deploy-since=[Start of the deployment window (default\: the start of the merge window). Keep it later than --since, so the changes a deployment shipped were merged inside the merge window]:DATE:_default' \
 '-f+[Output format; inferred from the --output extension when omitted]:FORMAT:((json\:""
 yaml\:""
 table\:"A plain-text table for people; \`text\` is an alias"
@@ -327,6 +355,8 @@ in-toto-jsonl\:"JSON Lines of unsigned in-toto Statements, one per change"))' \
 '--ignore-trailers[Do not read Co-Authored-By trailers; only declarations and account mappings establish agent authorship]' \
 '--checks[Also collect check runs, commit statuses (GitLab\: pipelines and jobs) and the required checks for merged changes (ACC004). Implied when the policy enables ACC004]' \
 '--bypass[Also collect ruleset evaluations of merged changes (ACC005); the token needs repository administration read access. GitLab records none, so ACC005 stays unknown there. Implied when the policy enables ACC005]' \
+'--branches[Also record every update of the repository'\''s default branch in the window (ACC012). Implied when the policy enables ACC012]' \
+'--deployments[Also record successful deployments to production environments and the commits each shipped (ACC013)\: those the forge marks as production. Implied when the policy enables ACC013]' \
 '-q[Suppress status lines on stderr]' \
 '--quiet[Suppress status lines on stderr]' \
 '(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
@@ -418,7 +448,7 @@ json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':input -- A manifest written by `scan` or `evaluate`, an in-toto Statement, or JSON Lines of Statements:_files' \
+':input -- A manifest written by `scan` or `evaluate`, an in-toto Statement (including a release attestation), or JSON Lines of Statements:_files' \
 && ret=0
 ;;
 (check)
@@ -477,6 +507,27 @@ json\:"One JSON object (RFC 8785 bytes) followed by a newline"))' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \
 '--version[Print version]' \
+&& ret=0
+;;
+(release)
+_arguments "${_arguments_options[@]}" : \
+'--range=[The commits the release shipped, as BASE..HEAD\: the previous release and this one, for example v1.4.0..v1.5.0]:BASE..HEAD:_default' \
+'*--subject=[A release artifact, as NAME=sha256\:HEX (repeatable; at least one)\: the subjects of the Statement, for example the archive and checksum your build produced]:NAME=sha256:HEX:_default' \
+'--policy=[Policy file; overrides the policy embedded in each manifest]:FILE:_files' \
+'--as-of=[Calendar date dispositions are evaluated on (YYYY-MM-DD). Required when a finding has a non-open disposition; the machine clock is never consulted]:DATE:_default' \
+'--checkout=[The local clone the range is read from]:DIR:_files' \
+'-o+[Write the Statement to FILE instead of stdout]:FILE:_files' \
+'--output=[Write the Statement to FILE instead of stdout]:FILE:_files' \
+'-q[Suppress status lines on stderr]' \
+'--quiet[Suppress status lines on stderr]' \
+'(-q --quiet)-v[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'(-q --quiet)--verbose[Print extra diagnostics on stderr (resolved policy, format, destination, counts). Never changes stdout]' \
+'--no-color[Never color diagnostics. acc'\''s own output is never colored; this and a non-empty NO_COLOR environment variable switch off color in help and usage errors too]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'*::manifests -- Manifests (JSON or YAML) whose changes may have landed the range'\''s commits:_files' \
 && ret=0
 ;;
 (pr)
@@ -645,6 +696,10 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(release)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (pr)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -683,6 +738,7 @@ _acc_commands() {
 'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
 'check:Enforce policy against a manifest, honoring recorded dispositions' \
 'verify:Gate a deploy\: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing' \
+'release:Attest a release\: every first-parent commit in a range, the changes that landed it and their verdicts, as an in-toto Statement about the release artifacts' \
 'pr:Collect and evaluate one pull request' \
 'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
 'completions:Generate shell completions' \
@@ -763,6 +819,7 @@ _acc__subcmd__help_commands() {
 'validate:Validate a manifest\: schema, timeline, references and recomputed contents' \
 'check:Enforce policy against a manifest, honoring recorded dispositions' \
 'verify:Gate a deploy\: every first-parent commit in a range must be landed by a change that a signed acc attestation shows passing' \
+'release:Attest a release\: every first-parent commit in a range, the changes that landed it and their verdicts, as an in-toto Statement about the release artifacts' \
 'pr:Collect and evaluate one pull request' \
 'doctor:Check that this environment is ready to collect\: version, token, policy file, repository; with --online, the token, the rate limit and whether a newer acc exists (GET only)' \
 'completions:Generate shell completions' \
@@ -824,6 +881,11 @@ _acc__subcmd__help__subcmd__pr_commands() {
     local commands; commands=()
     _describe -t commands 'acc help pr commands' commands "$@"
 }
+(( $+functions[_acc__subcmd__help__subcmd__release_commands] )) ||
+_acc__subcmd__help__subcmd__release_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc help release commands' commands "$@"
+}
 (( $+functions[_acc__subcmd__help__subcmd__scan_commands] )) ||
 _acc__subcmd__help__subcmd__scan_commands() {
     local commands; commands=(
@@ -861,6 +923,11 @@ _acc__subcmd__manpage_commands() {
 _acc__subcmd__pr_commands() {
     local commands; commands=()
     _describe -t commands 'acc pr commands' commands "$@"
+}
+(( $+functions[_acc__subcmd__release_commands] )) ||
+_acc__subcmd__release_commands() {
+    local commands; commands=()
+    _describe -t commands 'acc release commands' commands "$@"
 }
 (( $+functions[_acc__subcmd__scan_commands] )) ||
 _acc__subcmd__scan_commands() {

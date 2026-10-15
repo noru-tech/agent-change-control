@@ -10,6 +10,7 @@ pub mod export;
 pub mod forge;
 pub mod io;
 pub mod pr;
+pub mod release;
 pub mod scan;
 pub mod validate;
 pub mod verify;
@@ -79,6 +80,9 @@ pub enum Command {
     /// Gate a deploy: every first-parent commit in a range must be landed by a change that a
     /// signed acc attestation shows passing.
     Verify(verify::Args),
+    /// Attest a release: every first-parent commit in a range, the changes that landed it and
+    /// their verdicts, as an in-toto Statement about the release artifacts.
+    Release(release::Args),
     /// Collect and evaluate one pull request.
     Pr(pr::Args),
     /// Check that this environment is ready to collect: version, token, policy file, repository;
@@ -121,6 +125,7 @@ pub fn run(cli: Cli) -> Result<Exit> {
         Command::Validate(args) => validate::run(&ctx, args),
         Command::Verify(args) => verify::run(&ctx, args),
         Command::Check(args) => check::run(&ctx, args),
+        Command::Release(args) => release::run(&ctx, args),
         Command::Pr(args) => pr::run(&ctx, args),
         Command::Doctor(args) => doctor::run(&ctx, args),
         Command::Completions(args) => completions::run(&ctx, args),
@@ -194,6 +199,17 @@ pub fn warn_incomplete(
                     "{rule} data missing or incomplete for {n} merged change(s)"
                 ));
             }
+        }
+        for rule in policy
+            .map(|p| crate::manifest::subject_gaps(events, p))
+            .unwrap_or_default()
+        {
+            parts.push(match rule {
+                crate::model::RuleId::Acc012 => {
+                    "ACC012 branch updates missing or incomplete".to_string()
+                }
+                _ => format!("{rule} deployments missing or incomplete"),
+            });
         }
         parts.join("; ")
     });

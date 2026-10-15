@@ -3,9 +3,9 @@
 use super::Ctx;
 use super::detect;
 use super::io::{self, EvidenceArgs, OutputArgs};
-use crate::collectors::Sources;
 use crate::collectors::github::Github;
 use crate::collectors::gitlab::Gitlab;
+use crate::collectors::{DeploymentQuery, Sources};
 use crate::model::Events;
 use crate::{Exit, failure_with_hint};
 use anyhow::Result;
@@ -89,6 +89,25 @@ pub struct Collect {
     /// require.
     #[arg(long, value_name = "ORG/SLUG")]
     pub team: Vec<String>,
+    /// Also record every update of the repository's default branch in the window (ACC012).
+    /// Implied when the policy enables ACC012.
+    #[arg(long)]
+    pub branches: bool,
+    /// Also record every update of this protected branch in the window (repeatable; ACC012).
+    #[arg(long, value_name = "NAME")]
+    pub branch: Vec<String>,
+    /// Also record successful deployments to production environments and the commits each
+    /// shipped (ACC013): those the forge marks as production. Implied when the policy enables
+    /// ACC013.
+    #[arg(long)]
+    pub deployments: bool,
+    /// Also record deployments to this environment as production (repeatable; ACC013).
+    #[arg(long, value_name = "NAME")]
+    pub environment: Vec<String>,
+    /// Start of the deployment window (default: the start of the merge window). Keep it later
+    /// than --since, so the changes a deployment shipped were merged inside the merge window.
+    #[arg(long, value_name = "DATE")]
+    pub deploy_since: Option<String>,
     #[command(flatten)]
     pub output: OutputArgs,
 }
@@ -163,17 +182,49 @@ impl Client {
     }
 }
 
-/// Collect the pull requests merged in the window.
-/// `checks` and `bypass` ask for ACC004's and ACC005's facts whatever `--checks` and `--bypass`
-/// say: the caller's policy needs them.
-pub fn collect(
-    ctx: &Ctx,
-    kind: Kind,
-    c: &Collect,
-    checks: bool,
-    bypass: bool,
-    teams: &[String],
-) -> Result<Events> {
+/// The facts the opt-in rules need, beyond the changes themselves.
+#[derive(Debug, Clone, Default)]
+pub struct Wanted {
+    pub checks: bool,
+    pub bypass: bool,
+    pub teams: Vec<String>,
+    /// Protected branches to record; `Some(empty)` names the default branch.
+    pub branches: Option<Vec<String>>,
+    /// Production environments to record; `Some(empty)` means the forge's production flag.
+    pub environments: Option<Vec<String>>,
+}
+
+impl Wanted {
+    /// What `p` needs collected.
+    pub fn for_policy(p: &crate::model::Policy) -> Self {
+        use crate::manifest;
+        Self {
+            checks: manifest::checks_required(p),
+            bypass: manifest::bypass_required(p),
+            teams: manifest::teams_required_by(p),
+            branches: manifest::branches_required(p)
+                .then(|| p.branches.clone().unwrap_or_default().protected),
+            environments: manifest::deployments_required(p)
+                .then(|| p.deployments.clone().unwrap_or_default().environments),
+        }
+    }
+}
+
+/// Merge requested names with the flags: `None` unless something asked, the union otherwise.
+fn names(wanted: &Option<Vec<String>>, flag: bool, given: &[String]) -> Option<Vec<String>> {
+    if wanted.is_none() && !flag && given.is_empty() {
+        return None;
+    }
+    let mut out: Vec<String> = wanted.iter().flatten().chain(given).cloned().collect();
+    out.sort();
+    out.dedup();
+    Some(out)
+}
+
+/// Collect the pull requests merged in the window, and whatever `wanted` asks for whatever the
+/// flags say: the caller's policy needs it.
+pub fn collect(ctx: &Ctx, kind: Kind, c: &Collect, wanted: &Wanted) -> Result<Events> {
+    let (checks, bypass, teams) = (wanted.checks, wanted.bypass, wanted.teams.as_slice());
     let repository = detect::resolve_repository(kind, c.repository.as_deref(), |m| ctx.note(m))?;
     let since = c
         .since
@@ -225,6 +276,22 @@ pub fn collect(
         .collect();
     team_ids.sort();
     team_ids.dedup();
+    let branches = names(&wanted.branches, c.branches, &c.branch);
+    let environments = names(&wanted.environments, c.deployments, &c.environment);
+    let deploy_from = c
+        .deploy_since
+        .as_deref()
+        .map(|s| io::boundary(s, false))
+        .transpose()?
+        .unwrap_or(from);
+    if deploy_from > to {
+        return Err(failure_with_hint(
+            Exit::Usage,
+            "deployment window is reversed",
+            "--deploy-since must not be later than --until",
+        ));
+    }
+    let now = chrono::Utc::now();
     Client::new(kind, c.max_pages)?.collect(
         &repository,
         from,
@@ -238,7 +305,13 @@ pub fn collect(
             vendors: &vendors,
             checks: checks || c.checks,
             bypass_as_of: (bypass || c.bypass).then(chrono::Utc::now),
-            teams: (!team_ids.is_empty()).then(|| (team_ids.as_slice(), chrono::Utc::now())),
+            teams: (!team_ids.is_empty()).then_some((team_ids.as_slice(), now)),
+            branches: branches.as_deref().map(|b| (b, now)),
+            deployments: environments.as_deref().map(|environments| DeploymentQuery {
+                environments,
+                from: deploy_from,
+                to,
+            }),
         },
     )
 }

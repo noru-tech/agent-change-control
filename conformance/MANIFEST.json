@@ -1,16 +1,691 @@
 {
   "contract": "README.md#contract",
   "counts": {
-    "accept": 56,
-    "incomplete": 12,
-    "reject": 27
+    "accept": 63,
+    "incomplete": 15,
+    "reject": 29
   },
-  "specDigest": "sha256:6e03ea6f4bc03ff5e88af9fda4d8be88036e2b5e7f01a4685ec961e653055426",
+  "specDigest": "sha256:70f5a3bc3abd093b52330eae3abf206e398e248baf30daff5759808fb71a01cf",
   "specPath": "spec/ai-change-provenance.md",
   "specVersion": "0.4",
   "suite": "acp-evaluator-conformance",
-  "suiteRevision": 2,
+  "suiteRevision": 3,
   "vectors": [
+    {
+      "conditions": [
+        "#45-branch-updates",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:branch:main",
+            "outcome": "fail",
+            "rule": "ACC012"
+          }
+        ],
+        "codes": [
+          "ACC012"
+        ],
+        "manifestDigest": "sha256:440d2c70cd3dd583a03adf3b5873d2e3960eeb7babaa2492309e5e2990a964e9",
+        "verdict": "evaluated"
+      },
+      "id": "branch-updated-directly",
+      "kind": "accept",
+      "path": "accept/branch-updated-directly.json"
+    },
+    {
+      "conditions": [
+        "#45-branch-updates",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:branch:main",
+            "outcome": "pass",
+            "rule": "ACC012"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:69f7b0d015383b8c770fc10d9c6e128b12c0c6c99045b32eb1faa7352234ac40",
+        "verdict": "evaluated"
+      },
+      "id": "branch-accounted",
+      "kind": "accept",
+      "path": "accept/branch-accounted.json"
+    },
+    {
+      "conditions": [
+        "#46-deployments",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "pass",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:e1c8a93c477070048962736d8413a2b17d3c1f60190623e93f047d191242cb72",
+        "verdict": "evaluated"
+      },
+      "id": "deploy-covered",
+      "kind": "accept",
+      "path": "accept/deploy-covered.json"
+    },
+    {
+      "conditions": [
+        "#46-deployments",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "pass",
+            "rule": "ACC013"
+          },
+          {
+            "change": "github:acme/api:deployment:70",
+            "outcome": "fail",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [
+          "ACC013"
+        ],
+        "manifestDigest": "sha256:9c9b3ee39b05cc6313ecded4bb39e73d313a46ff68faf2309da3142b95dcc07c",
+        "verdict": "evaluated"
+      },
+      "id": "deploy-uncovered",
+      "kind": "accept",
+      "path": "accept/deploy-uncovered.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#45-branch-updates"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:branch:main",
+            "outcome": "unknown",
+            "rule": "ACC012"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:e2677a4af727754d7fc3ce7fa62d497406b1366c3c977845e686b450700df425",
+        "verdict": "incomplete"
+      },
+      "id": "branch-accounted--incomplete",
+      "kind": "incomplete",
+      "path": "incomplete/branch-accounted--incomplete.json"
+    },
+    {
+      "conditions": [
+        "#45-branch-updates",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:branch:main",
+            "outcome": "fail",
+            "rule": "ACC012"
+          }
+        ],
+        "codes": [
+          "ACC012"
+        ],
+        "manifestDigest": "sha256:e400641160d1d64ddff7bfb1bcb532b714cdc810de7fb1d1d49d90b9b3a6d6a4",
+        "verdict": "evaluated"
+      },
+      "id": "branch-accounted--deleted",
+      "kind": "accept",
+      "path": "accept/branch-accounted--deleted.json"
+    },
+    {
+      "conditions": [
+        "#4-collection",
+        "#46-deployments"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "unknown",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:ef099ed00fea307ab84eeb490820a1e9c3b3ceca15fbcad0d6e6419a485ba180",
+        "verdict": "incomplete"
+      },
+      "id": "deploy-covered--range-unbounded",
+      "kind": "incomplete",
+      "path": "incomplete/deploy-covered--range-unbounded.json"
+    },
+    {
+      "conditions": [
+        "#46-deployments",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "fail",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "fail",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [
+          "ACC002",
+          "ACC003",
+          "ACC013"
+        ],
+        "manifestDigest": "sha256:8b4e274a2114a2fbb0b597bcd65cb1ba2d0f2f548efd791a16c6bc1d1b61f613",
+        "verdict": "evaluated"
+      },
+      "id": "deploy-covered--failing-change",
+      "kind": "accept",
+      "path": "accept/deploy-covered--failing-change.json"
+    },
+    {
+      "conditions": [
+        "#46-deployments",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "unknown",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "unknown",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:c46684b49f3f613e3e8b261e359c57dffe24217139caccdb979421f3535532a9",
+        "verdict": "incomplete"
+      },
+      "id": "deploy-covered--change-unknown",
+      "kind": "incomplete",
+      "path": "incomplete/deploy-covered--change-unknown.json"
+    },
+    {
+      "conditions": [
+        "#46-deployments",
+        "#62-rules"
+      ],
+      "expected": {
+        "assessments": [
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC001"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC002"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "pass",
+            "rule": "ACC003"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC006"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC007"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC008"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC009"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC010"
+          },
+          {
+            "change": "github:acme/api:pr:421",
+            "outcome": "not_applicable",
+            "rule": "ACC011"
+          },
+          {
+            "change": "github:acme/api:deployment:69",
+            "outcome": "unknown",
+            "rule": "ACC013"
+          }
+        ],
+        "codes": [],
+        "manifestDigest": "sha256:69bf9daa1dce89b3d7d5c7a71dbce57d3a73d95d6758bf93d7ba9c4183eaab2b",
+        "verdict": "evaluated"
+      },
+      "id": "deploy-covered--merged-before-window",
+      "kind": "accept",
+      "path": "accept/deploy-covered--merged-before-window.json"
+    },
     {
       "conditions": [
         "#67-risk-tiers",
@@ -67,7 +742,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:be5766f6e4417131b7a2b5258969511c4f01f7a5f910a60cc0042338eb25db6f",
+        "manifestDigest": "sha256:545869c456259f01a2fc1ca2cc752075fe27f41b1b0e4aea87fd1173cd3b318f",
         "verdict": "evaluated"
       },
       "id": "tier-missing-assessment",
@@ -130,7 +805,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:7c5fd9ddb3c7ff2cba3902344df40c772f35ebe87e2be06dfd6bac6059d6623e",
+        "manifestDigest": "sha256:2206603d26337b319a1c83d780e6e64a503f7b4c9bb0c91013a2fca05989e4da",
         "verdict": "evaluated"
       },
       "id": "tier-below-minimum",
@@ -192,7 +867,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:ebc7ac6bf460d5a5cac23c679efc69a6f86bb84c142396368f969975f3dd11af",
+        "manifestDigest": "sha256:f67fb1a61024198f9c146d855b9d1725358ba5af11cf8abd738d2046dfbedf2c",
         "verdict": "evaluated"
       },
       "id": "tier-team-approved",
@@ -256,7 +931,7 @@
         "codes": [
           "ACC011"
         ],
-        "manifestDigest": "sha256:e3428b54c7132fe8bb3942ca35cf2d7006670714d6244729f0d96158a529caa0",
+        "manifestDigest": "sha256:7cecc2ba4b47b83c7e5cebf779d8d62b0aeb3dde8ab4a9090730ab1e71931bbf",
         "verdict": "evaluated"
       },
       "id": "tier-team-missing",
@@ -320,7 +995,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:1fa69aac59836ab942417dd7c70ae06cad8af66523144986d6f8c7cf5a0a6e01",
+        "manifestDigest": "sha256:6f07752a96137d10a0b8f879596f61cb2f5c08ea910548801230813525e45abb",
         "verdict": "evaluated"
       },
       "id": "tier-emergency-unreviewed",
@@ -383,7 +1058,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:d40e49ac2b749874c0507182be3ef3bce5387bcfb58e76aee51b3edc771e591e",
+        "manifestDigest": "sha256:6849be6b23361e1f88b2516da16a2f790b089df5fb568ea4dd1fbeed5a5a42a8",
         "verdict": "evaluated"
       },
       "id": "tier-emergency-declared",
@@ -444,7 +1119,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:d227975f4259205d19ab818e4846d191af23b3cd08608f04c26918ba6c20231f",
+        "manifestDigest": "sha256:ede6ac47e2ca4bdcd5b6a79285c8d19debc9f844ac6bd0d9399802f7ade7410b",
         "verdict": "incomplete"
       },
       "id": "tier-team-approved--membership-incomplete",
@@ -505,7 +1180,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:bbc945b0971f4d2a7ed37570ee0918b37b0df11f2ae4637e819459ad3503c236",
+        "manifestDigest": "sha256:eff2df460e48c5a39f31abaf4d0e16ac42a28cc5ae0c0ee4e3997f09a59cf338",
         "verdict": "incomplete"
       },
       "id": "tier-team-approved--reviews-incomplete",
@@ -568,7 +1243,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:825d81894ecdacac64be979b7d79738354e9de6b872d1110d1c2facfaf55c831",
+        "manifestDigest": "sha256:7953460ab9503f7626428bde85b0bab568ee0ed7ea5343fe6d0549bac570d8a3",
         "verdict": "evaluated"
       },
       "id": "tier-team-approved--author-unknown",
@@ -629,7 +1304,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e96ae067956ebf685548590cac63eddd8ad69f9a3baeea3868e741ea1a06af8a",
+        "manifestDigest": "sha256:2e8a5fede3dee7b05a5700a1f1eec96209036cbbca7f79e9cf12c383267ea8b3",
         "verdict": "evaluated"
       },
       "id": "human-clean",
@@ -692,7 +1367,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:4d514e483c55ac092c2f9b0f9a71a107330ced273870c7b6fce7d8943970ee50",
+        "manifestDigest": "sha256:b8c738af9dbde465d93b1ed8d583ce6abf0f5811298a2819de3938f96259a4a3",
         "verdict": "evaluated"
       },
       "id": "human-self-approved",
@@ -755,7 +1430,7 @@
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:f4c122963ee4e784d1716137d11fe47da44fa9a193152c13b2725bce1ea195d5",
+        "manifestDigest": "sha256:2934d21e887e711eefea1addadc102c065edfd8d13559eebe520b931ca98b58f",
         "verdict": "evaluated"
       },
       "id": "self-and-independent",
@@ -816,7 +1491,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:aad581adcdc77c3aa66858799500a6f2933fa8e8bfd934f9e7dead3df7a9578f",
+        "manifestDigest": "sha256:775b5fabd001750608e9ba6f5e62231cbfba5f12b80f6fc047b369430a62dba1",
         "verdict": "evaluated"
       },
       "id": "claude-clean",
@@ -881,7 +1556,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:b580140573c661fc94be599156aa556c7028971cbaea36978b208e508d019333",
+        "manifestDigest": "sha256:0222b7fd742a26038e2db57cdfed4af5dbc2711835c2a240701ce147ed596697",
         "verdict": "evaluated"
       },
       "id": "claude-operator-self-approved",
@@ -942,7 +1617,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:808a13b59833748f516c87113608bd19fda05febd7bf50d0fb8e1fb0aa2b277f",
+        "manifestDigest": "sha256:be551dd710b3553c61738baad1917922d4f30e4c047bd013903867a3699513d3",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived",
@@ -1007,7 +1682,7 @@
           "ACC002",
           "ACC003"
         ],
-        "manifestDigest": "sha256:0d561178b542569e553fb67abc58e5c6edce3ca361f674a4f4740f2b8c96c009",
+        "manifestDigest": "sha256:f95d6cf1290542243bc4e3dda6ef877b627f86c0c9bf83bccdb9f3c1d5b7ab75",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-self-approved",
@@ -1068,7 +1743,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:65c03b13772db46dbaeafa268285773fa6238be9a034846a1fdc0566e3559d62",
+        "manifestDigest": "sha256:bc49e6cd4f703d9121c783c1449bd94f2b1ae0a9749c29d46b26cd5dd2ebb8af",
         "verdict": "evaluated"
       },
       "id": "codex-clean",
@@ -1131,7 +1806,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:d25ea4d60a4d14e295be2fe7ac55135dd346c9e1906934b93d68d56194cbec21",
+        "manifestDigest": "sha256:7f3dafecb2ae4de9ce8fcef441fce678e61b73645bd23083c32c4ac059c64a22",
         "verdict": "evaluated"
       },
       "id": "agent-operator-unknown",
@@ -1194,7 +1869,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:8c6c3023c2d35ce5bdac896155f3a95f9f9ca6b089823febee613117af6b4e7f",
+        "manifestDigest": "sha256:843907820728c88bbf5882fb3607312c033fb3af3b1cb7cb27fa681ce140b70e",
         "verdict": "evaluated"
       },
       "id": "unknown-without-review",
@@ -1257,7 +1932,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:3700ec2d3ea1279bdd3085b78cce2485741d70889917e61269b5601a925b2d7d",
+        "manifestDigest": "sha256:c0c92838539a07773e89d92de98cad35a6c7c5e027fb65831bc5087adcf34509",
         "verdict": "evaluated"
       },
       "id": "bot-approval",
@@ -1319,7 +1994,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:92f858e1f3131e58fec1ccdb5d774555b77194aeca636fbfc7a7f39936e4944f",
+        "manifestDigest": "sha256:36faa46186ff9ba9722e01453bc0f10168e402876f75cdc48a20d623009fa2de",
         "verdict": "evaluated"
       },
       "id": "changes-requested",
@@ -1381,7 +2056,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:c5a22ec3eeb8c18376d760f57548331fab8f43141e8f785ee09524532565e1e9",
+        "manifestDigest": "sha256:8d9bddd69e934a8f7a6fca917e805b57d12984e75881c2a74dac2c40a87694d3",
         "verdict": "evaluated"
       },
       "id": "dismissed-approval",
@@ -1441,7 +2116,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:1bce6056bc191f529c91f8508d94d6bd5eb4398d2a55ab061e2ac05e329b5bf9",
+        "manifestDigest": "sha256:9f78e3e07f7dbf08136ab2ddada5aaadcb72c170c3d18758335d40252a5dbffd",
         "verdict": "evaluated"
       },
       "id": "comment-after-approval",
@@ -1503,7 +2178,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:81a3836b9adce7eaa34ee1a029370ec491cef8714248ca06f8488cdac6160952",
+        "manifestDigest": "sha256:e7cc63b887982479d89b5ee700f7a1e83f419afe5b70b56af139bd2ae0dbb6cd",
         "verdict": "evaluated"
       },
       "id": "stale-approval",
@@ -1563,7 +2238,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:6d0e0e554be206d9b502f6a10718192f91a5139b46343007c544828b45e8036e",
+        "manifestDigest": "sha256:58ff3ddd72fb08ab76eca2d223644d24947b5a4a12ed34320cfeb218b4c7284d",
         "verdict": "evaluated"
       },
       "id": "approval-at-merge",
@@ -1624,7 +2299,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:0bebc93a68cb4795541f1d5bc1822fedc0b3881954e96f8ee5b2db0c22238e7a",
+        "manifestDigest": "sha256:20f75c26d8cac7d0ed09588389350ebfea0bc4694b3323416413ae4a65e362dd",
         "verdict": "evaluated"
       },
       "id": "open-pr",
@@ -1685,7 +2360,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:e96ae067956ebf685548590cac63eddd8ad69f9a3baeea3868e741ea1a06af8a",
+        "manifestDigest": "sha256:2e8a5fede3dee7b05a5700a1f1eec96209036cbbca7f79e9cf12c383267ea8b3",
         "verdict": "evaluated"
       },
       "id": "timezone-equivalent",
@@ -1750,7 +2425,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:3ebf9186e8bd9048f4f74a866a1f2bc9abb8de034db67bca71e6c673e6c85c28",
+        "manifestDigest": "sha256:a13605d48ad5c9e85fc4ea049031f89429064b543b95a41277f232297c4e1386",
         "verdict": "evaluated"
       },
       "id": "agent-review-declared",
@@ -1816,7 +2491,7 @@
           "ACC007",
           "ACC008"
         ],
-        "manifestDigest": "sha256:83d9ef05f69eea60fd22e4b1097ccc6dfe344bce124555c04fe02710b73bbf1c",
+        "manifestDigest": "sha256:05ed133086ddf3eb7cdf7af570e296df16985ca55f4b663960f21cd209413fad",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-vendor",
@@ -1880,7 +2555,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:82fee0380a96df61fa624ad107bb8cbdc277d84660e0caf7111b0010f76faaed",
+        "manifestDigest": "sha256:210fa6aa1841f91f3f0318400aa3ac60a4c85b8c4e2b02eee1b8a4b99a9d5e53",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent",
@@ -1946,7 +2621,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:e817d9579ac6bf8b9c96b80e1502fd2d00c970601bc8373c23531693ab2799f2",
+        "manifestDigest": "sha256:9c7b0e0d1050acb262552e717545bd582ad055a86c436c9b1088227d9a7c2d5c",
         "verdict": "evaluated"
       },
       "id": "agent-review-dependent-operator",
@@ -2012,7 +2687,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:7cf3447c0d46d43657e08e1fe8b25206b407f48c3336dfc7628bcab184017e1f",
+        "manifestDigest": "sha256:f5043e7a567fbe58afb9fe12a2b9d5c5a473bacd06762383f59c5beb394d6857",
         "verdict": "evaluated"
       },
       "id": "agent-review-same-identity",
@@ -2076,7 +2751,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:544cb380d66fb1e1da5974d9f0d1a5dc7b95b6c18445f25684b8e27e1e163735",
+        "manifestDigest": "sha256:55efd10e753f3276e3eb2359444283c65485c2856299e636050411a45fcb05ff",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-operator",
@@ -2140,7 +2815,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:af780b058185626c9e6fe75b6be8273233dbfc706e140caaa20d24d150e975a2",
+        "manifestDigest": "sha256:220cc69fb3d40335a862cd3e8b621e68dee2b40cebd87bdfedb358c141bc5348",
         "verdict": "evaluated"
       },
       "id": "agent-review-unknown-vendor",
@@ -2207,7 +2882,7 @@
           "ACC007",
           "ACC010"
         ],
-        "manifestDigest": "sha256:77d7b0642842d0dc52f1093408658010face8102cb0e8c0b7f047d07e2c540e6",
+        "manifestDigest": "sha256:62a01e9a3fafc865d6e3f792850f3e1cd5d8ee37e8eb20b241ad5934d85e7dbf",
         "verdict": "evaluated"
       },
       "id": "agent-review-unsigned",
@@ -2271,7 +2946,7 @@
           "ACC003",
           "ACC007"
         ],
-        "manifestDigest": "sha256:38a1e692ff6b9c72bbd66168a57f9883dc81242b83a4eaaab6e093d2054957ec",
+        "manifestDigest": "sha256:76ef3e1ba33107b92b9d2b1e69d0b5635cae5f52ba1e38c0d2f93f933b778958",
         "verdict": "evaluated"
       },
       "id": "agent-review-out-of-scope",
@@ -2335,7 +3010,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:db4efa935eee53649d6e988f9a0ccde1a9d3ac1581f0e9eeba31c758461e4fbf",
+        "manifestDigest": "sha256:db6106b401e76194be3663d3ce0e8f8f0778d2ef6003075e90e505b89febb4b0",
         "verdict": "evaluated"
       },
       "id": "claude-trailer-derived--minimum-authorship-declared",
@@ -2399,7 +3074,7 @@
         "codes": [
           "ACC006"
         ],
-        "manifestDigest": "sha256:8e2efc3cd7af8cef53ca0141b498d18b7c3a3555bfdd5f3b8bafdbc653feb3b0",
+        "manifestDigest": "sha256:91211344c88347d884ab6d5adf078e893c5b7df81711aea8084eaba286453123",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-authorship-observed",
@@ -2464,7 +3139,7 @@
           "ACC001",
           "ACC003"
         ],
-        "manifestDigest": "sha256:fbe8cdfae3765f264647d130ec478c8e1ab05cd56efb56579ee128d44db08564",
+        "manifestDigest": "sha256:f5d3134427cc5bd7df20d0ef6f1b25170b475a7321a80005f930119f46530295",
         "verdict": "evaluated"
       },
       "id": "claude-clean--minimum-review-signed",
@@ -2525,7 +3200,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:954467e61f9eb79975deafa286d3b2384d5c7eed3c797a3fb04081c3359b0eb3",
+        "manifestDigest": "sha256:011c454dfd0beb47f95d501a5e2eee4512a83ffa1d1e335867e2692b2fb22cce",
         "verdict": "evaluated"
       },
       "id": "claude-clean--signed-authorship",
@@ -2582,7 +3257,7 @@
         "codes": [
           "ACC003"
         ],
-        "manifestDigest": "sha256:443812035a9789a50ed0e73aab35d789ea3383f46f6460183ab840ef4cab30cc",
+        "manifestDigest": "sha256:bc358b7772cbcb8c052af13a6d816673b9f18534065c9cb311f9d34f6f194d74",
         "verdict": "evaluated"
       },
       "id": "human-self-approved--rule-disabled",
@@ -2645,7 +3320,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:b926e348187bb506ae9d4c483670cfb9fa870a446f857f5168d0a0b7fe1ab7ab",
+        "manifestDigest": "sha256:1025e6beb5312c300845f511d3a16f22d0b627d6dd27650c77b0947d657fb34f",
         "verdict": "evaluated"
       },
       "id": "agent-review-independent--instructions-required",
@@ -2711,7 +3386,7 @@
           "ACC007",
           "ACC009"
         ],
-        "manifestDigest": "sha256:077219715c44d8a1680cbdb358c823c06e216dccd124775c4d0938c0117d3d68",
+        "manifestDigest": "sha256:0668a896f5b50b4094b5719e2dac8bc0b7f7881b2ec8d1255e22b031cf9c3601",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-dependent",
@@ -2775,7 +3450,7 @@
         "codes": [
           "ACC007"
         ],
-        "manifestDigest": "sha256:9392f948ec1d507737d9d0e52f85528599a31d062766ed6396b28470ab0ca2a9",
+        "manifestDigest": "sha256:74ed4745a493412e1a9fe68d417f02e21f500a44f30683330e6bada77657c578",
         "verdict": "evaluated"
       },
       "id": "agent-review-instructions-unknown",
@@ -2836,7 +3511,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:fc0a893f1e5cb7df6b6d875966671ea89aa6a1aef8aafa741cb2fb0615c8738c",
+        "manifestDigest": "sha256:f61aafbc2481029af1f8bba532da615a1d21f05470350d8318db8ac1dc4564a1",
         "verdict": "incomplete"
       },
       "id": "incomplete-window",
@@ -2897,7 +3572,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:433c0b4fd21b22ed7de2edc4a1b1685e2127312c595f0f11eed9e1d6a91835c8",
+        "manifestDigest": "sha256:a086217e7fb29c31027347eb560d7dd5f65f6cbf90729ea97222cbbbffcf9f80",
         "verdict": "incomplete"
       },
       "id": "partial-with-approval",
@@ -2963,7 +3638,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:331bcaa00e33fc7529244587d9f9efc80b65588c0197fd1e3c48e1faf4b6aa4c",
+        "manifestDigest": "sha256:9b63f064409c932c87381112b88140fa2054e3ffb3f6fed85395933ca243a0b3",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed",
@@ -3031,7 +3706,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:d261bee4eeda7b06c078a09b0c3d97e40c94067e122c9225d230caef3dfba31f",
+        "manifestDigest": "sha256:6f7b584b356c9ec87921ca62c3dfa8325f5cfd9be497a65ea28f4ae8cdc7e75a",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-failed",
@@ -3099,7 +3774,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:08a02a365ecee89a19938304882d94923d9f03345cd2630b9aa2005166248dee",
+        "manifestDigest": "sha256:92c782539b75cbec0f26b3bcfd802b571822a6001164c8f52053d5a871e8a87d",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-no-run",
@@ -3167,7 +3842,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:be5b59187b9106d7cd096135378f0533b00c3b1752130eae62a37fde368f6627",
+        "manifestDigest": "sha256:3043e3484f47307ccb03d5471f34c38726ab2e476ff1af3e80decc3270a6d77b",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-after-merge",
@@ -3233,7 +3908,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:c18068edd44baae30ab9eefc5c92fbae03fbc2d1a34ee358a4ee80eeb369c7dd",
+        "manifestDigest": "sha256:a742c585841eba74cf1e107f07882a7975a9c683a10d08f0166c96fc0ed8552b",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-passed-on-merge-commit",
@@ -3301,7 +3976,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:8efa327dfca31f06ae690d5f10264186271f1b81fdc453870cb044dd16863ff6",
+        "manifestDigest": "sha256:6ac788dfe7700fa587edb88c11b77f40d2573dfb0508d39086aa4f2e70005f43",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-simultaneous-disagree",
@@ -3369,7 +4044,7 @@
         "codes": [
           "ACC004"
         ],
-        "manifestDigest": "sha256:49e55d9b989418d085f2976ae87d9c714fa266be2b4c4bbc7b0bc02973e691b4",
+        "manifestDigest": "sha256:7366980798c5e22bf6f8a660d4c98238830ecb8e572b2d36e0539b71da404760",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-policy-required",
@@ -3435,7 +4110,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:6a02815bc971b402f6c7cb6b6f81e8e41310a626b59e1bfa8e4410020e7671b7",
+        "manifestDigest": "sha256:34c0e17715f80695d42d285a776ec8e402721cf9c3ac6f6e658dd8bbb7d192d6",
         "verdict": "evaluated"
       },
       "id": "human-clean--checks-nothing-required",
@@ -3501,7 +4176,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:fdb1b1c2113ff6386bb6592526205a363341b961b4118829b5e46b15d7d69beb",
+        "manifestDigest": "sha256:30eea43bfe311aaa115e305b4cca59c908b8def3095f1f35c76b59ebeac64ea8",
         "verdict": "evaluated"
       },
       "id": "open-pr--checks-enabled",
@@ -3567,7 +4242,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:992b7beb00c978fd9ae05e76db9d647f7cd6efaf78b4b9ab1108a9b9399215ba",
+        "manifestDigest": "sha256:dd2932cdcffb382a01dc4d1368fa394b43501da562bd80cb8ed65aecb57de245",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-passed",
@@ -3635,7 +4310,7 @@
         "codes": [
           "ACC005"
         ],
-        "manifestDigest": "sha256:3e7befffcb4f026def4aa9583da27c2512498ad503a22d6123df90abfab82aa9",
+        "manifestDigest": "sha256:0cbe8cb87b5b2998a4781784ab067ca2c7b4ae19515d6d8419bed8b02ee5b630",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-recorded",
@@ -3701,7 +4376,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:fc9de077d9e383ca96f5c9478ae892be00d2d180b340528b811ddf105054ab77",
+        "manifestDigest": "sha256:0f5d63f63794df13cb2a5f1bec072d4354c5bbea0a962d0fa0bd448d5ec470a8",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-suite-failed",
@@ -3767,7 +4442,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:b0aec4398a2deb7a3df812b43a173a7a316b414b515e16a3dbd4a950cc14a01d",
+        "manifestDigest": "sha256:2dada1d692784e562b9faf7c0a94a032efc6b4e413a522e8fe52ab0475dc9ebd",
         "verdict": "evaluated"
       },
       "id": "human-clean--bypass-none-recorded",
@@ -3833,7 +4508,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:d8f675e4b5f5cebf9c7622de2fc6d7379fd27977da7b332fefeff520846bf8c8",
+        "manifestDigest": "sha256:5b492ebdfa51894114fd15731636fd2e1496c8b2a4d407c358fda795625afa2b",
         "verdict": "evaluated"
       },
       "id": "open-pr--bypass-enabled",
@@ -3899,7 +4574,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:fda9719511ad5c4210daac1b049da5af692eb53d57c614f4857a84d26eb70629",
+        "manifestDigest": "sha256:b9791b8d3911fb61993ae6f00b74ee85d9a5014b193fd81533fdf0e46f5f95ba",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-not-collected",
@@ -3965,7 +4640,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:866ee17230a52cd4080fdb0fdd6f04a33862fc057536e5153cc5754aed891820",
+        "manifestDigest": "sha256:87ebc7e9757b13457623c7b1f67507b5385c7ba0f486733cc62c2ce18b0dc8df",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-incomplete",
@@ -4033,7 +4708,7 @@
         "codes": [
           "ACC005"
         ],
-        "manifestDigest": "sha256:0207358ab46db88e526a7df0c7fc587a86b1404b1b0dc802f74723b597ff6e6c",
+        "manifestDigest": "sha256:5dc2a90dd8f54ae5b5a681026b08cd816a44e5c022b32f8f8e745e2b2b2f1418",
         "verdict": "incomplete"
       },
       "id": "human-clean--bypass-recorded-incomplete",
@@ -4099,7 +4774,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:939beb73d5ea0f9ad63388ab58f66098b03027924d513994df2225cb8b521bf0",
+        "manifestDigest": "sha256:5b334d0021a18ef1b9c1103b6e8b10431f1b00a46fec9d276542d9e52b33cde2",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-not-collected",
@@ -4165,7 +4840,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:d60e891e278b3dda7ec99a20fbf2be4eaf43032d702bc91378fd509a39598132",
+        "manifestDigest": "sha256:d6391e531006cd436ee42a76ef40b2a7f812ca5aa033c91a5cc6c8e73e3b3fe0",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-incomplete",
@@ -4231,7 +4906,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:eb573fc938a65eed64af1169ed6bf92bdc50da31e95649bdfc671ca9fcd42736",
+        "manifestDigest": "sha256:648a5e8f2f9cd6f2acac3633b3132e1a2d4a87ee61d9d57e62d2192061e01eaf",
         "verdict": "incomplete"
       },
       "id": "human-clean--checks-required-unreadable",
@@ -4292,7 +4967,7 @@
           }
         ],
         "codes": [],
-        "manifestDigest": "sha256:2ec0b0b55dc161dd9a30903c2cccb87a9593344107d8d39e57d0e56818f0987d",
+        "manifestDigest": "sha256:1f3e85edddc1ea4e1b3f41f2f4d8df6bb23c8413b5ca9531bdba25bb3f71627e",
         "verdict": "incomplete"
       },
       "id": "claude-clean--reviews-incomplete",
@@ -4355,12 +5030,44 @@
         "codes": [
           "ACC002"
         ],
-        "manifestDigest": "sha256:21e7e147220b6cd0b459afe977170077dbd14f53c3b4adaa470453e45d6b10d7",
+        "manifestDigest": "sha256:646c0a70380c892a217b5faa2d6d4a004d71307adaa12c4b0c16f087a4cc2884",
         "verdict": "incomplete"
       },
       "id": "human-self-approved--reviews-incomplete",
       "kind": "incomplete",
       "path": "incomplete/human-self-approved--reviews-incomplete.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#45-branch-updates"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "branch-accounted--duplicate-update",
+      "kind": "reject",
+      "parent": "branch-accounted",
+      "path": "reject/branch-accounted--duplicate-update.json"
+    },
+    {
+      "conditions": [
+        "#66-validation",
+        "#46-deployments"
+      ],
+      "expected": {
+        "codes": [
+          "ACV004"
+        ],
+        "verdict": "invalid"
+      },
+      "id": "deploy-covered--commits-without-deployed-commit",
+      "kind": "reject",
+      "parent": "deploy-covered",
+      "path": "reject/deploy-covered--commits-without-deployed-commit.json"
     },
     {
       "conditions": [

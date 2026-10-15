@@ -161,6 +161,10 @@
         "enabled": true,
         "severity": "high"
       },
+      "deployed_without_passing_change": {
+        "enabled": false,
+        "severity": "high"
+      },
       "merged_with_protection_bypass": {
         "enabled": false,
         "severity": "high"
@@ -179,6 +183,10 @@
       },
       "same_vendor_write_and_review": {
         "enabled": true,
+        "severity": "high"
+      },
+      "unaccounted_branch_update": {
+        "enabled": false,
         "severity": "high"
       },
       "unknown_agent_operator": {

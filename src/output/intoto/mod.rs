@@ -158,6 +158,8 @@ pub fn per_change(m: &Manifest) -> Result<Vec<Manifest>> {
                     .map(|(id, a)| (id.clone(), a.clone()))
                     .collect(),
                 teams: m.events.teams.clone(),
+                branches: Vec::new(),
+                deployments: None,
                 changes: vec![c.clone()],
             };
             let mut part = crate::manifest::evaluate(events, m.policy.clone())?;
@@ -283,6 +285,8 @@ mod tests {
             actors,
             attestations: std::collections::BTreeMap::new(),
             teams: vec![],
+            branches: Vec::new(),
+            deployments: None,
             changes,
         };
         crate::manifest::evaluate(events, Policy::default()).unwrap()

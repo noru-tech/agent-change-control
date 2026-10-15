@@ -7,6 +7,23 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **ACC012** (`unaccounted_branch_update`, `high`, off by default): a protected branch that was
+  force-pushed, deleted, or pushed to a commit no merged change landed in the window, with one
+  finding per update. `branches.protected` names the branches (default: the repository's
+  default branch); GitHub's repository activity record is the source, a year back. Its subject is
+  a branch (`github:OWNER/REPO:branch:NAME`), recorded in the new `branches` facts (spec §4.5).
+- **ACC013** (`deployed_without_passing_change`, `high`, off by default): a production deployment
+  that shipped a commit no passing change landed, judging every first-parent commit since the
+  environment's previous successful deployment. `deployments.environments` names production
+  (default: environments the forge marks as production); `--deploy-since` starts the deployment
+  window later than the merge window. Its subject is a deployment, recorded in the new
+  `deployments` facts (spec §4.6). `acc pr` leaves ACC012 and ACC013 to `acc scan`.
+- **`acc release`**: an in-toto Statement about release artifacts (`--subject NAME=sha256:HEX`)
+  whose predicate lists every first-parent commit in `--range` and the verdicts of the changes that
+  landed it, from the manifests given (predicate type `release/v0.1`, spec §7.4,
+  `schemas/release.schema.json`). Written whatever its verdict; exit `1` or `4` as `acc verify`.
+- Conformance suite revision 3: branch update and deployment vectors, and ACC012 and ACC013 in
+  every resolved policy.
 - **GitLab.com collection.** `acc scan gitlab GROUP/…/PROJECT`, `acc export gitlab` and
   `acc pr N --forge gitlab` collect merge requests, reading `GITLAB_TOKEN` (`read_api`). Without a
   forge, a gitlab.com pipeline or origin remote selects GitLab. GitLab records no commit for an

@@ -1,0 +1,5 @@
+version: "0.4"
+rules:
+  unaccounted_branch_update:
+    enabled: true
+    severity: high

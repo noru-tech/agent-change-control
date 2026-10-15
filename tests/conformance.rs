@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 const SUITE: &str = "acp-evaluator-conformance";
-const SUITE_REVISION: u64 = 2;
+const SUITE_REVISION: u64 = 3;
 const SPEC_VERSION: &str = "0.4";
 const SPEC_PATH: &str = "spec/ai-change-provenance.md";
 
@@ -87,6 +87,8 @@ const RISK: &str = "#38-risk-assessment";
 const TEAMS: &str = "#43-reviewer-teams";
 const DISPOSITIONS: &str = "#64-dispositions";
 const TIERS: &str = "#67-risk-tiers";
+const BRANCHES: &str = "#45-branch-updates";
+const DEPLOYMENTS: &str = "#46-deployments";
 
 /// A required check's facts on `human-clean`, which merged at 2026-08-03T12:00:00Z with head
 /// `head` and merge commit `merge`, with ACC004 enabled.
@@ -164,8 +166,74 @@ const fn fixture(
     }
 }
 
+/// The deployment in `deploy-covered`.
+fn deployment(v: &mut Value) -> &mut Value {
+    &mut v["events"]["deployments"]["deployments"][0]
+}
+
 fn evaluated() -> Vec<Evaluated> {
     vec![
+        fixture("branch-updated-directly", &["ACC012"], &[BRANCHES, RULES]),
+        fixture("branch-accounted", &[], &[BRANCHES, RULES]),
+        fixture("deploy-covered", &[], &[DEPLOYMENTS, RULES]),
+        fixture("deploy-uncovered", &["ACC013"], &[DEPLOYMENTS, RULES]),
+        Evaluated {
+            id: "branch-accounted--incomplete",
+            kind: Kind::Incomplete,
+            fixture: "branch-accounted",
+            edit: Some(|v| v["events"]["branches"][0]["complete"] = false.into()),
+            fails: &[],
+            conditions: &[COLLECTION, BRANCHES],
+        },
+        Evaluated {
+            id: "branch-accounted--deleted",
+            kind: Kind::Accept,
+            fixture: "branch-accounted",
+            edit: Some(|v| {
+                v["events"]["branches"][0]["events"][0]["kind"] = "branch_deletion".into()
+            }),
+            fails: &["ACC012"],
+            conditions: &[BRANCHES, RULES],
+        },
+        Evaluated {
+            id: "deploy-covered--range-unbounded",
+            kind: Kind::Incomplete,
+            fixture: "deploy-covered",
+            edit: Some(|v| {
+                deployment(v)["previous_sha"] = Value::Null;
+                deployment(v)["commits_complete"] = false.into();
+            }),
+            fails: &[],
+            conditions: &[COLLECTION, DEPLOYMENTS],
+        },
+        Evaluated {
+            id: "deploy-covered--failing-change",
+            kind: Kind::Accept,
+            fixture: "deploy-covered",
+            edit: Some(|v| change(v)["reviews"][0]["actor_id"] = "github:alice".into()),
+            fails: &["ACC002", "ACC003", "ACC013"],
+            conditions: &[DEPLOYMENTS, RULES],
+        },
+        Evaluated {
+            id: "deploy-covered--change-unknown",
+            kind: Kind::Incomplete,
+            fixture: "deploy-covered",
+            edit: Some(|v| change(v)["reviews_complete"] = false.into()),
+            fails: &[],
+            conditions: &[DEPLOYMENTS, RULES],
+        },
+        Evaluated {
+            id: "deploy-covered--merged-before-window",
+            kind: Kind::Accept,
+            fixture: "deploy-covered",
+            edit: Some(|v| {
+                deployment(v)["sha"] = "older".into();
+                deployment(v)["commits"] =
+                    json!([{"sha": "older", "committed_at": "2026-07-30T09:00:00Z"}]);
+            }),
+            fails: &[],
+            conditions: &[DEPLOYMENTS, RULES],
+        },
         fixture("tier-missing-assessment", &["ACC003"], &[TIERS, RULES]),
         fixture("tier-below-minimum", &["ACC003"], &[RISK, TIERS]),
         fixture("tier-team-approved", &[], &[TEAMS, TIERS, RULES]),
@@ -650,6 +718,26 @@ const BOB: &str = "\"display_name\": \"Bob\"";
 fn rejects() -> Vec<Reject> {
     vec![
         Reject {
+            id: "branch-accounted--duplicate-update",
+            parent: "branch-accounted",
+            mutation: Mutation::Json(|v| {
+                let first = v["events"]["branches"][0]["events"][0].clone();
+                v["events"]["branches"][0]["events"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(first);
+            }),
+            codes: &["ACV004"],
+            conditions: &[VALIDATION, BRANCHES],
+        },
+        Reject {
+            id: "deploy-covered--commits-without-deployed-commit",
+            parent: "deploy-covered",
+            mutation: Mutation::Json(|v| deployment(v)["sha"] = "elsewhere".into()),
+            codes: &["ACV004"],
+            conditions: &[VALIDATION, DEPLOYMENTS],
+        },
+        Reject {
             id: "tier-emergency-unreviewed--emergency-without-declarer",
             parent: "tier-emergency-unreviewed",
             mutation: Mutation::Json(|v| {
@@ -945,6 +1033,22 @@ const UNKNOWN_PATHS: &[(&str, &str)] = &[
     (
         "ACC011",
         "The membership of acme/security could not be read in full; whether a member approved cannot be established.",
+    ),
+    (
+        "ACC012",
+        "The branch's updates in the window could not be read in full.",
+    ),
+    (
+        "ACC013",
+        "The commits the deployment shipped could not all be read, or no earlier deployment bounds them.",
+    ),
+    (
+        "ACC013",
+        "Commits merged before the collection window cannot be judged: older; collect changes from earlier.",
+    ),
+    (
+        "ACC013",
+        "Commits landed by a change whose verdict is unknown: merge (github:acme/api:pr:421).",
     ),
     ("ACC004", "Check data was not collected for this change."),
     ("ACC004", "Check collection is incomplete."),

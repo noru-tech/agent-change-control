@@ -191,5 +191,15 @@ runs:
             name: missing_required_reviewer_team
             shortDescription:
               text: missing required reviewer team
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC012.md"
+            id: ACC012
+            name: unaccounted_branch_update
+            shortDescription:
+              text: unaccounted branch update
+          - helpUri: "https://github.com/noru-tech/agent-change-control/blob/main/docs/rules/ACC013.md"
+            id: ACC013
+            name: deployed_without_passing_change
+            shortDescription:
+              text: deployed without passing change
         version: 0.6.0
 version: 2.1.0

@@ -85,6 +85,10 @@ runs on a temporary merge commit and is not recorded.
 against the branch's protection. When ACC005's facts are asked for, they are recorded as
 incomplete, and ACC005 is `unknown`.
 
+**Branch updates and deployments (ACC012, ACC013).** GitLab's push events do not say whether a
+push was forced or landed a merge request, and this version does not read GitLab deployments, so
+both are recorded as unreadable and the rules are `unknown`.
+
 **Reviewer teams (ACC011).** A required reviewer team is a group path (`acme/security`, or
 `acme/eng/security` for a subgroup). Its members are the group's direct members, as GitLab lists
 them at collection. Members inherited from a parent group are not counted.
