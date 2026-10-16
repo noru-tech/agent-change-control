@@ -139,6 +139,30 @@ Two things to keep in mind:
   the retention period, or keep the verdicts somewhere that lasts longer.
 - **The first deploy** has no previous deployment to start from. Pass the base explicitly once.
 
+## A GitLab deploy job
+
+[`examples/gitlab-deploy-gate.yml`](../examples/gitlab-deploy-gate.yml) is the same gate on
+GitLab.com, with both halves in one pipeline:
+
+- **On every push to the default branch**, `acc-attest` finds the merge request that landed the
+  commit, evaluates it with `acc pr --forge gitlab`, and signs the manifest keyless with Sigstore,
+  as the job's GitLab identity (`id_tokens` with `aud: sigstore`). The manifest is both predicate
+  and blob, the [digest form](signing.md#what-gets-signed). Manifest and bundle go to the project's
+  generic package registry under the merge commit, where they outlive artifact retention. A commit
+  no merge request landed gets nothing, and the deploy job reports it uncovered.
+- **The deploy job** takes the last successful production deployment from GitLab's deployments
+  API, fetches the verdict of every first-parent commit since, and keeps only those that
+  `cosign verify-blob-attestation` accepts: the signature, the signer
+  (`https://gitlab.com/GROUP/PROJECT//.gitlab-ci.yml@refs/heads/main`, double slash included,
+  issuer `https://gitlab.com`) and the manifest's digest against the signed subject. It then runs
+  `acc verify --attestations` with `--verified-by` naming that check, and deploys only on exit 0.
+
+The job token reads the deployments API and the package registry. Reading a merge request's
+approvals needs `GITLAB_TOKEN` (`read_api`), as for every GitLab collection. The pipeline installs
+cosign 3, because acc reads the Sigstore bundle format (a `dsseEnvelope`) that cosign 3 writes and
+older releases do not, and pins both downloads by SHA-256. Use merge commits or squash merges: a
+plain fast-forward merge reports no merge commit, and its commits are uncovered.
+
 ## Elsewhere
 
 Any CI that can run `git`, a signature verifier and `acc` can run the gate:

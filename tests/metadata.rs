@@ -213,3 +213,59 @@ fn the_gitlab_component_names_the_crate_version() {
         "expected include pins in the template and docs, saw {seen}"
     );
 }
+
+/// The deploy and admission examples name what acc emits and the release they were written for: a
+/// predicate type that drifted from acc's would make the GitLab gate or the Kyverno policy refuse
+/// every verdict, and the pinned release is bumped with the crate, as the documented pins are.
+#[test]
+fn the_deploy_and_admission_examples_name_what_acc_emits() {
+    use agent_change_control::cli::release::RELEASE_PREDICATE_TYPE;
+    use agent_change_control::output::intoto::PREDICATE_TYPE;
+
+    let version = field(&read("Cargo.toml"), "version", " = ");
+    let yaml = |name: &str| -> Value {
+        serde_saphyr::from_str(&read(name)).unwrap_or_else(|e| panic!("{name} is not YAML: {e}"))
+    };
+
+    let gitlab = yaml("examples/gitlab-deploy-gate.yml");
+    assert_eq!(
+        gitlab["variables"]["ACC_VERSION"],
+        version.as_str(),
+        "the GitLab gate's acc release"
+    );
+    assert_eq!(
+        gitlab["variables"]["ACC_PREDICATE"], PREDICATE_TYPE,
+        "the GitLab gate's predicate type"
+    );
+    assert_eq!(
+        gitlab["acc-attest"]["id_tokens"]["SIGSTORE_ID_TOKEN"]["aud"], "sigstore",
+        "Sigstore keyless signing on GitLab needs the sigstore audience"
+    );
+
+    let release = yaml("examples/release-image-attest.yml");
+    assert_eq!(
+        release["jobs"]["release"]["env"]["RELEASE_PREDICATE"], RELEASE_PREDICATE_TYPE,
+        "the image attestation's predicate type"
+    );
+    let text = read("examples/release-image-attest.yml");
+    assert!(
+        text.contains(&format!("VERSION=v{version}\n")),
+        "the release example installs v{version}"
+    );
+    assert!(
+        text.contains(PREDICATE_TYPE),
+        "the release example verifies v0.4 verdicts"
+    );
+
+    let kyverno = yaml("examples/kyverno-release-policy.yml");
+    let attestation = &kyverno["spec"]["rules"][0]["verifyImages"][0]["attestations"][0];
+    assert_eq!(
+        attestation["predicateType"], RELEASE_PREDICATE_TYPE,
+        "the Kyverno policy's predicate type"
+    );
+    assert_eq!(
+        attestation["conditions"][0]["all"][0]["key"],
+        "{{ verdict }}"
+    );
+    assert_eq!(attestation["conditions"][0]["all"][0]["value"], "pass");
+}

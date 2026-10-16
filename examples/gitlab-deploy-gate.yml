@@ -1,0 +1,148 @@
+# Deploy only what passed change control, on GitLab.com.
+#
+# Two jobs in the project's .gitlab-ci.yml:
+#
+#   acc-attest   on every push to the default branch: finds the merge request that landed the commit,
+#                evaluates it with `acc pr`, signs the manifest keyless with Sigstore (the job's
+#                GitLab identity), and keeps manifest and bundle in the project's generic package
+#                registry under the merge commit, where they outlive artifact retention.
+#   deploy       for every first-parent commit since the last successful production deployment,
+#                fetches that verdict, verifies its signature, identity and digest with cosign, and
+#                runs `acc verify` over the range. It deploys only when every commit is covered by a
+#                passing merge request.
+#
+# A sketch to adapt, not a drop-in file. Replace the deploy script, check the acc release you pin
+# (README, "Verify before you run"), and use merge commits or squash merges on the default branch
+# (docs/verify.md, "What covered means").
+#
+# Variables to create (Settings, CI/CD, Variables):
+#   GITLAB_TOKEN  masked and protected: a project access token, read_api, role Reporter. acc reads
+#                 merge requests and approvals with it; CI_JOB_TOKEN cannot read approvals.
+#
+# The verdicts are signed through the public Sigstore instance, which writes an entry to Rekor that is
+# public and permanent; the manifest names reviewers. Read docs/signing.md, "Privacy", first.
+
+variables:
+  ACC_VERSION: "0.7.0"
+  # The digest of agent-change-control-x86_64-unknown-linux-musl.tar.xz in that release. Written
+  # here rather than read from the file published beside it.
+  ACC_SHA256: a6637de897235bec9419e7676b6454d03d1703e14f0c3625657a5632009a2ee6
+  # cosign 3 writes the Sigstore bundle format (a dsseEnvelope) that acc verify reads; older cosign
+  # writes a format it does not. The digest is of cosign-linux-amd64 in that release.
+  COSIGN_VERSION: "3.1.3"
+  COSIGN_SHA256: 4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71
+  ACC_PREDICATE: https://noru.tech/spec/ai-change-provenance/v0.4
+  VERDICTS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/acc-verdicts
+  # The identity the attest job signs with, and the only one the deploy job accepts.
+  SIGNER: ${CI_SERVER_URL}/${CI_PROJECT_PATH}//.gitlab-ci.yml@refs/heads/${CI_DEFAULT_BRANCH}
+
+stages: [attest, deploy]
+
+.acc:
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache curl git jq
+    - |
+      set -eu
+      curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o /usr/local/bin/cosign \
+        "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+      echo "${COSIGN_SHA256}  /usr/local/bin/cosign" | sha256sum -c -
+      chmod +x /usr/local/bin/cosign
+      archive=agent-change-control-x86_64-unknown-linux-musl.tar.xz
+      curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "/tmp/$archive" \
+        "https://github.com/noru-tech/agent-change-control/releases/download/v${ACC_VERSION}/${archive}"
+      echo "${ACC_SHA256}  /tmp/${archive}" | sha256sum -c -
+      mkdir -p /opt/acc && tar -xJf "/tmp/$archive" -C /opt/acc --strip-components=1
+      export PATH="/opt/acc:$PATH"
+
+acc-attest:
+  extends: .acc
+  stage: attest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: sigstore
+  variables:
+    COSIGN_YES: "true"
+  script:
+    - |
+      set -eu
+      # The merge request that landed this commit. A direct push has none: nothing is signed, and
+      # the deploy job reports the commit uncovered.
+      iid=$(curl -sSf --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/repository/commits/${CI_COMMIT_SHA}/merge_requests" \
+        | jq -r --arg sha "$CI_COMMIT_SHA" \
+          '[.[] | select(.merge_commit_sha == $sha or .squash_commit_sha == $sha)][0].iid // empty')
+      if [ -z "$iid" ]; then
+        echo "no merge request landed ${CI_COMMIT_SHA}; nothing to sign"
+        exit 0
+      fi
+      # The verdict is recorded whatever it is: exit 1 (findings) and 4 (incomplete) still write it.
+      code=0
+      acc pr "$iid" --forge gitlab --repo "$CI_PROJECT_PATH" --format json -o acc-manifest.json \
+        || code=$?
+      case "$code" in 0|1|4) ;; *) exit "$code" ;; esac
+      # The manifest is both predicate and blob: the subject is its sha256, which acc verify
+      # recomputes from the predicate (docs/signing.md, "What gets signed").
+      cosign attest-blob --predicate acc-manifest.json --type "$ACC_PREDICATE" \
+        --bundle acc-manifest.sigstore.json acc-manifest.json
+      for file in acc-manifest.json acc-manifest.sigstore.json; do
+        curl -sSf --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$file" \
+          "${VERDICTS}/${CI_COMMIT_SHA}/${file}" > /dev/null
+      done
+
+deploy:
+  extends: .acc
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+  environment: production
+  resource_group: production
+  variables:
+    GIT_DEPTH: "0"   # acc verify refuses a shallow clone
+    # For the first deploy, or to override the record: the commit deployed last.
+    DEPLOY_BASE: ""
+  script:
+    - |
+      set -eu
+      base="$DEPLOY_BASE"
+      if [ -z "$base" ]; then
+        base=$(curl -sSf --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/deployments?environment=production&status=success&order_by=finished_at&sort=desc&per_page=1" \
+          | jq -r '.[0].sha // empty')
+      fi
+      if [ -z "$base" ]; then
+        echo "no successful production deployment found; run once with DEPLOY_BASE set" >&2
+        exit 1
+      fi
+      range="${base}..${CI_COMMIT_SHA}"
+      if [ -z "$(git rev-list --first-parent "$range")" ]; then
+        echo "nothing new since ${base}"
+        exit 0
+      fi
+      mkdir -p verdicts
+      for sha in $(git rev-list --first-parent "$range"); do
+        mkdir -p "fetched/$sha"
+        for file in acc-manifest.json acc-manifest.sigstore.json; do
+          # No verdict: acc verify reports this commit uncovered and fails below.
+          curl -sSf --header "JOB-TOKEN: ${CI_JOB_TOKEN}" -o "fetched/$sha/$file" \
+            "${VERDICTS}/${sha}/${file}" || continue 2
+        done
+        # Signature, signer identity and the manifest's digest against the signed subject. A verdict
+        # that fails any of them is not passed on, and its commit is uncovered.
+        if cosign verify-blob-attestation --bundle "fetched/$sha/acc-manifest.sigstore.json" \
+          --type "$ACC_PREDICATE" \
+          --certificate-identity "$SIGNER" --certificate-oidc-issuer "$CI_SERVER_URL" \
+          "fetched/$sha/acc-manifest.json"; then
+          cp "fetched/$sha/acc-manifest.sigstore.json" "verdicts/${sha}.sigstore.json"
+        fi
+      done
+      acc verify --range "$range" --attestations verdicts \
+        --verified-by "cosign verify-blob-attestation, identity ${SIGNER}, issuer ${CI_SERVER_URL}" \
+        --format json --output acc-verify.json \
+        || { cat acc-verify.json; exit 1; }
+    - echo "deploy ${CI_COMMIT_SHA} here"
+  artifacts:
+    when: always
+    paths: [acc-verify.json]

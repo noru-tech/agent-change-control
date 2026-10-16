@@ -1,0 +1,113 @@
+# Attest what a container image contains, for an admission controller to check.
+#
+# On every release tag: build and push the image, then write an `acc release` Statement about it
+# (every first-parent commit since the previous tag and the verdict of the change that landed each,
+# docs/release.md) and attach it to the image with `cosign attest`, keyless, as the workflow's
+# identity. examples/kyverno-release-policy.yml then admits only images whose attestation says
+# `verdict: pass`.
+#
+# It assumes the signing workflow from docs/signing.md with the upload step from docs/verify.md, so
+# that every merged pull request left an artifact `acc-verdict-<merge commit>` holding its attested
+# manifest. Replace OWNER, REPO, IMAGE and the build, pin every action to a commit SHA, and pin the
+# acc and cosign releases you have verified.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write      # push the image and its attestation
+      id-token: write      # cosign keyless signing
+      actions: read        # find and download the verdict artifacts
+      attestations: read   # gh attestation verify
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IMAGE: ghcr.io/OWNER/IMAGE
+      RELEASE_PREDICATE: https://noru.tech/spec/ai-change-provenance/release/v0.1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # acc release reads the range from the local clone
+
+      - name: Build and push the image
+        id: build
+        run: |
+          set -euo pipefail
+          echo "${{ github.token }}" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker build -t "$IMAGE:$GITHUB_REF_NAME" .
+          docker push "$IMAGE:$GITHUB_REF_NAME"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_REF_NAME" | cut -d@ -f2)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Install acc
+        run: |
+          set -euo pipefail
+          VERSION=v0.7.0
+          ARCHIVE=agent-change-control-x86_64-unknown-linux-musl.tar.xz
+          gh release download "$VERSION" --repo noru-tech/agent-change-control --pattern "$ARCHIVE"
+          gh attestation verify "$ARCHIVE" --repo noru-tech/agent-change-control \
+            --signer-workflow noru-tech/agent-change-control/.github/workflows/release.yml \
+            --source-ref "refs/tags/$VERSION"
+          mkdir -p "$RUNNER_TEMP/acc"
+          tar -xJf "$ARCHIVE" -C "$RUNNER_TEMP/acc" --strip-components=1
+          echo "$RUNNER_TEMP/acc" >> "$GITHUB_PATH"
+
+      - uses: sigstore/cosign-installer@v4
+
+      - name: Collect the verdict of every change since the previous release
+        id: verdicts
+        run: |
+          set -euo pipefail
+          previous=$(git describe --tags --abbrev=0 "${GITHUB_SHA}^" 2>/dev/null || true)
+          if [ -z "$previous" ]; then
+            echo "::error::no previous release tag; attest the first release by hand with --range"
+            exit 1
+          fi
+          echo "range=$previous..$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          mkdir -p verdicts
+          for sha in $(git rev-list --first-parent "$previous..$GITHUB_SHA"); do
+            name="acc-verdict-$sha"
+            run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$name&per_page=1" \
+              --jq '.artifacts[0].workflow_run.id // empty')
+            # No verdict: acc release records this commit uncovered, and the verdict is not `pass`.
+            [ -n "$run" ] || continue
+            gh run download "$run" --name "$name" --dir "verdicts/$sha"
+            # Only a manifest our own signing workflow attested is read.
+            gh attestation verify "verdicts/$sha/acc-manifest.json" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/attest.yml" \
+              --predicate-type https://noru.tech/spec/ai-change-provenance/v0.4 > /dev/null \
+              || rm -rf "verdicts/$sha"
+          done
+
+      - name: Attest the release to the image
+        env:
+          RANGE: ${{ steps.verdicts.outputs.range }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          set -- verdicts/*/acc-manifest.json
+          if [ ! -e "$1" ]; then
+            # Nothing to attest from. Without an attestation the admission policy refuses the
+            # image, which is the right answer for a release with no reviewed change in it.
+            echo "::error::no verified verdict for any commit in $RANGE; the image is not attested"
+            exit 1
+          fi
+          # Written whatever the verdict: a release that shipped an unreviewed commit is a fact to
+          # attest, and the admission policy is what refuses it. Exit 1 and 4 still write it.
+          code=0
+          acc release "$@" --range "$RANGE" \
+            --subject "$IMAGE=$DIGEST" --output release.intoto.json || code=$?
+          case "$code" in 0|1|4) ;; *) exit "$code" ;; esac
+          # cosign attest builds its own Statement, with the image digest as its subject, around the
+          # predicate it is given; acc's subject names the same digest.
+          jq -c .predicate release.intoto.json > release.predicate.json
+          cosign attest --yes --type "$RELEASE_PREDICATE" \
+            --predicate release.predicate.json "$IMAGE@$DIGEST"

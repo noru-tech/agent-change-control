@@ -96,3 +96,10 @@ them at collection. Members inherited from a parent group are not counted.
 **Merge commit.** The merge commit, or the squash commit when a squashed change was
 fast-forwarded. A plain fast-forward merge reports neither, so `acc verify` cannot cover those
 commits; use merge commits or squash on projects whose deployments it gates.
+
+## Gating a deploy
+
+[`examples/gitlab-deploy-gate.yml`](../examples/gitlab-deploy-gate.yml) signs each merged merge
+request's verdict keyless with Sigstore and keeps it in the project's package registry, then
+verifies the verdicts of every commit since the last production deployment before deploying.
+[Verify](verify.md#a-gitlab-deploy-job) explains it.
