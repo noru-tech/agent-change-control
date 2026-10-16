@@ -54,6 +54,26 @@ GitHub artifact attestations, whose `predicate-type` input takes
 `https://noru.tech/spec/ai-change-provenance/release/v0.1` ([signing](signing.md)). A consumer then
 holds two attestations about one artifact digest: how it was built, and what it contains.
 
+## Admitting an image in Kubernetes
+
+The release attestation can stand in front of a cluster: an image runs only if the change control
+behind it passed. [`examples/release-image-attest.yml`](../examples/release-image-attest.yml)
+builds the image on a release tag, writes the Statement with the image as its subject, and attaches
+its predicate to the image with `cosign attest --type
+https://noru.tech/spec/ai-change-provenance/release/v0.1`, keyless, as the release workflow's
+identity. cosign builds its own Statement around the predicate, with the image digest as subject,
+the same digest acc's `--subject` names.
+
+[`examples/kyverno-release-policy.yml`](../examples/kyverno-release-policy.yml) is the admission
+side: a Kyverno `ClusterPolicy` whose `verifyImages` rule requires an attestation of that
+predicate type, signed by that workflow on a tag, with the condition `verdict == pass`. An image
+with no attestation, one signed by another identity, or one whose release shipped an uncovered,
+failing or incomplete commit is refused.
+
+The release job only reads verdicts it verified (`gh attestation verify` against the signing
+workflow), so a manifest from anywhere else cannot make a release pass. A release with no verified
+verdict at all is not attested, and the policy refuses it.
+
 ## Limits
 
 - Only the manifests given are read. A commit whose change is in none of them is uncovered: pass

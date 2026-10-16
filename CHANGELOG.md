@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- `examples/gitlab-deploy-gate.yml`: the `acc verify` deploy gate on GitLab.com. Each merged merge
+  request's verdict is signed keyless with Sigstore and kept in the project's package registry;
+  the deploy job verifies the verdict of every commit since the last production deployment with
+  `cosign verify-blob-attestation` and `acc verify` (docs/verify.md, "A GitLab deploy job").
+- `examples/release-image-attest.yml` and `examples/kyverno-release-policy.yml`: an `acc release`
+  attestation attached to a container image with `cosign attest`, and a Kyverno policy that admits
+  the image only when it says `verdict: pass` (docs/release.md, "Admitting an image in
+  Kubernetes").
+- `tests/metadata.rs` checks that these examples name the predicate types acc emits and the
+  release they install.
+
 ## [0.7.0] - 2026-10-15
 
 ### Added

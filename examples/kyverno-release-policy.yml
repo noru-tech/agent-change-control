@@ -1,0 +1,47 @@
+# Admit an image only when its release attestation says every commit in it passed change control.
+#
+# A Kyverno ClusterPolicy for images attested by examples/release-image-attest.yml: it requires an
+# attestation of the `acc release` predicate type, signed keyless by that release workflow on a tag,
+# whose predicate's `verdict` is `pass`. An image with no such attestation, one signed by anyone
+# else, or one whose release shipped an uncovered, failing or incomplete commit is refused.
+#
+# Replace OWNER, REPO and IMAGE. Kyverno verifies the signature and the signer's certificate against
+# the public Sigstore instance; check the verifyImages fields against the Kyverno version you run.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-passing-change-control
+  annotations:
+    policies.kyverno.io/title: Require passing change control
+    policies.kyverno.io/description: >-
+      Admit an image only when an agent-change-control release attestation, signed by the
+      release workflow, says every commit it ships was landed by a change that passed.
+spec:
+  background: false
+  webhookConfiguration:
+    failurePolicy: Fail
+    timeoutSeconds: 30
+  rules:
+    - name: release-attestation-passes
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/OWNER/IMAGE*"
+          failureAction: Enforce
+          attestations:
+            - predicateType: https://noru.tech/spec/ai-change-provenance/release/v0.1
+              attestors:
+                - entries:
+                    - keyless:
+                        subject: "https://github.com/OWNER/REPO/.github/workflows/release.yml@refs/tags/*"
+                        issuer: https://token.actions.githubusercontent.com
+                        rekor:
+                          url: https://rekor.sigstore.dev
+              conditions:
+                - all:
+                    - key: "{{ verdict }}"
+                      operator: Equals
+                      value: pass
