@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-20
+
 ### Added
 - `examples/gitlab-deploy-gate.yml`: the `acc verify` deploy gate on GitLab.com. Each merged merge
   request's verdict is signed keyless with Sigstore and kept in the project's package registry;
@@ -23,8 +25,9 @@ All notable changes to this project are documented here. The format is based on
   (RUSTSEC-2026-0543). Input and output formats are unchanged: timestamps are strict RFC 3339 and
   print in UTC with a `Z` suffix, and dates are strict `YYYY-MM-DD`. The latest timestamp is
   now 9999-12-30T22:00:00Z, so `acc pr` records its unbounded window as ending at
-  9999-12-30T00:00:00Z (was 9999-12-31T23:59:59Z), and a later `--until` is a usage error. For library users,
-  `model::Timestamp` and the new `model::Date` are acc's own types rather than `chrono`'s.
+  9999-12-30T00:00:00Z (was 9999-12-31T23:59:59Z), and a later `--until` is a usage error. For
+  library users, `model::Timestamp` and the new `model::Date` are acc's own types rather than
+  `chrono`'s.
 
 ## [0.7.0] - 2026-10-15
 
@@ -440,7 +443,8 @@ unchanged; digests and finding identifiers are not.
 - Completeness and unknown assessments, integrity validation and dated dispositions.
 - Fixture goldens, CLI tests, loopback GitHub tests, snapshot tests and CI.
 
-[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/noru-tech/agent-change-control/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/noru-tech/agent-change-control/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/noru-tech/agent-change-control/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/noru-tech/agent-change-control/compare/v0.5.4...v0.6.0
 [0.5.4]: https://github.com/noru-tech/agent-change-control/compare/v0.5.3...v0.5.4

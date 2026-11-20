@@ -23,7 +23,7 @@
 # public and permanent; the manifest names reviewers. Read docs/signing.md, "Privacy", first.
 
 variables:
-  ACC_VERSION: "0.7.0"
+  ACC_VERSION: "0.8.0"
   # The digest of agent-change-control-x86_64-unknown-linux-musl.tar.xz in that release. Written
   # here rather than read from the file published beside it.
   ACC_SHA256: a6637de897235bec9419e7676b6454d03d1703e14f0c3625657a5632009a2ee6
