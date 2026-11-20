@@ -2,10 +2,10 @@
 
 use super::Ctx;
 use super::io::{self, OutputArgs};
+use crate::model::Date;
 use crate::output::Format;
 use crate::{Exit, failure_with_hint, manifest};
 use anyhow::Result;
-use chrono::NaiveDate;
 use std::path::PathBuf;
 
 #[derive(Debug, clap::Args)]
@@ -23,9 +23,9 @@ pub struct Args {
     pub output: OutputArgs,
 }
 
-/// Parse `--as-of` as a calendar date (accepting exactly what clap's `NaiveDate` parser did).
-pub fn as_of(s: &str) -> Result<NaiveDate> {
-    s.parse::<NaiveDate>().map_err(|_| {
+/// Parse `--as-of` as a calendar date (strict `YYYY-MM-DD`).
+pub fn as_of(s: &str) -> Result<Date> {
+    s.parse::<Date>().map_err(|_| {
             failure_with_hint(
                 Exit::Usage,
                 format!("invalid --as-of date: {s}"),
@@ -85,7 +85,7 @@ mod tests {
     fn as_of_is_a_calendar_date() {
         assert_eq!(
             as_of("2026-09-30").unwrap(),
-            NaiveDate::from_ymd_opt(2026, 9, 30).unwrap()
+            Date::new(2026, 9, 30).unwrap()
         );
         for bad in ["yesterday", "2026-02-30", "2026-09-30T00:00:00Z", ""] {
             assert_eq!(

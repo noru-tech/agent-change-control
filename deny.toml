@@ -8,10 +8,7 @@ targets = [
 
 [advisories]
 version = 2
-ignore = [
-  # chrono is unmaintained (no vulnerability). Tracked for migration to jiff.
-  { id = "RUSTSEC-2026-0543", reason = "unmaintained notice only; migration to jiff pending" },
-]
+ignore = []
 
 [licenses]
 version = 2

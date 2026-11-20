@@ -4,7 +4,6 @@ use crate::canonical::Canonicalization;
 use crate::model::*;
 use crate::{Exit, failure_with_hint};
 use anyhow::{Result, anyhow, bail, ensure};
-use chrono::NaiveDate;
 
 /// The manifest version `acc` writes: ACP 0.4, digests over RFC 8785 bytes.
 pub const VERSION: &str = "0.4";
@@ -294,7 +293,7 @@ fn validate_disposition(d: &Disposition) -> Result<()> {
 }
 
 /// Whether a non-open disposition suppresses its finding on `date`.
-fn suppressed(d: &Disposition, date: NaiveDate) -> Result<bool> {
+fn suppressed(d: &Disposition, date: Date) -> Result<bool> {
     let decided = d
         .decided_at
         .ok_or_else(|| anyhow!("disposition lacks a decision date"))?;
@@ -308,11 +307,7 @@ fn suppressed(d: &Disposition, date: NaiveDate) -> Result<bool> {
 /// finding ID (the current identifier or a legacy one, so a 0.2 manifest's dispositions survive
 /// the move to 0.3), and decide the process exit. Non-open dispositions require an explicit `as_of`
 /// date; the machine clock is never consulted.
-pub fn check(
-    m: &Manifest,
-    p: Option<Policy>,
-    as_of: Option<NaiveDate>,
-) -> Result<(Manifest, Exit)> {
+pub fn check(m: &Manifest, p: Option<Policy>, as_of: Option<Date>) -> Result<(Manifest, Exit)> {
     let (checked, failing) = reevaluate(m, p, as_of)?;
     let exit = if incomplete(&checked.events, &checked.policy) {
         Exit::Incomplete
@@ -366,7 +361,7 @@ impl Verdict {
 pub fn verdicts(
     m: &Manifest,
     p: Option<Policy>,
-    as_of: Option<NaiveDate>,
+    as_of: Option<Date>,
 ) -> Result<Vec<ChangeVerdict>> {
     let (checked, failing) = reevaluate(m, p, as_of)?;
     Ok(checked
@@ -404,7 +399,7 @@ pub fn verdicts(
 fn reevaluate(
     m: &Manifest,
     p: Option<Policy>,
-    as_of: Option<NaiveDate>,
+    as_of: Option<Date>,
 ) -> Result<(Manifest, Vec<bool>)> {
     validate(m)?;
     let mut checked = evaluate_as(
@@ -479,7 +474,7 @@ impl Standing {
 /// was remediated within the window, and its owner is a human actor of the
 /// export who is not the change's effective author: the independence is checked, not taken on
 /// the owner's word. No other disposition discharges it.
-pub fn standing(m: &Manifest, f: &Finding, as_of: Option<NaiveDate>) -> Option<Standing> {
+pub fn standing(m: &Manifest, f: &Finding, as_of: Option<Date>) -> Option<Standing> {
     let o = f.obligation.as_ref()?;
     let date = as_of?;
     let d = &f.disposition;
@@ -509,8 +504,8 @@ pub fn standing(m: &Manifest, f: &Finding, as_of: Option<NaiveDate>) -> Option<S
 mod tests {
     use super::*;
 
-    fn date(s: &str) -> NaiveDate {
-        NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
+    fn date(s: &str) -> Date {
+        s.parse().unwrap()
     }
 
     fn accepted() -> Disposition {

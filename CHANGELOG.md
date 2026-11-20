@@ -18,6 +18,14 @@ All notable changes to this project are documented here. The format is based on
 - `tests/metadata.rs` checks that these examples name the predicate types acc emits and the
   release they install.
 
+### Changed
+- Dates and times are handled with `jiff` instead of `chrono`, which is unmaintained
+  (RUSTSEC-2026-0543). Input and output formats are unchanged: timestamps are strict RFC 3339 and
+  print in UTC with a `Z` suffix, and dates are strict `YYYY-MM-DD`. The latest timestamp is
+  now 9999-12-30T22:00:00Z, so `acc pr` records its unbounded window as ending at
+  9999-12-30T00:00:00Z (was 9999-12-31T23:59:59Z), and a later `--until` is a usage error. For library users,
+  `model::Timestamp` and the new `model::Date` are acc's own types rather than `chrono`'s.
+
 ## [0.7.0] - 2026-10-15
 
 ### Added

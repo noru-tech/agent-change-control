@@ -10,7 +10,6 @@ mod schema_order;
 
 use crate::model::*;
 use anyhow::{Context, Result, bail, ensure};
-use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -49,9 +48,7 @@ pub fn schema(value: &Value, name: &str) -> Result<()> {
 
 /// Parse an RFC 3339 timestamp with any offset into a UTC instant.
 pub fn timestamp(s: &str) -> Result<Timestamp> {
-    DateTime::parse_from_rfc3339(s)
-        .map(|t| t.with_timezone(&Utc))
-        .context("ACV004 invalid timestamp")
+    s.parse::<Timestamp>().context("ACV004 invalid timestamp")
 }
 
 /// Sort and de-duplicate an evidence list, and check that attestation evidence resolves: a
@@ -388,7 +385,7 @@ mod tests {
     #[test]
     fn timestamps_accept_offsets_and_reject_garbage() {
         let t = timestamp("2026-08-01T14:00:00+02:00").unwrap();
-        assert_eq!(t.to_rfc3339(), "2026-08-01T12:00:00+00:00");
+        assert_eq!(t.to_string(), "2026-08-01T12:00:00Z");
         assert!(timestamp("2026-08-01").is_err());
     }
 

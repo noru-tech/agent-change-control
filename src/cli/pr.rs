@@ -4,11 +4,10 @@ use super::forge::Kind;
 use super::io::{self, EvidenceArgs, OutputArgs};
 use super::{Ctx, detect, forge};
 use crate::collectors::Sources;
-use crate::model::RuleId;
+use crate::model::{RuleId, Timestamp};
 use crate::output::Format;
 use crate::{Exit, failure_with_hint, manifest};
 use anyhow::Result;
-use chrono::{DateTime, TimeZone, Utc};
 use std::path::PathBuf;
 
 #[derive(Debug, clap::Args)]
@@ -65,11 +64,10 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             })?,
     };
     let repo = detect::resolve_repository(kind, Some(&repo), |_| {})?;
-    let from = DateTime::<Utc>::UNIX_EPOCH;
-    let to = Utc
-        .with_ymd_and_hms(9999, 12, 31, 23, 59, 59)
-        .single()
-        .expect("fixed far-future instant");
+    let from = Timestamp::UNIX_EPOCH;
+    // The far-future end of an unbounded window: 9999-12-30T00:00:00Z, the last whole UTC day
+    // that a timestamp can still represent.
+    let to = Timestamp::from_unix_seconds(253_402_128_000).expect("fixed far-future instant");
     let known = io::known(&args.agent_account)?;
     let registry = args.evidence.registry()?;
     let traces = args.evidence.traces()?;
@@ -107,8 +105,8 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: manifest::checks_required(&policy),
-            bypass_as_of: manifest::bypass_required(&policy).then(chrono::Utc::now),
-            teams: (!teams.is_empty()).then(|| (teams.as_slice(), chrono::Utc::now())),
+            bypass_as_of: manifest::bypass_required(&policy).then(Timestamp::now),
+            teams: (!teams.is_empty()).then(|| (teams.as_slice(), Timestamp::now())),
             branches: None,
             deployments: None,
         },
@@ -116,7 +114,7 @@ pub fn run(ctx: &Ctx, args: Args) -> Result<Exit> {
     let m = manifest::evaluate(events, policy)?;
     // A fresh collection has no dispositions, so the date only places an emergency's
     // retroactive review inside or past its window.
-    let (_, exit) = manifest::check(&m, None, Some(chrono::Utc::now().date_naive()))?;
+    let (_, exit) = manifest::check(&m, None, Some(Timestamp::now().date()))?;
     args.output.render(ctx, &m, Format::Table)?;
     if exit == Exit::Incomplete {
         super::warn_incomplete(

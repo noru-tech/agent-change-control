@@ -11,7 +11,6 @@ use crate::collectors::gitlab::validate_project;
 use crate::model::Timestamp;
 use crate::{Exit, failure, failure_with_hint};
 use anyhow::Result;
-use chrono::{DateTime, Days, SecondsFormat, Utc};
 
 /// The default window length, in days.
 pub const DEFAULT_DAYS: u64 = 30;
@@ -170,10 +169,9 @@ pub fn now() -> Result<Timestamp> {
     let now = match std::env::var(NOW_ENV) {
         Ok(s) if !s.is_empty() => crate::normalize::timestamp(&s)
             .map_err(|_| failure(Exit::Usage, "ACC_NOW must be an RFC 3339 timestamp"))?,
-        _ => Utc::now(),
+        _ => Timestamp::now(),
     };
-    DateTime::from_timestamp(now.timestamp(), 0)
-        .ok_or_else(|| failure(Exit::Usage, "time out of range"))
+    Ok(now.trunc_seconds())
 }
 
 /// Fill in a missing window edge: the end defaults to now, the start to [`DEFAULT_DAYS`] before
@@ -190,7 +188,7 @@ pub fn window(
     let since = match since {
         Some(t) => t,
         None => until
-            .checked_sub_days(Days::new(DEFAULT_DAYS))
+            .checked_sub_days(DEFAULT_DAYS)
             .ok_or_else(|| failure(Exit::Usage, "time out of range"))?,
     };
     Ok((since, until))
@@ -198,7 +196,7 @@ pub fn window(
 
 /// An instant as it is printed in the resolved-window line.
 pub fn show(t: Timestamp) -> String {
-    t.to_rfc3339_opts(SecondsFormat::AutoSi, true)
+    t.to_string()
 }
 
 #[cfg(test)]
