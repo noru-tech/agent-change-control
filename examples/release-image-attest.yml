@@ -50,7 +50,7 @@ jobs:
       - name: Install acc
         run: |
           set -euo pipefail
-          VERSION=v0.7.0
+          VERSION=v0.8.0
           ARCHIVE=agent-change-control-x86_64-unknown-linux-musl.tar.xz
           gh release download "$VERSION" --repo noru-tech/agent-change-control --pattern "$ARCHIVE"
           gh attestation verify "$ARCHIVE" --repo noru-tech/agent-change-control \
