@@ -1045,8 +1045,7 @@ struct Version {
 /// either way: GitLab creates a version shortly after a push, so an approval that close to one
 /// could have been given against either head.
 fn bind(timeline: &[Version], at: Timestamp) -> Option<&Version> {
-    let close = chrono::Duration::seconds(1);
-    if timeline.iter().any(|v| (v.at - at).abs() < close) {
+    if timeline.iter().any(|v| v.at.within_seconds(at, 1)) {
         return None;
     }
     timeline

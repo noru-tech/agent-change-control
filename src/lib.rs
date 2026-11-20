@@ -22,6 +22,7 @@ pub mod output;
 pub mod policy;
 pub mod provenance;
 pub mod rules;
+pub mod time;
 
 use std::borrow::Cow;
 

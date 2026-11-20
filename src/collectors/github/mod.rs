@@ -1048,7 +1048,7 @@ impl Github {
                 provenance: vec![provenance],
             });
         }
-        let in_reach = from >= as_of - chrono::Duration::days(365);
+        let in_reach = as_of.checked_sub_days(365).is_none_or(|edge| from >= edge);
         Ok(Branch {
             id: format!("github:{repository}:branch:{name}"),
             name: name.to_string(),
@@ -1317,7 +1317,7 @@ impl Github {
 
 /// How far back the rule-suite listing reaches: GitHub's widest `time_period` is a month, so
 /// anything merged more than 28 days before collection may have fallen out of it.
-const RULE_SUITE_REACH_DAYS: i64 = 28;
+const RULE_SUITE_REACH_DAYS: u64 = 28;
 
 /// The ruleset evaluations of one merged change: those whose push landed its merge commit.
 #[allow(clippy::too_many_arguments)]
@@ -1359,7 +1359,9 @@ fn protection(
             });
         }
     }
-    let in_reach = merged_at >= as_of - chrono::Duration::days(RULE_SUITE_REACH_DAYS);
+    let in_reach = as_of
+        .checked_sub_days(RULE_SUITE_REACH_DAYS)
+        .is_none_or(|edge| merged_at >= edge);
     Ok(Protection {
         branch: branch.to_string(),
         suites,

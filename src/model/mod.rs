@@ -4,13 +4,10 @@
 //! Enum variants that participate in sorting are declared in the order of their serialized
 //! strings, so canonical output is identical to a string comparison.
 
-use chrono::{DateTime, NaiveDate, Utc};
+pub use crate::time::{Date, Timestamp};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
-
-/// A UTC instant. Serialized as RFC 3339 with a `Z` suffix; any offset is accepted on input.
-pub type Timestamp = DateTime<Utc>;
 
 /// How a piece of evidence was obtained. The derived ordering is the string order used for
 /// sorting evidence lists; [`EvidenceKind::strength`] is the trust ordering policies use.
@@ -821,7 +818,7 @@ pub enum TierSource {
 #[serde(deny_unknown_fields)]
 pub struct Obligation {
     pub kind: ObligationKind,
-    pub due: NaiveDate,
+    pub due: Date,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -865,10 +862,10 @@ pub struct ChecksPolicy {
 pub struct Disposition {
     pub status: DispositionStatus,
     pub owner: Option<String>,
-    pub decided_at: Option<NaiveDate>,
-    pub expires_at: Option<NaiveDate>,
+    pub decided_at: Option<Date>,
+    pub expires_at: Option<Date>,
     pub rationale: Option<String>,
-    pub remediated_at: Option<NaiveDate>,
+    pub remediated_at: Option<Date>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

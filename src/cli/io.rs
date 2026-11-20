@@ -6,7 +6,6 @@ use crate::provenance::agent_trace::AgentTraces;
 use crate::provenance::attestations::Attestations;
 use crate::{Exit, Failure, failure, failure_with_hint};
 use anyhow::{Context, Result, anyhow, ensure};
-use chrono::NaiveDate;
 use clap::Args;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -293,16 +292,13 @@ fn bad_date(message: &'static str) -> anyhow::Error {
 /// RFC 3339 timestamp is taken as is.
 pub fn boundary(s: &str, end: bool) -> Result<Timestamp> {
     if s.len() == 10 {
-        let date =
-            NaiveDate::parse_from_str(s, "%Y-%m-%d").map_err(|_| bad_date("invalid date"))?;
-        let time = if end {
-            date.and_hms_nano_opt(23, 59, 59, 999_999_999)
+        let date: Date = s.parse().map_err(|_| bad_date("invalid date"))?;
+        let edge = if end {
+            date.end_of_day()
         } else {
-            date.and_hms_opt(0, 0, 0)
+            date.start_of_day()
         };
-        return time
-            .map(|t| t.and_utc())
-            .ok_or_else(|| bad_date("invalid date"));
+        return edge.ok_or_else(|| bad_date("date out of range"));
     }
     crate::normalize::timestamp(s).map_err(|_| bad_date("invalid date/time"))
 }
@@ -358,13 +354,13 @@ mod tests {
     fn boundaries_expand_dates_to_utc_day_edges() {
         let from = boundary("2026-08-01", false).unwrap();
         let to = boundary("2026-08-31", true).unwrap();
-        assert_eq!(from.to_rfc3339(), "2026-08-01T00:00:00+00:00");
+        assert_eq!(from.to_string(), "2026-08-01T00:00:00Z");
         assert_eq!(
             serde_json::to_string(&to).unwrap(),
             "\"2026-08-31T23:59:59.999999999Z\""
         );
         let exact = boundary("2026-08-01T14:00:00+02:00", false).unwrap();
-        assert_eq!(exact.to_rfc3339(), "2026-08-01T12:00:00+00:00");
+        assert_eq!(exact.to_string(), "2026-08-01T12:00:00Z");
         assert_eq!(
             crate::exit_for(&boundary("2026-13-01", false).unwrap_err()),
             Exit::Usage

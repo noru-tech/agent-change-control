@@ -145,10 +145,12 @@ pub fn obligation(c: &Change, p: &Policy) -> Option<Obligation> {
         .as_ref()?
         .get(&Tier::Emergency)?
         .retroactive_review_within_days?;
-    let merged = c.merged_at?.date_naive();
+    let merged = c.merged_at?.date();
     Some(Obligation {
         kind: ObligationKind::RetroactiveReview,
-        due: merged + chrono::Days::new(u64::from(days)),
+        due: merged
+            .checked_add_days(u64::from(days))
+            .unwrap_or(Date::MAX),
     })
 }
 
@@ -883,7 +885,7 @@ fn evaluate_subjects(
                     || "an account the forge does not name".to_string(),
                     String::from,
                 );
-                let at = ev.at.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, true);
+                let at = ev.at.to_string();
                 let explanation = match ev.kind {
                     BranchEventKind::BranchDeletion => {
                         format!("Deletion of {} by {by} at {at}.", b.name)

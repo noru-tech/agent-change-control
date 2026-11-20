@@ -6,10 +6,9 @@ use super::io::{self, EvidenceArgs, OutputArgs};
 use crate::collectors::github::Github;
 use crate::collectors::gitlab::Gitlab;
 use crate::collectors::{DeploymentQuery, Sources};
-use crate::model::Events;
+use crate::model::{Events, Timestamp};
 use crate::{Exit, failure_with_hint};
 use anyhow::Result;
-use chrono::SecondsFormat;
 use clap::{Args, Subcommand};
 use std::path::PathBuf;
 
@@ -170,8 +169,8 @@ impl Client {
     pub fn collect(
         &self,
         repository: &str,
-        from: chrono::DateTime<chrono::Utc>,
-        to: chrono::DateTime<chrono::Utc>,
+        from: Timestamp,
+        to: Timestamp,
         number: Option<u64>,
         sources: Sources<'_>,
     ) -> Result<Events> {
@@ -263,10 +262,7 @@ pub fn collect(ctx: &Ctx, kind: Kind, c: &Collect, wanted: &Wanted) -> Result<Ev
     let vendors = c.evidence.vendors()?;
     ctx.debug(format!(
         "collecting {} merged from {} to {} (at most {} pages per endpoint)",
-        repository,
-        from.to_rfc3339_opts(SecondsFormat::AutoSi, true),
-        to.to_rfc3339_opts(SecondsFormat::AutoSi, true),
-        c.max_pages
+        repository, from, to, c.max_pages
     ));
     debug_auth(ctx, kind);
     let mut team_ids: Vec<String> = teams
@@ -291,7 +287,7 @@ pub fn collect(ctx: &Ctx, kind: Kind, c: &Collect, wanted: &Wanted) -> Result<Ev
             "--deploy-since must not be later than --until",
         ));
     }
-    let now = chrono::Utc::now();
+    let now = Timestamp::now();
     Client::new(kind, c.max_pages)?.collect(
         &repository,
         from,
@@ -304,7 +300,7 @@ pub fn collect(ctx: &Ctx, kind: Kind, c: &Collect, wanted: &Wanted) -> Result<Ev
             attestations: attestations.as_ref(),
             vendors: &vendors,
             checks: checks || c.checks,
-            bypass_as_of: (bypass || c.bypass).then(chrono::Utc::now),
+            bypass_as_of: (bypass || c.bypass).then(Timestamp::now),
             teams: (!team_ids.is_empty()).then_some((team_ids.as_slice(), now)),
             branches: branches.as_deref().map(|b| (b, now)),
             deployments: environments.as_deref().map(|environments| DeploymentQuery {

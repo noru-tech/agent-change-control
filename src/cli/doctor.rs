@@ -198,7 +198,7 @@ fn online_checks(checks: &mut Vec<Check>) {
             } else {
                 Status::Ok
             };
-            let reset = chrono::DateTime::from_timestamp(rate.reset as i64, 0)
+            let reset = crate::model::Timestamp::from_unix_seconds(rate.reset as i64)
                 .map_or_else(|| rate.reset.to_string(), detect::show);
             Check::new(
                 "github",
